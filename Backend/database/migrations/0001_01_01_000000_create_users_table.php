@@ -12,13 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
+            $table->string('id', 36)->primary();
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
-            $table->timestamps();
+            $table->string('password_hash')->nullable();
+            $table->string('full_name', 100);
+            $table->enum('role', ['ADMIN', 'USER'])->default('USER');
+            $table->enum('gender', ['MALE', 'FEMALE'])->nullable();
+            $table->decimal('height_cm', 5, 2)->nullable();
+            $table->integer('birth_year')->nullable();
+            $table->decimal('target_waist_cm', 5, 2)->nullable();
+            $table->decimal('target_weight_kg', 5, 2)->nullable();
+            $table->decimal('weight_kg', 5, 2)->nullable();
+            $table->date('target_date')->nullable();
+            $table->timestamps(); // Tự động tạo created_at và updated_at
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

@@ -59,11 +59,10 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => [
+            // --- THÊM ĐOẠN OPTIONS NÀY VÀO ---
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                // Bỏ qua xác thực chứng chỉ self-signed nếu cần thiết
-                PDO::ATTR_PERSISTENT => false,
-            ],
+            ]) : [],
         ],
 
         'mariadb' => [

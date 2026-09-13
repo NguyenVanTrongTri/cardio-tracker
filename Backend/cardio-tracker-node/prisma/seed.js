@@ -90,7 +90,36 @@ async function main() {
 
   console.log('✅ Seed dữ liệu lên Aiven MySQL thành công!');
 }
-
+// Endpoint lấy danh sách users
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        gender: true,
+        heightCm: true,
+        weightKg: true,
+        targetWeightKg: true,
+        targetWaistCm: true,
+        createdAt: true,
+      },
+    });
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users,
+    });
+  } catch (error) {
+    console.error('❌ Lỗi lấy danh sách user:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 main()
   .catch((e) => {
     console.error('❌ Lỗi seed:', e);

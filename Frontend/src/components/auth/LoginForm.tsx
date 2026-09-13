@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
-import { login, INITIAL_ADMIN_USER } from '../../services/auth';
 import { UserAccount } from '../../types';
 
 interface LoginFormProps {
@@ -28,27 +27,41 @@ export default function LoginForm({
   const [rememberMe, setRememberMe] = useState(true);
 
   const handleFillAdmin = () => {
-    setEmail(INITIAL_ADMIN_USER.email);
-    setPassword(INITIAL_ADMIN_USER.password || 'admin123456');
+    setEmail('admin@cardiotracker.com');
+    setPassword('admin123456');
     setErrorMsg(null);
     setSuccessMsg('Đã điền thông tin tài khoản Quản Trị Viên (Admin). Bấm ĐĂNG NHẬP để tiếp tục!');
   };
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setLoading(true);
 
-    const res = login(email, password, rememberMe);
-    setLoading(false);
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (res.success && res.user) {
-      setSuccessMsg(`Chào mừng bạn trở lại, ${res.user.fullName}!`);
-      setTimeout(() => {
-        onSuccess(res.user!);
-      }, 700);
-    } else {
-      setErrorMsg(res.error || 'Đăng nhập không thành công');
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
+        if (rememberMe) {
+          localStorage.setItem('cardio_user', JSON.stringify(data.user));
+        }
+        setTimeout(() => {
+          onSuccess(data.user as UserAccount);
+        }, 700);
+      } else {
+        setErrorMsg(data.error || 'Đăng nhập không thành công');
+      }
+    } catch (err) {
+      setErrorMsg('Không thể kết nối đến server backend!');
+    } finally {
+      setLoading(false);
     }
   };
 

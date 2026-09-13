@@ -11,10 +11,6 @@ const prisma = new PrismaClient();
 app.use(express.json());
 app.use(cors());
 
-app.use((req, res, next) => {
-  console.log(`📥 [LOG] Request vào: ${req.method} ${req.url}`);
-  next();
-});
 // Test route
 app.get('/', async (req, res) => {
   try {
@@ -31,7 +27,6 @@ app.get('/', async (req, res) => {
 
 // Users route
 app.get('/api/users', async (req, res) => {
-  console.log("🔥 ĐÃ CHẠM VÀO /api/users");
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -56,6 +51,37 @@ app.get('/api/users', async (req, res) => {
     res.status(200).json({ success: true, count: users.length, data: users });
   } catch (error) {
     console.error("Lỗi /api/users:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Auth Login route
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    if (!user || user.passwordHash !== password) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Email hoặc mật khẩu không chính xác' 
+      });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        gender: user.gender,
+      }
+    });
+  } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

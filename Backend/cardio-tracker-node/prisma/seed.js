@@ -1,86 +1,14 @@
-const express = require('express');
-const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
-
 const { PrismaClient } = require('@prisma/client');
-const app = express();
+
 const prisma = new PrismaClient();
 
-app.use(express.json());
-app.use(cors());
-
-app.use((req, res, next) => {
-  console.log(`📥 [LOG] Request vào: ${req.method} ${req.url}`);
-  next();
-});
-// Test route
-app.get('/', async (req, res) => {
+async function main() {
   try {
-    const userCount = await prisma.user.count();
-    res.json({ 
-      success: true, 
-      message: "Cardio Tracker API is running smoothly!",
-      totalUsers: userCount
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+    console.log('🌱 [SEED] Đang khởi chạy seed dữ liệu lên database...');
 
-// Users route
-app.get('/api/users', async (req, res) => {
-  console.log("🔥 ĐÃ CHẠM VÀO /api/users");
-  try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        role: true,
-        gender: true,
-        heightCm: true,
-        weightKg: true,
-        targetWeightKg: true,
-        targetWaistCm: true,
-        waistCm: true,
-        hipCm: true,
-        bodyFatPercentage: true,
-        activityLevel: true,
-        workoutEnvironment: true,
-        weeklyGoalKg: true,
-        createdAt: true,
-      },
-    });
-    res.status(200).json({ success: true, count: users.length, data: users });
-  } catch (error) {
-    console.error("Lỗi /api/users:", error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Workouts route
-app.get('/api/workouts', async (req, res) => {
-  try {
-    const workouts = await prisma.workout.findMany({
-      take: 10,
-      include: {
-        user: { select: { fullName: true, email: true } },
-        workoutPhases: true,
-        meals: { include: { foodItems: true } }
-      },
-      orderBy: { workoutStartTime: 'desc' }
-    });
-    res.json({ success: true, data: workouts });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Seed route
-app.post('/api/seed', async (req, res) => {
-  try {
     const INITIAL_ADMIN_USER = {
       id: 'usr-admin-master',
       email: 'admin@cardiotracker.com',
@@ -118,8 +46,17 @@ app.post('/api/seed', async (req, res) => {
       createdAt: new Date('2026-08-01T08:00:00Z'),
     };
 
-    await prisma.user.upsert({ where: { email: INITIAL_ADMIN_USER.email }, update: INITIAL_ADMIN_USER, create: INITIAL_ADMIN_USER });
-    await prisma.user.upsert({ where: { email: INITIAL_USER.email }, update: INITIAL_USER, create: INITIAL_USER });
+    await prisma.user.upsert({ 
+      where: { email: INITIAL_ADMIN_USER.email }, 
+      update: INITIAL_ADMIN_USER, 
+      create: INITIAL_ADMIN_USER 
+    });
+
+    await prisma.user.upsert({ 
+      where: { email: INITIAL_USER.email }, 
+      update: INITIAL_USER, 
+      create: INITIAL_USER 
+    });
 
     const workoutId = crypto.randomUUID();
     const workout = await prisma.workout.create({
@@ -145,16 +82,12 @@ app.post('/api/seed', async (req, res) => {
       include: { workoutPhases: true }
     });
 
-    res.json({ success: true, message: "Seed thành công toàn bộ dữ liệu mẫu!", data: { workout } });
+    console.log('✅ Seed thành công toàn bộ dữ liệu mẫu!', workout.id);
   } catch (error) {
-    console.error("Cloud seed error:", error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Cloud seed error:', error);
+  } finally {
+    await prisma.$disconnect();
   }
-});
+}
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server chạy port ${PORT}`);
-});
-
-module.exports = app;
+main();

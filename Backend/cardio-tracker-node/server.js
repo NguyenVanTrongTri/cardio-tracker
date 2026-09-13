@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path'); // Thêm dòng này để định nghĩa path
+const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const { PrismaClient } = require('@prisma/client');
@@ -14,7 +14,6 @@ app.use(cors());
 // 1. Route kiểm tra server và kết nối Database
 app.get('/', async (req, res) => {
   try {
-    // Thử truy vấn nhanh bảng users để test kết nối Aiven MySQL
     const userCount = await prisma.user.count();
     res.json({ 
       success: true, 
@@ -36,7 +35,7 @@ app.get('/', async (req, res) => {
 app.get('/api/workouts', async (req, res) => {
   try {
     const workouts = await prisma.workout.findMany({
-      take: 10, // Lấy 10 bài tập gần nhất
+      take: 10,
       include: {
         user: {
           select: { fullName: true, email: true }
@@ -53,8 +52,13 @@ app.get('/api/workouts', async (req, res) => {
   }
 });
 
-// Khởi động Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Khởi động Server (Local vs Vercel)
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+// BẮT BUỘC cho Vercel Serverless
+module.exports = app;

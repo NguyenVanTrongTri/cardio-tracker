@@ -1,6 +1,27 @@
 import { EquipmentType, WorkoutPhase, WorkoutRecord } from '../types';
 
 /**
+ * Helper to calculate cumulative distance for UI display
+ */
+export function getPhasesWithCumulativeDistance(phases: WorkoutPhase[]) {
+  let cumulativeSum = 0;
+  return phases.map((p) => {
+    // Calculate phase distance if not explicitly set (same logic as in calculateWorkoutTotals)
+    const phaseDist =
+      p.distanceKm !== undefined && Number(p.distanceKm) > 0
+        ? Number(p.distanceKm)
+        : (Number(p.speedKmh) * Number(p.durationMinutes)) / 60;
+    
+    cumulativeSum += phaseDist;
+    
+    return {
+      ...p,
+      cumulativeDistanceKm: Math.round(cumulativeSum * 100) / 100,
+    };
+  });
+}
+
+/**
  * Calculates scientific calories per phase based on equipment type:
  * - TREADMILL: ACSM walking/running equation with incline grade & speed
  * - STATIONARY_BIKE: Ergometer METs based on resistance & cadence RPM

@@ -126,9 +126,10 @@ export const renderParam2Field = (
 export const renderDistanceField = (
   props: PhaseControlsProps & {
     className?: string;
+    cumulativeDistance?: number;
   }
 ) => {
-  const { phase, setPhase, equipmentDef, colorRing, className } = props;
+  const { phase, setPhase, equipmentDef, colorRing, className, cumulativeDistance } = props;
   const isSpeedDriven =
     equipmentDef.param2.key === 'speedKmh' ||
     equipmentDef.param3?.key === 'speedKmh' ||
@@ -174,6 +175,11 @@ export const renderDistanceField = (
           `w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`
         }
       />
+      {cumulativeDistance !== undefined && (
+        <p className="text-[10px] text-emerald-600 mt-1 font-mono font-bold">
+          Tích lũy: {cumulativeDistance.toFixed(2)} km
+        </p>
+      )}
     </div>
   );
 };

@@ -26,7 +26,8 @@ import {
 import {
   calculateWorkoutTotals,
   checkPreWorkoutAlert,
-  getSmartWorkoutRecommendation
+  getSmartWorkoutRecommendation,
+  getPhasesWithCumulativeDistance
 } from '../../utils/calculations';
 import {
   getLatestBodyMetric,
@@ -153,6 +154,10 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     list.push(phase3);
     return list;
   }, [isIntervalMode, phase1, phase2, phase2Relief, phase2Surge, enableRelief, enableSurge, phase3]);
+
+  const phasesWithCumulative = useMemo(() => {
+    return getPhasesWithCumulativeDistance(phases);
+  }, [phases]);
 
   useEffect(() => {
     if (!isInitialized.current) {
@@ -469,7 +474,13 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
               {renderDurationField({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
               {renderParam1Field({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
               {renderParam2Field({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
-              {renderDistanceField({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
+              {renderDistanceField({ 
+                phase: phase1, 
+                setPhase: setPhase1, 
+                equipmentDef, 
+                colorRing: 'focus:ring-amber-500/20',
+                cumulativeDistance: (phase1.distanceKm ?? (phase1.speedKmh * phase1.durationMinutes) / 60)
+              })}
             </div>
           </div>
 
@@ -523,6 +534,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 colorRing: 'focus:ring-emerald-500/30',
                 className:
                   'w-full bg-white border-2 border-emerald-300 rounded-xl px-2.5 py-2.5 text-center text-base font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30',
+                cumulativeDistance: (phase1.distanceKm ?? (phase1.speedKmh * phase1.durationMinutes) / 60) + (phase2.distanceKm ?? (phase2.speedKmh * phase2.durationMinutes) / 60)
               })}
             </div>
 

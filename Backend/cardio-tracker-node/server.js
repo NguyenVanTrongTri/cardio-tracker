@@ -7,16 +7,19 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { PrismaClient } = require('@prisma/client');
 const app = express();
 const prisma = new PrismaClient();
+
+// Cấu hình CORS chuẩn (chỉ gọi 1 lần duy nhất)
 app.use(cors({
   origin: [
     'https://cardio-tracker-iota.vercel.app',
     'http://localhost:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
+
 app.use(express.json());
-app.use(cors());
 
 // Test route
 app.get('/', async (req, res) => {
@@ -131,7 +134,7 @@ app.post('/api/seed', async (req, res) => {
 
     const INITIAL_USER = {
       id: 'usr-trongtri',
-      email: 'trongtriww@gmail.com',
+      email: 'trongtriww1@gmail.com',
       passwordHash: 'password123',
       fullName: 'Nguyễn Minh Trí',
       role: 'USER', 
@@ -185,9 +188,12 @@ app.post('/api/seed', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server chạy port ${PORT}`);
-});
+// Chỉ listen khi chạy dev local (tránh conflict serverless của Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server chạy port ${PORT}`);
+  });
+}
 
 module.exports = app;

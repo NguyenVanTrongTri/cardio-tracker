@@ -2,17 +2,8 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/Backend/cardio-tracker-node/server.js"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/Backend/cardio-tracker-node/server.js"
+      "source": "/(.*)",
+      "destination": "/server.js"
     }
-  ],
-  "functions": {
-    "Backend/cardio-tracker-node/server.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }

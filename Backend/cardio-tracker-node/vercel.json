@@ -1,9 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/server.js"
-    }
+    { "source": "/api/(.*)", "destination": "/Backend/cardio-tracker-node/server.js" },
+    { "source": "/(.*)", "destination": "/Backend/cardio-tracker-node/server.js" }
   ]
 }

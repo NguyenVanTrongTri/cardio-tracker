@@ -32,7 +32,7 @@ app.get('/', async (req, res) => {
   }
 });
 
-// 2. Route lấy danh sách Users
+// 2. Route lấy danh sách Users (kèm các chỉ số hình thể & lifestyle mới)
 app.get('/api/users', async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -46,6 +46,12 @@ app.get('/api/users', async (req, res) => {
         weightKg: true,
         targetWeightKg: true,
         targetWaistCm: true,
+        waistCm: true,
+        hipCm: true,
+        bodyFatPercentage: true,
+        activityLevel: true,
+        workoutEnvironment: true,
+        weeklyGoalKg: true,
         createdAt: true,
       },
     });
@@ -59,7 +65,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// 3. Route mẫu: Lấy danh sách Workouts
+// 3. Route lấy danh sách Workouts (kèm phases & meals)
 app.get('/api/workouts', async (req, res) => {
   try {
     const workouts = await prisma.workout.findMany({
@@ -83,7 +89,7 @@ app.get('/api/workouts', async (req, res) => {
   }
 });
 
-// 4. Route seed dữ liệu chạy trên cloud production (Khớp chuẩn schema)
+// 4. Route seed dữ liệu đầy đủ chuẩn schema mở rộng
 app.post('/api/seed', async (req, res) => {
   try {
     const INITIAL_ADMIN_USER = {
@@ -109,10 +115,17 @@ app.post('/api/seed', async (req, res) => {
       role: 'USER', 
       gender: 'MALE',
       heightCm: 173.00,
-      birthYear: 1996,
-      targetWaistCm: 80.00,
-      targetWeightKg: 67.00,
+      birthYear: 2004,
+      targetWaistCm: 78.00,
+      targetWeightKg: 68.00,
+      weightKg: 72.00,
       targetDate: new Date('2026-10-31'),
+      waistCm: 82.00,
+      hipCm: 94.00,
+      bodyFatPercentage: 17.50,
+      activityLevel: 'ACTIVE',
+      workoutEnvironment: 'GYM',
+      weeklyGoalKg: -0.50,
       createdAt: new Date('2026-08-01T08:00:00Z'),
     };
 
@@ -140,6 +153,7 @@ app.post('/api/seed', async (req, res) => {
         activeTime: 40,
         calories: 380.00,
         isZone2: true,
+        totalDistanceKm: 5.20,
         notes: 'Buổi cardio Zone 2 mẫu đầu tiên của Trí',
         workoutPhases: {
           create: [
@@ -150,8 +164,9 @@ app.post('/api/seed', async (req, res) => {
               durationMinutes: 10,
               speedKmh: 6.0,
               inclineDegree: 1.0,
-              distanceKm: 1.0,
+              distanceKm: 1.00,
               isCoreEngaged: false,
+              subType: 'RELIEF',
             },
             {
               id: crypto.randomUUID(),
@@ -162,6 +177,7 @@ app.post('/api/seed', async (req, res) => {
               inclineDegree: 1.5,
               distanceKm: 4.20,
               isCoreEngaged: true,
+              subType: 'MAIN',
             }
           ]
         }
@@ -171,7 +187,7 @@ app.post('/api/seed', async (req, res) => {
 
     res.json({
       success: true,
-      message: "Seed 2 tài khoản và workout mẫu lên Aiven thành công!",
+      message: "Seed thành công toàn bộ dữ liệu mẫu!",
       data: { workout }
     });
   } catch (error) {

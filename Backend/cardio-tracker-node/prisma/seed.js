@@ -80,7 +80,7 @@ app.get('/api/workouts', async (req, res) => {
   }
 });
 
-// 4. Route seed dữ liệu chạy trên cloud production (Đã loại bỏ cột thừa)
+// 4. Route seed dữ liệu chạy trên cloud production
 app.post('/api/seed', async (req, res) => {
   try {
     const INITIAL_ADMIN_USER = {

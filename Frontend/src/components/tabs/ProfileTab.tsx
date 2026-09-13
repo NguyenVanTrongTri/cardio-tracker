@@ -17,6 +17,7 @@ import ChangePasswordModal from '../auth/ChangePasswordModal';
 import AuthModal from '../auth/AuthModal';
 
 export interface ProfileTabProps {
+  key?: string;
   onAddNotification?: (title: string, message: string) => void;
 }
 

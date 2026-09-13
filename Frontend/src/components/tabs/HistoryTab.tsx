@@ -297,10 +297,10 @@ export default function HistoryTab() {
                 <div className="bg-slate-50/80 p-4 border-t border-slate-100 space-y-3 text-xs">
                   <div>
                     <h4 className="font-bold text-slate-700 mb-2">
-                      Chi Tiết 3 Giai Đoạn ({eqDef.name})
+                      Chi Tiết Các Giai Đoạn ({eqDef.name})
                     </h4>
-                    <div className="grid grid-cols-3 gap-2 text-center font-mono">
-                      {w.phases.map((p) => {
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-center font-mono">
+                      {w.phases.map((p, idx) => {
                         const dist =
                           p.distanceKm !== undefined && Number(p.distanceKm) > 0
                             ? Number(p.distanceKm)
@@ -308,18 +308,25 @@ export default function HistoryTab() {
                             ? Math.round(((p.speedKmh * p.durationMinutes) / 60) * 100) / 100
                             : null;
 
+                        const isRelief = p.subType === 'RELIEF' || p.name.toLowerCase().includes('xả');
+                        const isSurge = p.subType === 'SURGE' || p.name.toLowerCase().includes('bứt tốc');
+
                         return (
                           <div
-                            key={p.phaseNumber}
+                            key={`${p.phaseNumber}-${idx}`}
                             className={`p-2 rounded-xl border flex flex-col justify-between ${
-                              p.phaseNumber === 2
+                              isRelief
+                                ? 'bg-sky-50/80 border-sky-200 text-sky-950'
+                                : isSurge
+                                ? 'bg-amber-50/80 border-amber-200 text-amber-950 font-bold'
+                                : p.phaseNumber === 2
                                 ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950 font-bold'
                                 : 'bg-white border-slate-200 text-slate-700'
                             }`}
                           >
                             <div>
-                              <span className="text-[10px] text-slate-500 block">
-                                P{p.phaseNumber}: {p.name}
+                              <span className="text-[10px] text-slate-500 block truncate" title={p.name}>
+                                {isRelief ? '💧 Nhịp xả' : isSurge ? '⚡ Bứt tốc' : `P${p.phaseNumber}: ${p.name}`}
                               </span>
                               <div className="text-xs font-semibold text-slate-800">{p.durationMinutes} phút</div>
                               {dist !== null && (

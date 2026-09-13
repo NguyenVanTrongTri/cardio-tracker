@@ -11,8 +11,7 @@ import { EquipmentType, WorkoutPhase, WorkoutRecord } from '../types';
 export function calculatePhaseCalories(
   phase: WorkoutPhase,
   weightKg: number,
-  equipmentType: EquipmentType = 'TREADMILL' 
-  
+  equipmentType: EquipmentType = 'TREADMILL'
 ): number {
   if (phase.durationMinutes <= 0 || weightKg <= 0) return 0;
 
@@ -83,14 +82,17 @@ export function calculateWorkoutTotals(
   const efficiencyIndex =
     activeTime > 0 ? Math.round((roundedCalories / activeTime) * 100) / 100 : 0;
 
-  const p2 = phases.find((p) => p.phaseNumber === 2);
+  const p2Phases = phases.filter((p) => p.phaseNumber === 2);
+  const totalP2Time = p2Phases.reduce((sum, p) => sum + (Number(p.durationMinutes) || 0), 0);
+  const maxIncline = Math.max(0, ...p2Phases.map((p) => Number(p.inclineDegree) || 0));
+  const maxResistance = Math.max(0, ...p2Phases.map((p) => Number(p.resistanceLevel) || 0));
   let isZone2 = false;
 
-  if (p2 && activeTime >= 40 && activeTime <= 48 && p2.durationMinutes >= 25) {
+  if (p2Phases.length > 0 && activeTime >= 30 && activeTime <= 55 && totalP2Time >= 15) {
     if (equipmentType === 'TREADMILL') {
-      isZone2 = p2.inclineDegree >= 8;
+      isZone2 = maxIncline >= 6;
     } else if (equipmentType === 'STATIONARY_BIKE') {
-      isZone2 = (p2.resistanceLevel || 0) >= 6;
+      isZone2 = maxResistance >= 5;
     } else {
       isZone2 = true;
     }

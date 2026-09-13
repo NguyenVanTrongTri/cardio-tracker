@@ -20,7 +20,8 @@ import {
   Waves,
   Footprints,
   Compass,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Wind
 } from 'lucide-react';
 import {
   calculateWorkoutTotals,
@@ -92,6 +93,40 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const [phase2, setPhase2] = useState<WorkoutPhase>(equipmentDef.defaultPhases.phase2);
   const [phase3, setPhase3] = useState<WorkoutPhase>(equipmentDef.defaultPhases.phase3);
 
+  // Flexible Interval Mode in Phase 2 (Đốt mỡ chính linh hoạt)
+  const [isIntervalMode, setIsIntervalMode] = useState<boolean>(false);
+  const [enableRelief, setEnableRelief] = useState<boolean>(true);
+  const [enableSurge, setEnableSurge] = useState<boolean>(true);
+
+  // Sub-phases for Relief (nhịp xả) and Surge (bứt tốc)
+  const [phase2Relief, setPhase2Relief] = useState<WorkoutPhase>({
+    phaseNumber: 2,
+    name: 'Nhịp xả bớt mệt (Relief)',
+    durationMinutes: 5,
+    speedKmh: 5.0,
+    inclineDegree: 0,
+    distanceKm: 0.42,
+    resistanceLevel: 2,
+    cadenceRpm: 60,
+    strokeRateSpm: 18,
+    stepsPerMin: 40,
+    subType: 'RELIEF',
+  });
+
+  const [phase2Surge, setPhase2Surge] = useState<WorkoutPhase>({
+    phaseNumber: 2,
+    name: 'Bứt tốc / Leo dốc 2 (Surge)',
+    durationMinutes: 5,
+    speedKmh: 5.5,
+    inclineDegree: 8,
+    distanceKm: 0.46,
+    resistanceLevel: 8,
+    cadenceRpm: 75,
+    strokeRateSpm: 26,
+    stepsPerMin: 70,
+    subType: 'SURGE',
+  });
+
   const [pauseDuration, setPauseDuration] = useState<number>(0);
   const [fatigueLevel, setFatigueLevel] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [waterConsumedMl, setWaterConsumedMl] = useState<number>(500);
@@ -99,6 +134,25 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
 
   const [savedSuccessMessage, setSavedSuccessMessage] = useState<string | null>(null);
   const isInitialized = useRef(false);
+
+  // Real-time calculated phases
+  const phases = useMemo(() => {
+    if (!isIntervalMode) {
+      return [phase1, phase2, phase3];
+    }
+    const list: WorkoutPhase[] = [
+      phase1,
+      { ...phase2, name: 'Đợt 1: Leo dốc chính', subType: 'MAIN' },
+    ];
+    if (enableRelief) {
+      list.push({ ...phase2Relief, phaseNumber: 2 });
+    }
+    if (enableSurge) {
+      list.push({ ...phase2Surge, phaseNumber: 2 });
+    }
+    list.push(phase3);
+    return list;
+  }, [isIntervalMode, phase1, phase2, phase2Relief, phase2Surge, enableRelief, enableSurge, phase3]);
 
   useEffect(() => {
     if (!isInitialized.current) {
@@ -111,7 +165,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         workoutStartTime,
         meals,
         equipmentType,
-        phases: [phase1, phase2, phase3],
+        phases,
         pauseDuration,
         fatigueLevel,
         waterConsumedMl,
@@ -119,11 +173,11 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         weightKg,
         waistCm
       });
-      console.log('Meals auto-saved');
+      console.log('Workout auto-saved');
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [meals, workoutStartTime, equipmentType, phase1, phase2, phase3, pauseDuration, fatigueLevel, waterConsumedMl, notes, weightKg, waistCm]);
+  }, [meals, workoutStartTime, equipmentType, phases, pauseDuration, fatigueLevel, waterConsumedMl, notes, weightKg, waistCm]);
 
   useEffect(() => {
     const workouts = getStoredWorkouts();
@@ -147,6 +201,13 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     setPhase1(def.defaultPhases.phase1);
     setPhase2(def.defaultPhases.phase2);
     setPhase3(def.defaultPhases.phase3);
+    if (newType === 'TREADMILL' || newType === 'OUTDOOR_RUN') {
+      setPhase2Relief((prev) => ({ ...prev, inclineDegree: 0, speedKmh: 5.0, distanceKm: 0.42 }));
+      setPhase2Surge((prev) => ({ ...prev, inclineDegree: 8, speedKmh: 5.5, distanceKm: 0.46 }));
+    } else if (newType === 'STATIONARY_BIKE') {
+      setPhase2Relief((prev) => ({ ...prev, resistanceLevel: 3, cadenceRpm: 65, speedKmh: 18 }));
+      setPhase2Surge((prev) => ({ ...prev, resistanceLevel: 8, cadenceRpm: 80, speedKmh: 24 }));
+    }
   };
 
   // Smart Recommendation
@@ -155,7 +216,6 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   }, [recentWorkouts]);
 
   // Real-time calculations with current equipment
-  const phases = useMemo(() => [phase1, phase2, phase3], [phase1, phase2, phase3]);
   const liveTotals = useMemo(() => {
     return calculateWorkoutTotals(phases, pauseDuration, weightKg, equipmentType);
   }, [phases, pauseDuration, weightKg, equipmentType]);
@@ -164,21 +224,26 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const handleSaveWorkout = (e: FormEvent) => {
     e.preventDefault();
 
-    const p1Dist =
-      Number(phase1.distanceKm) ||
-      (Number(phase1.speedKmh) && Number(phase1.durationMinutes)
-        ? Math.round(((Number(phase1.speedKmh) * Number(phase1.durationMinutes)) / 60) * 100) / 100
-        : 0);
-    const p2Dist =
-      Number(phase2.distanceKm) ||
-      (Number(phase2.speedKmh) && Number(phase2.durationMinutes)
-        ? Math.round(((Number(phase2.speedKmh) * Number(phase2.durationMinutes)) / 60) * 100) / 100
-        : 0);
-    const p3Dist =
-      Number(phase3.distanceKm) ||
-      (Number(phase3.speedKmh) && Number(phase3.durationMinutes)
-        ? Math.round(((Number(phase3.speedKmh) * Number(phase3.durationMinutes)) / 60) * 100) / 100
-        : 0);
+    const savedPhases = phases.map((p) => {
+      const pDist =
+        p.distanceKm !== undefined && Number(p.distanceKm) > 0
+          ? Number(p.distanceKm)
+          : Number(p.speedKmh) && Number(p.durationMinutes)
+          ? Math.round(((Number(p.speedKmh) * Number(p.durationMinutes)) / 60) * 100) / 100
+          : 0;
+
+      return {
+        ...p,
+        durationMinutes: Number(p.durationMinutes) || 0,
+        speedKmh: Number(p.speedKmh) || 0,
+        inclineDegree: Number(p.inclineDegree) || 0,
+        distanceKm: pDist,
+        resistanceLevel: Number(p.resistanceLevel) || 0,
+        cadenceRpm: Number(p.cadenceRpm) || 0,
+        strokeRateSpm: Number(p.strokeRateSpm) || 0,
+        stepsPerMin: Number(p.stepsPerMin) || 0,
+      };
+    });
 
     const saved = saveWorkoutRecord({
       equipmentType,
@@ -186,41 +251,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       meals: meals,
       weightKg: Number(weightKg) || 70,
       waistCm: Number(waistCm) || 80,
-      phases: [
-        {
-          ...phase1,
-          durationMinutes: Number(phase1.durationMinutes),
-          speedKmh: Number(phase1.speedKmh) || 0,
-          inclineDegree: Number(phase1.inclineDegree) || 0,
-          distanceKm: p1Dist,
-          resistanceLevel: Number(phase1.resistanceLevel) || 0,
-          cadenceRpm: Number(phase1.cadenceRpm) || 0,
-          strokeRateSpm: Number(phase1.strokeRateSpm) || 0,
-          stepsPerMin: Number(phase1.stepsPerMin) || 0,
-        },
-        {
-          ...phase2,
-          durationMinutes: Number(phase2.durationMinutes),
-          speedKmh: Number(phase2.speedKmh) || 0,
-          inclineDegree: Number(phase2.inclineDegree) || 0,
-          distanceKm: p2Dist,
-          resistanceLevel: Number(phase2.resistanceLevel) || 0,
-          cadenceRpm: Number(phase2.cadenceRpm) || 0,
-          strokeRateSpm: Number(phase2.strokeRateSpm) || 0,
-          stepsPerMin: Number(phase2.stepsPerMin) || 0,
-        },
-        {
-          ...phase3,
-          durationMinutes: Number(phase3.durationMinutes),
-          speedKmh: Number(phase3.speedKmh) || 0,
-          inclineDegree: Number(phase3.inclineDegree) || 0,
-          distanceKm: p3Dist,
-          resistanceLevel: Number(phase3.resistanceLevel) || 0,
-          cadenceRpm: Number(phase3.cadenceRpm) || 0,
-          strokeRateSpm: Number(phase3.strokeRateSpm) || 0,
-          stepsPerMin: Number(phase3.stepsPerMin) || 0,
-        },
-      ],
+      phases: savedPhases,
       totalDistanceKm: liveTotals.totalDistanceKm,
       pauseDuration: Number(pauseDuration) || 0,
       fatigueLevel,
@@ -444,7 +475,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
 
           {/* Phase 2: Fat Burn (Trọng tâm) */}
           <div className="bg-gradient-to-b from-emerald-50/70 to-white p-4.5 rounded-2xl border-2 border-emerald-500 shadow-md relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-extrabold flex items-center justify-center shadow-xs">
                   2
@@ -472,6 +503,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
               )}
             </div>
 
+            {/* Standard Phase 2 View (Single Phase) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3.5">
               {renderDurationField({
                 phase: phase2,
@@ -532,6 +564,92 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 />
               </button>
             </div>
+
+            {/* Nút nhỏ Tạo nhịp phụ ngay dưới Siết Cơ Bụng */}
+            <div className="mt-2.5 pt-2 border-t border-emerald-100 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">
+                {isIntervalMode ? 'Đang mở nhịp xả & bứt tốc' : 'Cần xả nhịp hay bứt tốc đợt 2?'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsIntervalMode(!isIntervalMode)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
+                  isIntervalMode
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
+                    : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50 shadow-2xs'
+                }`}
+              >
+                <SlidersHorizontal size={12} />
+                <span>{isIntervalMode ? 'Ẩn nhịp phụ' : '+ Tạo nhịp phụ'}</span>
+              </button>
+            </div>
+
+            {/* Khối Nhịp Phụ Tùy Chọn khi người dùng bấm "+ Tạo nhịp phụ" */}
+            {isIntervalMode && (
+              <div className="space-y-3 mt-3 pt-3 border-t border-emerald-200/80">
+                {/* Sub-block 1: Relief Phase (Nhịp xả bớt mệt) */}
+                <div className="bg-sky-50/70 p-3 rounded-xl border border-sky-200 shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Wind size={14} className="text-sky-600" />
+                      <span className="text-xs font-bold text-slate-900">
+                        Nhịp xả bớt mệt (Hạ dốc 0°)
+                      </span>
+                    </div>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={enableRelief}
+                        onChange={(e) => setEnableRelief(e.target.checked)}
+                        className="rounded text-sky-600 focus:ring-sky-500 w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span className="text-[11px] font-bold text-sky-900">Bật</span>
+                    </label>
+                  </div>
+                  {enableRelief ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {renderDurationField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
+                      {renderParam1Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
+                      {renderParam2Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
+                      {renderDistanceField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 italic">Đã tắt nhịp xả này.</p>
+                  )}
+                </div>
+
+                {/* Sub-block 2: Surge Phase (Bứt tốc / Leo dốc đợt 2) */}
+                <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200 shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Flame size={14} className="text-orange-500" />
+                      <span className="text-xs font-bold text-slate-900">
+                        Bứt tốc / Leo dốc đợt 2 (Surge)
+                      </span>
+                    </div>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={enableSurge}
+                        onChange={(e) => setEnableSurge(e.target.checked)}
+                        className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span className="text-[11px] font-bold text-amber-900">Bật</span>
+                    </label>
+                  </div>
+                  {enableSurge ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {renderDurationField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
+                      {renderParam1Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
+                      {renderParam2Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
+                      {renderDistanceField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 italic">Đã tắt nhịp bứt tốc này.</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Phase 3: Cool-down */}

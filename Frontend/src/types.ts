@@ -79,13 +79,14 @@ export type EquipmentType =
   | 'OUTDOOR_RUN';
 
 export interface WorkoutPhase {
-  phaseNumber: 1 | 2 | 3;
-  name: 'Warm-up' | 'Fat Burn' | 'Cool-down';
+  phaseNumber: 1 | 2 | 3 | number;
+  name: string;
   durationMinutes: number;
   speedKmh: number;
   inclineDegree: number;
   distanceKm?: number;      // Quãng đường (km)
   isCoreEngaged?: boolean;
+  subType?: 'MAIN' | 'RELIEF' | 'SURGE'; // Tùy chọn: Nhịp chính, Nhịp xả, Bứt tốc
   // Specific attributes for other modalities:
   resistanceLevel?: number; // Xe đạp (1-20), Máy chèo (1-10), Leo thang (1-20)
   cadenceRpm?: number;      // Vòng quay / phút (xe đạp)

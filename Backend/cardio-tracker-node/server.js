@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const { PrismaClient } = require('@prisma/client');
@@ -51,14 +52,6 @@ app.get('/api/workouts', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
-// Khởi động Server (Local vs Vercel)
-if (require.main === module) {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-}
 
 // Route seed dữ liệu chạy trên cloud production
 app.post('/api/seed', async (req, res) => {
@@ -157,5 +150,14 @@ app.post('/api/seed', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// Khởi động Server (Local vs Vercel)
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
 // BẮT BUỘC cho Vercel Serverless
 module.exports = app;

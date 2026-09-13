@@ -195,9 +195,6 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`🚀 Server chạy port ${PORT}`);
   });
 }
-
-module.exports = app;
-
 app.options('*', cors({
   origin: [
     'https://cardio-tracker-iota.vercel.app',
@@ -205,3 +202,6 @@ app.options('*', cors({
   ],
   credentials: true
 }));
+
+module.exports = app;
+

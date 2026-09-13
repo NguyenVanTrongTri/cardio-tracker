@@ -62,7 +62,6 @@ async function main() {
       activeTime: 40,
       calories: 380.00,
       isZone2: true,
-      totalDistanceKm: 5.20,
       notes: 'Buổi cardio Zone 2 mẫu đầu tiên của Trí',
       workoutPhases: {
         create: [

@@ -39,16 +39,24 @@ export default function LoginForm({
     setLoading(true);
 
     try {
-      const apiUrl = (import.meta as any).env?.VITE_API_URL || 'https://backendcardio.vercel.app';
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
+      const response = await fetch('https://backendcardio.vercel.app/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      console.log('Response Status:', response.status);
+      const rawText = await response.text();
+      console.log('Raw Response Body:', rawText);
 
-      if (data.success && data.user) {
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = { error: rawText || 'Invalid JSON response' };
+      }
+
+      if (response.ok && data.success && data.user) {
         setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
         if (rememberMe) {
           localStorage.setItem('cardio_user', JSON.stringify(data.user));
@@ -57,10 +65,11 @@ export default function LoginForm({
           onSuccess(data.user as UserAccount);
         }, 700);
       } else {
-        setErrorMsg(data.error || 'Đăng nhập không thành công');
+        setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
       }
-    } catch (err) {
-      setErrorMsg('Không thể kết nối đến server backend!');
+    } catch (err: any) {
+      console.error('Network/Fetch Catch Error:', err);
+      setErrorMsg(`Network Error: ${err.message || 'Không kết nối được server'}`);
     } finally {
       setLoading(false);
     }

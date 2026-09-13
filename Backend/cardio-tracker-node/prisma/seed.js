@@ -68,7 +68,10 @@ app.get('/api/workouts', async (req, res) => {
         user: {
           select: { fullName: true, email: true }
         },
-        workoutPhases: true
+        workoutPhases: true,
+        meals: {
+          include: { foodItems: true }
+        }
       },
       orderBy: {
         workoutStartTime: 'desc'
@@ -80,7 +83,7 @@ app.get('/api/workouts', async (req, res) => {
   }
 });
 
-// 4. Route seed dữ liệu chạy trên cloud production
+// 4. Route seed dữ liệu chạy trên cloud production (Khớp chuẩn schema)
 app.post('/api/seed', async (req, res) => {
   try {
     const INITIAL_ADMIN_USER = {
@@ -148,6 +151,7 @@ app.post('/api/seed', async (req, res) => {
               speedKmh: 6.0,
               inclineDegree: 1.0,
               distanceKm: 1.0,
+              isCoreEngaged: false,
             },
             {
               id: crypto.randomUUID(),
@@ -157,6 +161,7 @@ app.post('/api/seed', async (req, res) => {
               speedKmh: 8.0,
               inclineDegree: 1.5,
               distanceKm: 4.20,
+              isCoreEngaged: true,
             }
           ]
         }

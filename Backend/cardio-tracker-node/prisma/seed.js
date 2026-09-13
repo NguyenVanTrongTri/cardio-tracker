@@ -73,7 +73,6 @@ async function main() {
             speedKmh: 6.0,
             inclineDegree: 1.0,
             distanceKm: 1.0,
-            subType: 'RELIEF'
           },
           {
             id: crypto.randomUUID(),
@@ -83,7 +82,6 @@ async function main() {
             speedKmh: 8.0,
             inclineDegree: 1.5,
             distanceKm: 4.20,
-            subType: 'MAIN'
           }
         ]
       }

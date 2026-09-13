@@ -7,7 +7,14 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { PrismaClient } = require('@prisma/client');
 const app = express();
 const prisma = new PrismaClient();
-
+app.use(cors({
+  origin: [
+    'https://cardio-tracker-iota.vercel.app',
+    'http://localhost:5173'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(cors());
 

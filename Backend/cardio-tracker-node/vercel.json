@@ -1,15 +1,9 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "Backend/cardio-tracker-node/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "Backend/cardio-tracker-node/server.js"
+      "source": "/(.*)",
+      "destination": "/server.js"
     }
   ]
 }

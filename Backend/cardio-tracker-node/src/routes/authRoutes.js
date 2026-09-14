@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { login } = require('../controllers/authController');
+const { loginLimiter } = require('../middlewares/rateLimiter');
 
-router.post('/login', login);
+router.post('/login', loginLimiter, login);
 
 router.get('/test', (req, res) => {
   res.json({ success: true, message: "Auth route is working!" });

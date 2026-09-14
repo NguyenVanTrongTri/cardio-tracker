@@ -55,7 +55,6 @@ export default function LoginForm({
       } catch {
         data = { error: rawText || 'Invalid JSON response' };
       }
-
       if (response.ok && data.success && data.user) {
         setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
         if (rememberMe) {
@@ -74,6 +73,9 @@ export default function LoginForm({
         setTimeout(() => {
           onSuccess(data.user as UserAccount);
         }, 700);
+      }
+      else {
+        setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
       }
     } catch (err: any) {
       console.error('Network/Fetch Catch Error:', err);

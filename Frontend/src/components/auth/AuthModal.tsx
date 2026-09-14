@@ -47,37 +47,47 @@ export default function AuthModal({
 
 
   if (!isOpen) return null;
-
-  const handleRequestOtp = (e: FormEvent) => {
+  // Gửi yêu cầu lấy OTP
+  const handleRequestOtp = async (e: FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
-
-    const res = requestPasswordReset(forgotEmail);
-    if (res.success && res.otp) {
-      setGeneratedOtpDisplay(res.otp);
-      setResetOtp(res.otp); // prefill for easy instant testing
-      setStepForgot('verify');
-      setSuccessMsg(`Mã xác thực OTP bảo mật đã được tạo: ${res.otp}`);
-    } else {
-      setErrorMsg(res.error || 'Không tìm thấy tài khoản');
+    try {
+      // Gọi qua service hoặc dùng axios (đảm bảo đã import axios nếu dùng axios trực tiếp)
+      const res: any = await requestPasswordReset(forgotEmail);
+      if (res.success) {
+        setGeneratedOtpDisplay(res.otp); // Nhận OTP từ backend trả về để hiển thị
+        setStepForgot('verify'); // Chuyển sang bước nhập OTP và mật khẩu mới
+        setSuccessMsg('Đã gửi mã xác thực thành công!');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.error || err.message || 'Có lỗi xảy ra khi gửi yêu cầu.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleResetPassword = (e: FormEvent) => {
+  // Gửi yêu cầu đổi mật khẩu mới
+  const handleResetPassword = async (e: FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     setErrorMsg(null);
-
-    const res = verifyAndResetPassword(forgotEmail, resetOtp, newPassword);
-    if (res.success) {
-      setSuccessMsg('Đặt lại mật khẩu thành công! Hãy đăng nhập với mật khẩu mới.');
-      setTimeout(() => {
-        setMode('login');
+    setSuccessMsg(null);
+    try {
+      const res = await verifyAndResetPassword(forgotEmail, resetOtp, newPassword);
+      if (res.success) {
+        alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+        setMode('login'); // Quay về màn hình đăng nhập
         setStepForgot('request');
-        setSuccessMsg(null);
-      }, 1200);
-    } else {
-      setErrorMsg(res.error || 'Xác thực OTP thất bại');
+        setResetOtp('');
+        setNewPassword('');
+        setGeneratedOtpDisplay(null);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.error || err.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.');
+    } finally {
+      setLoading(false);
     }
   };
 

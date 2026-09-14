@@ -27,3 +27,21 @@ export async function verifyAndResetPassword(email: string, otp: string, newPass
   }
   return data; // { success: true }
 }
+
+export async function changePasswordApi(email: string, oldPass: string, newPass: string) {
+  const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      // Thêm Authorization token nếu backend của Trí yêu cầu xác thực JWT, ví dụ:
+      // 'Authorization': `Bearer ${token}` 
+    },
+    body: JSON.stringify({ email, oldPassword: oldPass, newPassword: newPass }),
+  });
+  
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Đổi mật khẩu thất bại.');
+  }
+  return data; // { success: true, message: "..." }
+}

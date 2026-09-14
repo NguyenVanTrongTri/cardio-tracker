@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { X, Lock, Eye, EyeOff, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { changePassword, getCurrentUser } from '../../services/auth';
+import { X, Lock, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { getCurrentUser } from '../../services/auth';
+// Import hàm gọi API động (Trí điều chỉnh lại đường dẫn import cho đúng với vị trí file service thực tế nhé)
+import { changePasswordApi } from '../../services/auth/forgotPasswordService'; 
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -24,13 +26,13 @@ export default function ChangePasswordModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
 
     const currentUser = getCurrentUser();
-    if (!currentUser) {
+    if (!currentUser || !currentUser.email) {
       setErrorMsg('Vui lòng đăng nhập để đổi mật khẩu.');
       return;
     }
@@ -51,21 +53,25 @@ export default function ChangePasswordModal({
     }
 
     setLoading(true);
-    const res = changePassword(currentUser.id, currentPassword, newPassword);
-    setLoading(false);
-
-    if (res.success) {
-      setSuccessMsg('Đổi mật khẩu thành công!');
-      setTimeout(() => {
-        onSuccess?.();
-        onClose();
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setSuccessMsg(null);
-      }, 1000);
-    } else {
-      setErrorMsg(res.error || 'Đổi mật khẩu thất bại');
+    try {
+      // Gọi API động lên Backend Vercel
+      const res = await changePasswordApi(currentUser.email, currentPassword, newPassword);
+      
+      if (res.success) {
+        setSuccessMsg('Đổi mật khẩu thành công trên hệ thống!');
+        setTimeout(() => {
+          onSuccess?.();
+          onClose();
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+          setSuccessMsg(null);
+        }, 1500);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -88,7 +94,7 @@ export default function ChangePasswordModal({
             Đổi Mật Khẩu
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Cập nhật mật khẩu để bảo vệ tài khoản và dữ liệu luyện tập
+            Cập nhật mật khẩu bảo mật trên hệ thống đám mây
           </p>
         </div>
 
@@ -180,7 +186,7 @@ export default function ChangePasswordModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-600/20 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-xl font-bold text-xs shadow-md shadow-indigo-600/20 active:scale-[0.99] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <ShieldCheck size={15} />
               <span>{loading ? 'Đang lưu...' : 'Lưu Mật Khẩu'}</span>

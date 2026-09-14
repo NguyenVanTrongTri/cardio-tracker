@@ -1,9 +1,8 @@
-import { UserAccount, AuthSession, PasswordResetCode, UserProfile } from '../types';
-import axiosClient from './axiosClient';
+import { UserAccount, AuthSession, UserProfile } from '../types';
 
 const USERS_STORAGE_KEY = 'cardio_users_v2';
 const SESSION_STORAGE_KEY = 'cardio_session_v2';
-const RESET_CODES_KEY = 'cardio_reset_codes_v2';
+const API_BASE_URL = 'https://backendcardio.vercel.app/api';
 
 // Pre-seeded users
 export const INITIAL_ADMIN_USER: UserAccount = {
@@ -26,7 +25,7 @@ export const INITIAL_USER: UserAccount = {
   email: 'abc@gmail.com',
   password: '123456',
   fullName: 'Nguyễn Minh Trí',
-  role: 'USER', // Set as regular user
+  role: 'USER',
   heightCm: 173,
   gender: 'MALE',
   birthYear: 1996,
@@ -153,7 +152,7 @@ export async function register(data: {
   targetDate?: string;
 }): Promise<{ success: boolean; user?: UserAccount; error?: string }> {
   try {
-    const response = await fetch('https://backendcardio.vercel.app/api/auth/register', {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -170,12 +169,11 @@ export async function register(data: {
       };
     }
 
-    // Nếu backend trả về token và thông tin user sau khi đăng ký thành công
     if (result.token) {
       const session: AuthSession = {
         user: result.user,
         token: result.token,
-        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // Hoặc theo thời gian token thực tế
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
       };
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
       localStorage.removeItem('cardio_explicit_logout');
@@ -218,7 +216,6 @@ export function changePassword(
   users[index].password = newPass;
   saveUsers(users);
 
-  // Update active session if user is logged in
   const currentUser = getCurrentUser();
   if (currentUser && currentUser.id === userId) {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY);
@@ -231,15 +228,33 @@ export function changePassword(
 
   return { success: true };
 }
-export const requestPasswordReset = async (email: string) => {
-  const response = await axiosClient.post('/auth/forgot-password', { email });
-  return response.data; // Trả về { success: true, otp: "...", message: "..." } từ backend
-};
 
-export const verifyAndResetPassword = async (email: string, otp: string, newPassword: string) => {
-  const response = await axiosClient.post('/auth/reset-password', { email, otp, newPassword });
-  return response.data; // Trả về { success: true, message: "..." } từ backend
-};
+// Chuyển sang dùng fetch trực tiếp giống hàm register để đồng bộ và không lỗi axiosClient
+export async function requestPasswordReset(email: string) {
+  const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Không thể gửi yêu cầu lấy mã OTP.');
+  }
+  return data; // { success: true, otp: "..." }
+}
+
+export async function verifyAndResetPassword(email: string, otp: string, newPassword: string) {
+  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, otp, newPassword }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Mã OTP không hợp lệ hoặc đã hết hạn.');
+  }
+  return data; // { success: true }
+}
 
 export function updateCurrentUserProfile(
   profileData: Partial<UserProfile>
@@ -280,7 +295,6 @@ export function adminUpdateUserRole(
   users[index].role = newRole;
   saveUsers(users);
 
-  // If updating current user, refresh session
   const current = getCurrentUser();
   if (current && current.id === userId) {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY);
@@ -309,7 +323,6 @@ export function adminResetUserPassword(
   users[index].password = newPass;
   saveUsers(users);
 
-  // If updating current user, refresh session
   const current = getCurrentUser();
   if (current && current.id === userId) {
     const raw = localStorage.getItem(SESSION_STORAGE_KEY);
@@ -382,4 +395,3 @@ export function adminCreateUser(userData: {
 
   return { success: true, user: newUser };
 }
-

@@ -5,6 +5,8 @@ const { loginLimiter } = require('../middlewares/rateLimiter');
 
 router.post('/login', loginLimiter, login);
 router.post('/register', register);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 router.get('/test', (req, res) => {
   res.json({ success: true, message: "Auth route is working!" });

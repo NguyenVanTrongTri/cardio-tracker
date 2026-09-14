@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
-import { login, INITIAL_ADMIN_USER } from '../../services/auth';
 import { UserAccount } from '../../types';
 
 interface LoginFormProps {
@@ -28,27 +27,51 @@ export default function LoginForm({
   const [rememberMe, setRememberMe] = useState(true);
 
   const handleFillAdmin = () => {
-    setEmail(INITIAL_ADMIN_USER.email);
-    setPassword(INITIAL_ADMIN_USER.password || 'admin123456');
+    setEmail('admin@cardiotracker.com');
+    setPassword('admin123456');
     setErrorMsg(null);
     setSuccessMsg('Đã điền thông tin tài khoản Quản Trị Viên (Admin). Bấm ĐĂNG NHẬP để tiếp tục!');
   };
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setLoading(true);
 
-    const res = login(email, password, rememberMe);
-    setLoading(false);
+    try {
+      const response = await fetch('https://backendcardio.vercel.app/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (res.success && res.user) {
-      setSuccessMsg(`Chào mừng bạn trở lại, ${res.user.fullName}!`);
-      setTimeout(() => {
-        onSuccess(res.user!);
-      }, 700);
-    } else {
-      setErrorMsg(res.error || 'Đăng nhập không thành công');
+      console.log('Response Status:', response.status);
+      const rawText = await response.text();
+      console.log('Raw Response Body:', rawText);
+
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = { error: rawText || 'Invalid JSON response' };
+      }
+
+      if (response.ok && data.success && data.user) {
+        setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
+        if (rememberMe) {
+          localStorage.setItem('cardio_user', JSON.stringify(data.user));
+        }
+        setTimeout(() => {
+          onSuccess(data.user as UserAccount);
+        }, 700);
+      } else {
+        setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
+      }
+    } catch (err: any) {
+      console.error('Network/Fetch Catch Error:', err);
+      setErrorMsg(`Network Error: ${err.message || 'Không kết nối được server'}`);
+    } finally {
+      setLoading(false);
     }
   };
 

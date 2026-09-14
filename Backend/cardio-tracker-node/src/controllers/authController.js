@@ -194,4 +194,45 @@ const forgotPassword = async (req, res) => {
       return res.status(500).json({ success: false, error: error.message });
     }
 };
-module.exports = { login, register, forgotPassword, resetPassword };
+const changePassword = async (req, res) => {
+  try {
+    // Nhận vào email (hoặc lấy từ JWT middleware), mật khẩu cũ và mật khẩu mới
+    const { email, oldPassword, newPassword } = req.body;
+
+    if (!email || !oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp đầy đủ thông tin!' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'Mật khẩu mới phải có tối thiểu 6 ký tự.' });
+    }
+
+    // Tìm user trong database
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy người dùng.' });
+    }
+
+    // Kiểm tra mật khẩu cũ có đúng không
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(400).json({ success: false, error: 'Mật khẩu hiện tại không chính xác!' });
+    }
+
+    // Hash mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+    // Cập nhật vào DB
+    await prisma.user.update({
+      where: { email },
+      data: { passwordHash: hashedNewPassword },
+    });
+
+    return res.json({ success: true, message: 'Đổi mật khẩu thành công!' });
+  } catch (error) {
+    console.error("Change password error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+module.exports = { login, register, forgotPassword, resetPassword, changePassword };

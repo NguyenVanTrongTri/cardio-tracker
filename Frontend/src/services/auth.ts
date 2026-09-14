@@ -1,4 +1,5 @@
 import { UserAccount, AuthSession, PasswordResetCode, UserProfile } from '../types';
+import axiosClient from './axiosClient';
 
 const USERS_STORAGE_KEY = 'cardio_users_v2';
 const SESSION_STORAGE_KEY = 'cardio_session_v2';
@@ -230,94 +231,15 @@ export function changePassword(
 
   return { success: true };
 }
+export const requestPasswordReset = async (email: string) => {
+  const response = await axiosClient.post('/auth/forgot-password', { email });
+  return response.data; // Trả về { success: true, otp: "...", message: "..." } từ backend
+};
 
-export function requestPasswordReset(email: string): {
-  success: boolean;
-  otp?: string;
-  error?: string;
-} {
-  const users = getStoredUsers();
-  const trimmedEmail = email.trim().toLowerCase();
-  const user = users.find((u) => u.email.toLowerCase() === trimmedEmail);
-
-  if (!user) {
-    return { success: false, error: 'Không tìm thấy tài khoản với email này.' };
-  }
-
-  // Generate 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const codes: PasswordResetCode[] = [];
-
-  try {
-    const raw = localStorage.getItem(RESET_CODES_KEY);
-    if (raw) {
-      const parsed: PasswordResetCode[] = JSON.parse(raw);
-      // Keep only active unexpired codes
-      codes.push(...parsed.filter((c) => c.expiresAt > Date.now()));
-    }
-  } catch {
-    // Ignore error
-  }
-
-  codes.push({
-    email: trimmedEmail,
-    code: otp,
-    expiresAt: Date.now() + 15 * 60 * 1000, // 15 mins
-  });
-
-  localStorage.setItem(RESET_CODES_KEY, JSON.stringify(codes));
-
-  return { success: true, otp };
-}
-
-export function verifyAndResetPassword(
-  email: string,
-  otp: string,
-  newPass: string
-): { success: boolean; error?: string } {
-  if (!newPass || newPass.length < 6) {
-    return { success: false, error: 'Mật khẩu mới phải có ít nhất 6 ký tự.' };
-  }
-
-  const trimmedEmail = email.trim().toLowerCase();
-  let codes: PasswordResetCode[] = [];
-
-  try {
-    const raw = localStorage.getItem(RESET_CODES_KEY);
-    if (raw) {
-      codes = JSON.parse(raw);
-    }
-  } catch {
-    // Ignore error
-  }
-
-  const matchingCode = codes.find(
-    (c) =>
-      c.email.toLowerCase() === trimmedEmail &&
-      c.code === otp.trim() &&
-      c.expiresAt > Date.now()
-  );
-
-  if (!matchingCode) {
-    return { success: false, error: 'Mã xác thực OTP không đúng hoặc đã hết hạn.' };
-  }
-
-  const users = getStoredUsers();
-  const index = users.findIndex((u) => u.email.toLowerCase() === trimmedEmail);
-
-  if (index === -1) {
-    return { success: false, error: 'Tài khoản không tồn tại.' };
-  }
-
-  users[index].password = newPass;
-  saveUsers(users);
-
-  // Clear used code
-  const updatedCodes = codes.filter((c) => c.code !== otp.trim());
-  localStorage.setItem(RESET_CODES_KEY, JSON.stringify(updatedCodes));
-
-  return { success: true };
-}
+export const verifyAndResetPassword = async (email: string, otp: string, newPassword: string) => {
+  const response = await axiosClient.post('/auth/reset-password', { email, otp, newPassword });
+  return response.data; // Trả về { success: true, message: "..." } từ backend
+};
 
 export function updateCurrentUserProfile(
   profileData: Partial<UserProfile>

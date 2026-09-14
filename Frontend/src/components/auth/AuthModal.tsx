@@ -202,6 +202,7 @@ export default function AuthModal({
 
                 <button
                   type="submit"
+                  
                   className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <KeyRound size={15} />

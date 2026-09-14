@@ -48,21 +48,22 @@ export default function AuthModal({
 
   if (!isOpen) return null;
   // Gửi yêu cầu lấy OTP
+  // Gửi yêu cầu lấy OTP
   const handleRequestOtp = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
-      // Gọi qua service hoặc dùng axios (đảm bảo đã import axios nếu dùng axios trực tiếp)
       const res: any = await requestPasswordReset(forgotEmail);
       if (res.success) {
-        setGeneratedOtpDisplay(res.otp); // Nhận OTP từ backend trả về để hiển thị
-        setStepForgot('verify'); // Chuyển sang bước nhập OTP và mật khẩu mới
-        setSuccessMsg('Đã gửi mã xác thực thành công!');
+        setGeneratedOtpDisplay(res.otp); // Hiển thị OTP lên màn hình cho tiện test
+        setResetOtp(res.otp); // 👈 Tự động điền luôn vào ô input bước 2
+        setStepForgot('verify'); // Chuyển sang bước nhập OTP & mật khẩu mới
+        setSuccessMsg('Đã tạo mã OTP thành công!');
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || err.message || 'Có lỗi xảy ra khi gửi yêu cầu.');
+      setErrorMsg(err.response?.data?.error || err.message || 'Không tìm thấy tài khoản hoặc có lỗi xảy ra.');
     } finally {
       setLoading(false);
     }

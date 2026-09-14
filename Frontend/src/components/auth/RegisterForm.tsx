@@ -149,7 +149,7 @@ export default function RegisterForm({
             min="120"
             max="230"
             required
-            value={height}
+            value={height || ''}
             onChange={(e) => setHeight(Number(e.target.value))}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs text-center font-bold text-slate-800"
           />
@@ -160,7 +160,7 @@ export default function RegisterForm({
             Giới tính
           </label>
           <select
-            value={gender}
+            value={gender || ''}
             onChange={(e) => setGender(e.target.value as 'MALE' | 'FEMALE')}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-1.5 py-2 text-xs text-center font-bold text-slate-800"
           >
@@ -178,7 +178,7 @@ export default function RegisterForm({
             min="1940"
             max="2015"
             required
-            value={birthYear}
+            value={birthYear || ''}
             onChange={(e) => setBirthYear(Number(e.target.value))}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs text-center font-bold text-slate-800"
           />

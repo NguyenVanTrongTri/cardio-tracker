@@ -28,7 +28,7 @@ export default function LoginForm({
 
   const handleFillAdmin = () => {
     setEmail('admin@cardiotracker.com');
-    setPassword('admin123456');
+    setPassword('admin123');
     setErrorMsg(null);
     setSuccessMsg('Đã điền thông tin tài khoản Quản Trị Viên (Admin). Bấm ĐĂNG NHẬP để tiếp tục!');
   };

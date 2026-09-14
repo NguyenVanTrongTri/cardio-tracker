@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../middlewares/authMiddleware');
+const { v4: uuidv4 } = require('uuid');
 
 const login = async (req, res) => {
   try {
@@ -69,7 +70,7 @@ const register = async (req, res) => {
     // Tạo user mới (đồng bộ trường passwordHash giống hệt lúc login)
     const newUser = await prisma.user.create({
       data: {
-        id: `usr-${Date.now()}`,
+        id: `usr-${uuidv4()}`,
         email,
         passwordHash: password, 
         fullName,

@@ -181,8 +181,8 @@ const register = async (req, res) => {
       });
 
       // Xóa token sau khi dùng xong
-      await prisma.password_reset_tokens.delete({
-        where: { email },
+      await prisma.password_reset_tokens.deleteMany({
+        where: { token: otpToken }, // hoặc id: tokenID
       });
 
       return res.json({

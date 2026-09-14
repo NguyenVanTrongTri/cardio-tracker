@@ -4,9 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-  "build": "npx prisma generate",
+  "build": "node node_modules/prisma/build/index.js generate",
   "start": "node server.js",
-  "postinstall": "npx prisma generate"
+  "postinstall": "node node_modules/prisma/build/index.js generate"
 },
   "keywords": [],
   "author": "",

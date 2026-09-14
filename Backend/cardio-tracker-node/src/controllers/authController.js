@@ -144,8 +144,6 @@ const forgotPassword = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-const bcrypt = require('bcryptjs');
-
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;

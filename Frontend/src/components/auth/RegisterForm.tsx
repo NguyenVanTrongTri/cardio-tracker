@@ -28,28 +28,53 @@ export default function RegisterForm({
   const [gender, setGender] = useState<'MALE' | 'FEMALE'>('MALE');
   const [birthYear, setBirthYear] = useState(1996);
 
-  const handleRegister = (e: FormEvent) => {
-    e.preventDefault();
-    setErrorMsg(null);
-    setLoading(true);
+  const handleRegister = async (e: FormEvent) => {
+  e.preventDefault();
+  setErrorMsg(null);
+  setLoading(true);
+  try {
+      const response = await fetch('https://backendcardio.vercel.app/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: fullName,
+          email: email,
+          password: password,
+          heightCm: Number(height),
+          gender: gender,
+          birthYear: Number(birthYear),
+        }),
+      });
 
-    const res = register({
-      fullName: fullName,
-      email: email,
-      password: password,
-      heightCm: Number(height),
-      gender: gender,
-      birthYear: Number(birthYear),
-    });
-    setLoading(false);
+      const data = await response.json();
 
-    if (res.success && res.user) {
-      setSuccessMsg('Đăng ký tài khoản thành công! Đã tự động đăng nhập.');
-      setTimeout(() => {
-        onSuccess(res.user!);
-      }, 800);
-    } else {
-      setErrorMsg(res.error || 'Đăng ký thất bại');
+      if (response.ok && data.success) {
+        setSuccessMsg('Đăng ký tài khoản thành công! Đã tự động đăng nhập.');
+
+        // Lưu token và thông tin user vào localStorage nếu backend có trả về token
+        if (data.token) {
+          const session = {
+            user: data.user,
+            token: data.token,
+            expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          };
+          // Dùng đúng key lưu session mà hệ thống đang dùng chung (thay string tùy ý bằng hằng số app nếu có)
+          localStorage.setItem('cardio_user_session', JSON.stringify(session));
+          localStorage.removeItem('cardio_explicit_logout');
+        }
+
+        setTimeout(() => {
+          onSuccess(data.user);
+        }, 800);
+      } else {
+        setErrorMsg(data.error || 'Đăng ký thất bại');
+      }
+    } catch (error) {
+      setErrorMsg('Không thể kết nối đến máy chủ!');
+    } finally {
+      setLoading(false);
     }
   };
 

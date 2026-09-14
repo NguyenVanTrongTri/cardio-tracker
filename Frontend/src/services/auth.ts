@@ -140,7 +140,7 @@ export function login(
   return { success: true, user };
 }
 
-export function register(data: {
+export async function register(data: {
   email: string;
   password: string;
   fullName: string;
@@ -150,50 +150,42 @@ export function register(data: {
   targetWaistCm?: number;
   targetWeightKg?: number;
   targetDate?: string;
-}): { success: boolean; user?: UserAccount; error?: string } {
-  const users = getStoredUsers();
-  const trimmedEmail = data.email.trim().toLowerCase();
+}): Promise<{ success: boolean; user?: UserAccount; error?: string }> {
+  try {
+    const response = await fetch('https://backendcardio.vercel.app/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
 
-  if (!trimmedEmail || !trimmedEmail.includes('@')) {
-    return { success: false, error: 'Vui lòng nhập định dạng email hợp lệ.' };
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      return { 
+        success: false, 
+        error: result.error || 'Đăng ký thất bại trên hệ thống.' 
+      };
+    }
+
+    // Nếu backend trả về token và thông tin user sau khi đăng ký thành công
+    if (result.token) {
+      const session: AuthSession = {
+        user: result.user,
+        token: result.token,
+        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // Hoặc theo thời gian token thực tế
+      };
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+      localStorage.removeItem('cardio_explicit_logout');
+      notifyListeners(result.user);
+    }
+
+    return { success: true, user: result.user };
+  } catch (error) {
+    console.error('Lỗi kết nối API đăng ký:', error);
+    return { success: false, error: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.' };
   }
-
-  if (!data.password || data.password.length < 6) {
-    return { success: false, error: 'Mật khẩu phải có tối thiểu 6 ký tự.' };
-  }
-
-  if (users.some((u) => u.email.toLowerCase() === trimmedEmail)) {
-    return { success: false, error: 'Email này đã được đăng ký tài khoản.' };
-  }
-
-  const newUser: UserAccount = {
-    id: `usr-${Date.now()}`,
-    email: trimmedEmail,
-    password: data.password,
-    fullName: data.fullName.trim() || 'Thành Viên Mới',
-    heightCm: data.heightCm || 170,
-    gender: data.gender || 'MALE',
-    birthYear: data.birthYear || 1998,
-    targetWaistCm: data.targetWaistCm || 80.0,
-    targetWeightKg: data.targetWeightKg || 68.0,
-    targetDate: data.targetDate || '2026-12-31',
-    createdAt: new Date().toISOString(),
-  };
-
-  users.push(newUser);
-  saveUsers(users);
-
-  // Auto login upon registration
-  const session: AuthSession = {
-    user: newUser,
-    token: `token-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-    expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-  };
-  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-  localStorage.removeItem('cardio_explicit_logout');
-  notifyListeners(newUser);
-
-  return { success: true, user: newUser };
 }
 
 export function logout(): void {

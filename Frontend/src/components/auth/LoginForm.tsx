@@ -59,13 +59,21 @@ export default function LoginForm({
       if (response.ok && data.success && data.user) {
         setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
         if (rememberMe) {
+          // 👉 Sửa lại cấu trúc lưu thành dạng session có chứa token và user, 
+          // khớp tuyệt đối với các hàm kiểm tra đăng nhập khác:
+          const sessionData = {
+            user: data.user,
+            token: data.token,
+            expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+          };
+          
+          // Lưu đồng thời cả 2 key để code cũ hay mới đều đọc được trơn tru:
+          localStorage.setItem('cardio_session_v2', JSON.stringify(sessionData));
           localStorage.setItem('cardio_user', JSON.stringify(data.user));
         }
         setTimeout(() => {
           onSuccess(data.user as UserAccount);
         }, 700);
-      } else {
-        setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
       }
     } catch (err: any) {
       console.error('Network/Fetch Catch Error:', err);

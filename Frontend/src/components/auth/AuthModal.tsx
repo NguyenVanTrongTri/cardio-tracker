@@ -12,7 +12,7 @@ import {
   User,
   Sparkles
 } from 'lucide-react';
-import { requestPasswordReset, verifyAndResetPassword } from '../../services/auth';
+import { requestPasswordReset, verifyAndResetPassword } from '../../services/auth/forgotPasswordService';
 import { UserAccount } from '../../types';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';

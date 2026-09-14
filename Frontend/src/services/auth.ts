@@ -1,5 +1,4 @@
 import { UserAccount, AuthSession, UserProfile } from '../types';
-
 const USERS_STORAGE_KEY = 'cardio_users_v2';
 const SESSION_STORAGE_KEY = 'cardio_session_v2';
 const API_BASE_URL = 'https://backendcardio.vercel.app/api';
@@ -230,31 +229,7 @@ export function changePassword(
 }
 
 // Chuyển sang dùng fetch trực tiếp giống hàm register để đồng bộ và không lỗi axiosClient
-export async function requestPasswordReset(email: string) {
-  const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || 'Không thể gửi yêu cầu lấy mã OTP.');
-  }
-  return data; // { success: true, otp: "..." }
-}
 
-export async function verifyAndResetPassword(email: string, otp: string, newPassword: string) {
-  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, otp, newPassword }),
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || 'Mã OTP không hợp lệ hoặc đã hết hạn.');
-  }
-  return data; // { success: true }
-}
 
 export function updateCurrentUserProfile(
   profileData: Partial<UserProfile>

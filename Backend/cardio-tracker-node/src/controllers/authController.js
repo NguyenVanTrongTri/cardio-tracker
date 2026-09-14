@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { JWT_SECRET } = require('../middlewares/authMiddleware');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 const login = async (req, res) => {
   try {

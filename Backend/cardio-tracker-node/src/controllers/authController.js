@@ -109,41 +109,8 @@ const register = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-  const forgotPassword = async (req, res) => {
-    try {
-      const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({ success: false, error: 'Vui lòng nhập email!' });
-      }
 
-      // Kiểm tra email có tồn tại trong DB không
-      const user = await prisma.user.findUnique({ where: { email } });
-      if (!user) {
-        return res.status(404).json({ success: false, error: 'Email này không tồn tại trong hệ thống!' });
-      }
-
-      // Sinh mã OTP 6 chữ số ngẫu nhiên
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-      // Lưu hoặc cập nhật OTP vào bảng token (Upsert)
-      await prisma.password_reset_tokens.upsert({
-        where: { email },
-        update: { token: otp, created_at: new Date() },
-        create: { email, token: otp, created_at: new Date() },
-      });
-
-      // Trả về OTP để Frontend hiển thị (hoặc gửi qua email thực tế nếu làm hệ thống thật)
-      return res.json({
-        success: true,
-        message: 'Đã tạo mã OTP thành công!',
-        otp: otp, // Trả về để frontend gán vào biến generatedOtpDisplay cho Trí test dễ dàng
-      });
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      return res.status(500).json({ success: false, error: error.message });
-    }
-  };
-  const resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
 
@@ -192,5 +159,39 @@ const register = async (req, res) => {
     console.error("Reset password error:", error);
     return res.status(500).json({ success: false, error: error.message });
   }
+};
+const forgotPassword = async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ success: false, error: 'Vui lòng nhập email!' });
+      }
+
+      // Kiểm tra email có tồn tại trong DB không
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'Email này không tồn tại trong hệ thống!' });
+      }
+
+      // Sinh mã OTP 6 chữ số ngẫu nhiên
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+      // Lưu hoặc cập nhật OTP vào bảng token (Upsert)
+      await prisma.password_reset_tokens.upsert({
+        where: { email },
+        update: { token: otp, created_at: new Date() },
+        create: { email, token: otp, created_at: new Date() },
+      });
+
+      // Trả về OTP để Frontend hiển thị (hoặc gửi qua email thực tế nếu làm hệ thống thật)
+      return res.json({
+        success: true,
+        message: 'Đã tạo mã OTP thành công!',
+        otp: otp, // Trả về để frontend gán vào biến generatedOtpDisplay cho Trí test dễ dàng
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      return res.status(500).json({ success: false, error: error.message });
+    }
 };
 module.exports = { login, register, forgotPassword, resetPassword };

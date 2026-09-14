@@ -75,7 +75,7 @@ const register = async (req, res) => {
     // Tạo user mới (đồng bộ trường passwordHash giống hệt lúc login)
     const newUser = await prisma.user.create({
       data: {
-        id: `usr-${uuidv4()}`,
+        id: `usr-${crypto.randomUUID()}`,
         email,
         passwordHash: hashedPassword,
         fullName,

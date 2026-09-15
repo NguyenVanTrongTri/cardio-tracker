@@ -83,7 +83,7 @@ model Workout {
 }
 
 model WorkoutPhase {
-  id                   String           @id @db.VarChar(36)
+  id                   String           @id @db.VarChar(50)
   workoutId            String           @map("workout_id") @db.VarChar(36)
   phaseNumber          Int              @map("phase_number")
   name                 String           @db.VarChar(100)

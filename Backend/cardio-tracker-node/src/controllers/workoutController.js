@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-// ❌ Xóa dòng: const { v4: uuidv4 } = require('uuid');
+// ❌ Đã xóa hoàn toàn dòng require('uuid')
 
 const createWorkout = async (req, res) => {
   try {
@@ -21,7 +21,7 @@ const createWorkout = async (req, res) => {
 
     const newWorkout = await prisma.workout.create({
       data: {
-        id: crypto.randomUUID(), // Dùng hàm có sẵn của Node.js
+        id: crypto.randomUUID(), // Dùng sẵn của Node.js
         userId,
         equipmentType,
         workoutStartTime: new Date(workoutStartTime),
@@ -38,7 +38,7 @@ const createWorkout = async (req, res) => {
         
         workoutPhases: {
           create: phases.map((p, index) => ({
-            id: crypto.randomUUID(),
+            id: crypto.randomUUID(), // Dùng sẵn của Node.js
             phaseNumber: p.phaseNumber || index + 1,
             name: p.name || `Pha ${index + 1}`,
             durationMinutes: p.durationMinutes ? Number(p.durationMinutes) : 0,
@@ -58,13 +58,13 @@ const createWorkout = async (req, res) => {
 
         meals: meals && meals.length > 0 ? {
           create: meals.map((m) => ({
-            id: crypto.randomUUID(),
+            id: crypto.randomUUID(), // Dùng sẵn của Node.js
             category: m.category,
             mealTime: m.mealTime || new Date().toLocaleTimeString(),
             totalCalories: m.totalCalories ? Number(m.totalCalories) : 0,
             foodItems: {
               create: m.foodItems ? m.foodItems.map((item) => ({
-                id: crypto.randomUUID(),
+                id: crypto.randomUUID(), // Dùng sẵn của Node.js
                 foodName: item.foodName,
                 grams: Number(item.grams) || 0,
                 calories: Number(item.calories) || 0,

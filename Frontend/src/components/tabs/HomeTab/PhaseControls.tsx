@@ -44,22 +44,16 @@ export const renderDurationField = (
 };
 
 export const renderParam1Field = (
-  props: PhaseControlsProps & { 
-    className?: string;
-    phaseValue?: number; // Calculated segment value for this phase
-  }
+  props: PhaseControlsProps
 ) => {
-  const { phase, setPhase, equipmentDef, colorRing, className, phaseValue } = props;
+  const { phase, setPhase, equipmentDef, colorRing } = props;
   const isDegree = equipmentDef.param1.key === 'inclineDegree';
-  // Use undefined for empty state to match distance field behavior
-  const rawVal = isDegree ? phase.inclineDegree : (phase.resistanceLevel);
-  const val = rawVal !== undefined && rawVal !== 0 ? rawVal : '';
-  const label = equipmentDef.param1.label;
+  const val = isDegree ? phase.inclineDegree : (phase.resistanceLevel ?? 0);
 
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 mb-1 truncate">
-        {label} ({equipmentDef.param1.unit})
+        Độ dốc (°)
       </label>
       <input
         type="number"
@@ -68,53 +62,33 @@ export const renderParam1Field = (
         max={equipmentDef.param1.max}
         value={val}
         onChange={(e) => {
-          const raw = e.target.value;
-          const num = raw === '' ? undefined : Number(raw);
+          const num = Number(e.target.value);
           if (isDegree) {
-            setPhase({ ...phase, inclineDegree: num ?? 0 });
+            setPhase({ ...phase, inclineDegree: num });
           } else {
-            setPhase({ ...phase, resistanceLevel: num ?? 0 });
+            setPhase({ ...phase, resistanceLevel: num });
           }
         }}
-        className={
-          className ||
-          `w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`
-        }
+        className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`}
       />
-      {phaseValue !== undefined && (
-        <p className="text-[10px] text-emerald-600 mt-1 font-mono font-bold truncate">
-          Giai đoạn này: {phaseValue.toFixed(1)}
-        </p>
-      )}
     </div>
   );
 };
 
 export const renderParam2Field = (
-  props: PhaseControlsProps & { 
-    className?: string;
-    phaseValue?: number; 
-  }
+  props: PhaseControlsProps
 ) => {
-  const { phase, setPhase, equipmentDef, colorRing, className, phaseValue } = props;
+  const { phase, setPhase, equipmentDef, colorRing } = props;
   const key = equipmentDef.param2.key;
-  
-  // Get value, handle potential undefined
-  const getVal = () => {
-    if (key === 'speedKmh') return phase.speedKmh;
-    if (key === 'cadenceRpm') return phase.cadenceRpm;
-    if (key === 'strokeRateSpm') return phase.strokeRateSpm;
-    if (key === 'stepsPerMin') return phase.stepsPerMin;
-    return 0;
-  };
-  
-  const rawVal = getVal();
-  const val = rawVal !== undefined && rawVal !== 0 ? rawVal : '';
+  let val: number = phase.speedKmh;
+  if (key === 'cadenceRpm') val = phase.cadenceRpm ?? 70;
+  else if (key === 'strokeRateSpm') val = phase.strokeRateSpm ?? 24;
+  else if (key === 'stepsPerMin') val = phase.stepsPerMin ?? 60;
 
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 mb-1 truncate">
-        {equipmentDef.param2.label} ({equipmentDef.param2.unit})
+        Tốc độ (km/h)
       </label>
       <input
         type="number"
@@ -123,11 +97,9 @@ export const renderParam2Field = (
         max={equipmentDef.param2.max}
         value={val}
         onChange={(e) => {
-          const raw = e.target.value;
-          const num = raw === '' ? undefined : Number(raw);
-          
+          const num = Number(e.target.value);
           if (key === 'speedKmh') {
-            setPhase({ ...phase, speedKmh: num || 0 });
+            setPhase({ ...phase, speedKmh: num });
           } else if (key === 'cadenceRpm') {
             setPhase({ ...phase, cadenceRpm: num });
           } else if (key === 'strokeRateSpm') {
@@ -136,16 +108,8 @@ export const renderParam2Field = (
             setPhase({ ...phase, stepsPerMin: num });
           }
         }}
-        className={
-          className ||
-          `w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`
-        }
+        className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`}
       />
-      {phaseValue !== undefined && (
-        <p className="text-[10px] text-emerald-600 mt-1 font-mono font-bold truncate">
-          Giai đoạn này: {phaseValue.toFixed(1)}
-        </p>
-      )}
     </div>
   );
 };

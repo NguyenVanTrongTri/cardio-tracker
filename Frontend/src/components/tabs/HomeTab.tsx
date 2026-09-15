@@ -486,8 +486,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {renderDurationField({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
-              {renderParam1Field({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20', phaseValue: 0 })}
-              {renderParam2Field({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20', phaseValue: 0 })}
+              {renderParam1Field({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
+              {renderParam2Field({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
               {renderDistanceField({ 
                 phase: phase1, 
                 setPhase: setPhase1, 
@@ -539,8 +539,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                   'w-full bg-white border-2 border-emerald-300 rounded-xl px-2.5 py-2.5 text-center text-base font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30',
               })}
 
-              {renderParam1Field({ phase: phase2, setPhase: setPhase2, equipmentDef, colorRing: 'focus:ring-emerald-500/30', phaseValue: 0 })}
-              {renderParam2Field({ phase: phase2, setPhase: setPhase2, equipmentDef, colorRing: 'focus:ring-emerald-500/30', phaseValue: 0 })}
+              {renderParam1Field({ phase: phase2, setPhase: setPhase2, equipmentDef, colorRing: 'focus:ring-emerald-500/30' })}
+              {renderParam2Field({ phase: phase2, setPhase: setPhase2, equipmentDef, colorRing: 'focus:ring-emerald-500/30' })}
               {renderDistanceField({
                 phase: phase2,
                 setPhase: setPhase2,
@@ -635,8 +635,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                   {enableRelief ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {renderDurationField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
-                      {renderParam1Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30', phaseValue: 0 })}
-                      {renderParam2Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30', phaseValue: 0 })}
+                      {renderParam1Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
+                      {renderParam2Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
                       {renderDistanceField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30', phaseDistance: phaseDistances.phase2Relief })}
                     </div>
                   ) : (
@@ -666,8 +666,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                   {enableSurge ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {renderDurationField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
-                      {renderParam1Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30', phaseValue: 0 })}
-                      {renderParam2Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30', phaseValue: 0 })}
+                      {renderParam1Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
+                      {renderParam2Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
                       {renderDistanceField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30', phaseDistance: phaseDistances.phase2Surge })}
                     </div>
                   ) : (
@@ -703,8 +703,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 colorRing: 'focus:ring-sky-500/20',
               })}
 
-              {renderParam1Field({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20', phaseValue: 0 })}
-              {renderParam2Field({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20', phaseValue: 0 })}
+              {renderParam1Field({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20' })}
+              {renderParam2Field({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20' })}
               {renderDistanceField({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20', phaseDistance: phaseDistances.phase3 })}
             </div>
           </div>

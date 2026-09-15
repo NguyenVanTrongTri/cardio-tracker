@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { v4: uuidv4 } = require('uuid'); // Đảm bảo dự án đã cài uuid hoặc dùng crypto.randomUUID()
+// ❌ Xóa dòng: const { v4: uuidv4 } = require('uuid');
 
 const createWorkout = async (req, res) => {
   try {
@@ -21,7 +21,7 @@ const createWorkout = async (req, res) => {
 
     const newWorkout = await prisma.workout.create({
       data: {
-        id: uuidv4(), // Sinh ID cho workout nếu schema yêu cầu chuỗi 36 ký tự không tự tăng
+        id: crypto.randomUUID(), // Dùng hàm có sẵn của Node.js
         userId,
         equipmentType,
         workoutStartTime: new Date(workoutStartTime),
@@ -36,10 +36,9 @@ const createWorkout = async (req, res) => {
         cortisolAlert: false,
         preWorkoutAlert: false,
         
-        // 👉 SỬA TỪ 'phases' THÀNH 'workoutPhases' CHO KHỚP VỚI SCHEMA
         workoutPhases: {
           create: phases.map((p, index) => ({
-            id: uuidv4(), // Sinh ID cho phase
+            id: crypto.randomUUID(),
             phaseNumber: p.phaseNumber || index + 1,
             name: p.name || `Pha ${index + 1}`,
             durationMinutes: p.durationMinutes ? Number(p.durationMinutes) : 0,
@@ -57,16 +56,15 @@ const createWorkout = async (req, res) => {
           })),
         },
 
-        // Xử lý meals và foodItems
         meals: meals && meals.length > 0 ? {
           create: meals.map((m) => ({
-            id: uuidv4(), // Sinh ID cho meal
+            id: crypto.randomUUID(),
             category: m.category,
             mealTime: m.mealTime || new Date().toLocaleTimeString(),
             totalCalories: m.totalCalories ? Number(m.totalCalories) : 0,
             foodItems: {
               create: m.foodItems ? m.foodItems.map((item) => ({
-                id: uuidv4(), // 👉 CỰC KỲ QUAN TRỌNG: Sinh ID vì bảng MealFoodItem không có @default
+                id: crypto.randomUUID(),
                 foodName: item.foodName,
                 grams: Number(item.grams) || 0,
                 calories: Number(item.calories) || 0,
@@ -92,3 +90,5 @@ const createWorkout = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server khi lưu buổi tập', error: error.message });
   }
 };
+
+module.exports = { createWorkout };

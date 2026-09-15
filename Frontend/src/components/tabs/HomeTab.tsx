@@ -99,6 +99,9 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const [enableRelief, setEnableRelief] = useState<boolean>(true);
   const [enableSurge, setEnableSurge] = useState<boolean>(true);
 
+  const [draftToRestore, setDraftToRestore] = useState<WorkoutRecord | null>(null);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+
   // Sub-phases for Relief (nhịp xả) and Surge (bứt tốc)
   const [phase2Relief, setPhase2Relief] = useState<WorkoutPhase>({
     phaseNumber: 2,
@@ -204,14 +207,22 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   }, [meals, workoutStartTime, equipmentType, phasesWithCumulative, pauseDuration, fatigueLevel, waterConsumedMl, notes, weightKg, waistCm]);
 
   useEffect(() => {
-    const workouts = getStoredWorkouts();
-    const today = new Date().toISOString().split('T')[0];
-    const lastWorkout = workouts[0];
-    
-    if (lastWorkout && lastWorkout.workoutStartTime.startsWith(today)) {
-      setMeals(lastWorkout.meals);
-    } else {
-      setMeals([]);
+  const workouts = getStoredWorkouts();
+  const lastWorkout = workouts[0];
+  
+    if (lastWorkout) {
+      const draftDate = lastWorkout.workoutStartTime.split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Nếu bản nháp khác ngày hôm nay -> Hiện Modal hỏi
+      if (draftDate !== today) {
+        setDraftToRestore(lastWorkout);
+        setShowDraftModal(true);
+      } else {
+        // Nếu là hôm nay thì khôi phục thẳng hoặc để người dùng tiếp tục
+        setMeals(lastWorkout.meals);
+        // ... bạn có thể khôi phục các state khác ở đây nếu muốn
+      }
     }
     
     setRecentWorkouts(workouts);
@@ -244,9 +255,21 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     return calculateWorkoutTotals(phases, pauseDuration, weightKg, equipmentType);
   }, [phases, pauseDuration, weightKg, equipmentType]);
 
+  // Tính toán xem dữ liệu có thay đổi so với bản nháp gần nhất không
+  const isDirty = useMemo(() => {
+    const lastStored = getStoredWorkouts()[0];
+    if (!lastStored) return true; // Chưa có bản nháp nào thì luôn coi là "bẩn" (cần lưu)
+    
+    // So sánh dữ liệu hiện tại với bản nháp gần nhất
+    return JSON.stringify(lastStored.phases) !== JSON.stringify(phasesWithCumulative);
+  }, [phasesWithCumulative, equipmentType, meals]);
   // Real-time Pre-workout alert
   const handleSaveWorkout = async (e: FormEvent) => {
     e.preventDefault();
+     if (!isDirty) {
+    onAddNotification?.('Thông báo', 'Dữ liệu không có thay đổi mới để lưu!');
+    return;
+    }
 
     const savedPhases = phasesWithCumulative.map((p) => {
       return {
@@ -353,6 +376,51 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           <CheckCircle2 size={24} className="shrink-0 text-emerald-200" />
           <div className="flex-1 text-sm font-medium">
             {savedSuccessMessage}
+          </div>
+        </div>
+      )}
+      {showDraftModal && draftToRestore && (
+        <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Tìm thấy bản nháp!</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Bạn có một buổi tập chưa hoàn thành từ ngày {draftToRestore.workoutStartTime.split('T')[0]}. Bạn có muốn khôi phục lại không?
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  // HÀNH ĐỘNG HỦY: Xóa nháp
+                  localStorage.removeItem('workout_draft'); // Thay bằng key bạn dùng
+                  setShowDraftModal(false);
+                }}
+                className="flex-1 py-3 text-sm font-bold text-slate-600 bg-slate-100 rounded-xl"
+              >
+                Bỏ qua
+              </button>
+              <button 
+                // ... trong phần Khôi phục (dòng 403 trở đi)
+                onClick={() => {
+                  setMeals(draftToRestore.meals);
+                  setEquipmentType(draftToRestore.equipmentType);
+                  setWorkoutStartTime(draftToRestore.workoutStartTime);
+                  setPauseDuration(draftToRestore.pauseDuration);
+                  setFatigueLevel(draftToRestore.fatigueLevel as 1|2|3|4|5);
+                  setWaterConsumedMl(draftToRestore.waterConsumedMl);
+                  setNotes(draftToRestore.notes || '');
+                  setWeightKg(Number(draftToRestore.weightKg));
+                  setWaistCm(Number(draftToRestore.waistCm));
+                  
+                  // Bạn có thể cần set lại cả các state phase (phase1, phase2, phase3) 
+                  // nếu muốn khôi phục cả chi tiết bài tập
+                  setShowDraftModal(false);
+                }}
+                  
+
+                className="flex-1 py-3 text-sm font-bold text-white bg-emerald-600 rounded-xl"
+              >
+                Khôi phục
+              </button>
+            </div>
           </div>
         </div>
       )}

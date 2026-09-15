@@ -44,16 +44,20 @@ export const renderDurationField = (
 };
 
 export const renderParam1Field = (
-  props: PhaseControlsProps
+  props: PhaseControlsProps & { 
+    className?: string;
+    phaseValue?: number; // Calculated segment value for this phase
+  }
 ) => {
-  const { phase, setPhase, equipmentDef, colorRing } = props;
+  const { phase, setPhase, equipmentDef, colorRing, className, phaseValue } = props;
   const isDegree = equipmentDef.param1.key === 'inclineDegree';
   const val = isDegree ? phase.inclineDegree : (phase.resistanceLevel ?? 0);
+  const label = equipmentDef.param1.label;
 
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 mb-1 truncate">
-        Độ dốc (°)
+        {label} ({equipmentDef.param1.unit})
       </label>
       <input
         type="number"
@@ -69,16 +73,27 @@ export const renderParam1Field = (
             setPhase({ ...phase, resistanceLevel: num });
           }
         }}
-        className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`}
+        className={
+          className ||
+          `w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`
+        }
       />
+      {phaseValue !== undefined && (
+        <p className="text-[10px] text-emerald-600 mt-1 font-mono font-bold truncate">
+          Giai đoạn này: {phaseValue.toFixed(1)}
+        </p>
+      )}
     </div>
   );
 };
 
 export const renderParam2Field = (
-  props: PhaseControlsProps
+  props: PhaseControlsProps & { 
+    className?: string;
+    phaseValue?: number; 
+  }
 ) => {
-  const { phase, setPhase, equipmentDef, colorRing } = props;
+  const { phase, setPhase, equipmentDef, colorRing, className, phaseValue } = props;
   const key = equipmentDef.param2.key;
   let val: number = phase.speedKmh;
   if (key === 'cadenceRpm') val = phase.cadenceRpm ?? 70;
@@ -88,7 +103,7 @@ export const renderParam2Field = (
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 mb-1 truncate">
-        Tốc độ (km/h)
+        {equipmentDef.param2.label} ({equipmentDef.param2.unit})
       </label>
       <input
         type="number"
@@ -108,8 +123,16 @@ export const renderParam2Field = (
             setPhase({ ...phase, stepsPerMin: num });
           }
         }}
-        className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`}
+        className={
+          className ||
+          `w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`
+        }
       />
+      {phaseValue !== undefined && (
+        <p className="text-[10px] text-emerald-600 mt-1 font-mono font-bold truncate">
+          Giai đoạn này: {phaseValue.toFixed(1)}
+        </p>
+      )}
     </div>
   );
 };

@@ -245,7 +245,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   }, [phases, pauseDuration, weightKg, equipmentType]);
 
   // Real-time Pre-workout alert
-  const handleSaveWorkout = (e: FormEvent) => {
+  const handleSaveWorkout = async (e: FormEvent) => {
     e.preventDefault();
 
     const savedPhases = phasesWithCumulative.map((p) => {
@@ -264,33 +264,52 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       };
     });
 
-    const saved = saveWorkoutRecord({
-      equipmentType,
-      workoutStartTime,
-      meals: meals,
-      weightKg: Number(weightKg) || 70,
-      waistCm: Number(waistCm) || 80,
-      phases: savedPhases,
-      totalDistanceKm: liveTotals.totalDistanceKm,
-      pauseDuration: Number(pauseDuration) || 0,
-      fatigueLevel,
-      waterConsumedMl: Number(waterConsumedMl) || 0,
-      notes: notes.trim(),
-    });
+    try {
+      // Lấy token xác thực từ localStorage (hoặc từ state quản lý auth của dự án)
+      const token = localStorage.getItem('token'); 
 
-    // setSavedSuccessMessage(
-    //   `🎉 Buổi tập [${equipmentDef.shortName}] đã lưu thành công! Tiêu hao ${saved.calories} kcal trong ${saved.activeTime} phút vận động.`
-    // );
-    // setTimeout(() => {
-    //   setSavedSuccessMessage(null);
-    //   if (onWorkoutSaved) onWorkoutSaved();
-    // }, 2500);
+      const response = await fetch('http://localhost:5000/api/workouts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({
+          equipmentType,
+          workoutStartTime,
+          meals: meals,
+          weightKg: Number(weightKg) || 70,
+          waistCm: Number(waistCm) || 80,
+          phases: savedPhases,
+          totalDistanceKm: liveTotals.totalDistanceKm,
+          pauseDuration: Number(pauseDuration) || 0,
+          fatigueLevel,
+          waterConsumedMl: Number(waterConsumedMl) || 0,
+          notes: notes.trim(),
+        }),
+      });
 
-    onAddNotification?.(
-      'Lưu thành công! 🎉',
-      `Buổi tập [${equipmentDef.shortName}] đã lưu thành công! Tiêu hao ${saved.calories} kcal trong ${saved.activeTime} phút vận động.`
-    );
-    if (onWorkoutSaved) onWorkoutSaved();
+      if (!response.ok) {
+        throw new Error('Lỗi từ server khi lưu buổi tập');
+      }
+
+      const result = await response.json();
+      const savedWorkout = result.workout;
+
+      // Thông báo thành công
+      onAddNotification?.(
+        'Lưu thành công! 🎉',
+        `Buổi tập [${equipmentDef.shortName}] đã được lưu trữ an toàn vào cơ sở dữ liệu!`
+      );
+      
+      if (onWorkoutSaved) onWorkoutSaved();
+    } catch (error) {
+      console.error('Lỗi kết nối API:', error);
+      onAddNotification?.(
+        'Lưu thất bại ❌',
+        'Không thể kết nối đến server để lưu buổi tập. Vui lòng kiểm tra lại backend!'
+      );
+    }
   };
 
   const fatigueLabels: Record<1 | 2 | 3 | 4 | 5, { emoji: string; text: string; color: string }> = {

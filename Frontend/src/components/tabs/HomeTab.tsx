@@ -137,6 +137,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const [notes, setNotes] = useState<string>('');
 
   const [savedSuccessMessage, setSavedSuccessMessage] = useState<string | null>(null);
+  const [workoutId] = useState(() => crypto.randomUUID()); // New workout ID for this session
   const isInitialized = useRef(false);
 
   // Real-time calculated phases
@@ -312,6 +313,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           'Authorization': token ? `Bearer ${token}` : '',
         },
         body: JSON.stringify({
+          id: workoutId,
           equipmentType,
           workoutStartTime,
           meals: meals,

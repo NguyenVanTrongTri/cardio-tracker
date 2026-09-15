@@ -265,10 +265,24 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     });
 
     try {
-      // Lấy token xác thực từ localStorage (hoặc từ state quản lý auth của dự án)
-      const token = localStorage.getItem('token'); 
+      // 👉 Lấy token chuẩn từ session v2 đã được lưu lúc đăng nhập
+      let token = '';
+      const sessionData = localStorage.getItem('cardio_session_v2');
+      if (sessionData) {
+        try {
+          const parsed = JSON.parse(sessionData);
+          token = parsed.token;
+        } catch (e) {
+          console.error('Lỗi đọc session token:', e);
+        }
+      }
+      // Fallback dự phòng nếu có nơi nào lưu lẻ key 'token'
+      if (!token) {
+        token = localStorage.getItem('token') || '';
+      }
 
-      const response = await fetch('http://localhost:5000/api/workouts', {
+      // 👉 Trỏ trực tiếp tới domain backend trên Vercel
+      const response = await fetch('https://backendcardio.vercel.app/api/workouts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,12 +303,18 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Lỗi từ server khi lưu buổi tập');
+      // 👉 Bắt response cẩn thận giống phong cách trang Login
+      const rawText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = { message: rawText || 'Invalid JSON response' };
       }
 
-      const result = await response.json();
-      const savedWorkout = result.workout;
+      if (!response.ok) {
+        throw new Error(data.message || `Lỗi server HTTP ${response.status}`);
+      }
 
       // Thông báo thành công
       onAddNotification?.(
@@ -303,11 +323,11 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       );
       
       if (onWorkoutSaved) onWorkoutSaved();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Lỗi kết nối API:', error);
       onAddNotification?.(
         'Lưu thất bại ❌',
-        'Không thể kết nối đến server để lưu buổi tập. Vui lòng kiểm tra lại backend!'
+        `Không thể lưu buổi tập: ${error.message || 'Lỗi kết nối server!'}`
       );
     }
   };

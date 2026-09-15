@@ -52,8 +52,11 @@ const createWorkout = async (req, res) => {
     }
 
     // Map fatigue: Chuỗi -> Số (theo schema @db.TinyInt)
-    const fatigueMapping = { 'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'EXTREME': 4 };
-    const fatigueNumber = fatigueMapping[fatigueLevel] || 0;
+    const fatigueMapping = { 'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'EXTREME': 4, 'VERY_HIGH': 5 };
+    let fatigueNumber = fatigueMapping[fatigueLevel] || 3; 
+    
+    if (fatigueNumber < 1) fatigueNumber = 1;
+    if (fatigueNumber > 5) fatigueNumber = 5;
 
     const newWorkout = await prisma.workout.create({
       data: {

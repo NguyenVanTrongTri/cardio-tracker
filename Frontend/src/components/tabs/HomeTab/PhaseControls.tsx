@@ -8,6 +8,9 @@ interface PhaseControlsProps {
   colorRing: string;
 }
 
+/**
+ * Trường nhập Thời gian (durationMinutes)
+ */
 export const renderDurationField = (
   props: Partial<PhaseControlsProps> & {
     min?: number;
@@ -16,6 +19,7 @@ export const renderDurationField = (
   }
 ) => {
   const { phase, setPhase, min = 1, max = 30, className, colorRing } = props;
+  const val = phase?.durationMinutes !== undefined ? phase.durationMinutes : '';
 
   return (
     <div>
@@ -26,12 +30,14 @@ export const renderDurationField = (
         type="number"
         min={min}
         max={max}
-        value={phase?.durationMinutes || ''}
+        placeholder="0"
+        value={val}
         onChange={(e) => {
-          const newDur = Number(e.target.value);
+          const raw = e.target.value;
+          const newDur = raw === '' ? undefined : Number(raw);
           setPhase?.({
             ...phase!,
-            durationMinutes: newDur,
+            durationMinutes: newDur as any,
           });
         }}
         className={
@@ -43,30 +49,35 @@ export const renderDurationField = (
   );
 };
 
-export const renderParam1Field = (
-  props: PhaseControlsProps
-) => {
+/**
+ * Trường nhập Tham số 1 (Độ dốc / Mức kháng lực)
+ */
+export const renderParam1Field = (props: PhaseControlsProps) => {
   const { phase, setPhase, equipmentDef, colorRing } = props;
   const isDegree = equipmentDef.param1.key === 'inclineDegree';
-  const val = isDegree ? phase.inclineDegree : (phase.resistanceLevel ?? 0);
+  
+  const rawVal = isDegree ? phase.inclineDegree : phase.resistanceLevel;
+  const val = rawVal !== undefined ? rawVal : '';
 
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 mb-1 truncate">
-        Độ dốc (°)
+        {equipmentDef.param1.label || (isDegree ? 'Độ dốc (°)' : 'Kháng lực')}
       </label>
       <input
         type="number"
         step={equipmentDef.param1.step}
         min={equipmentDef.param1.min}
         max={equipmentDef.param1.max}
+        placeholder="0"
         value={val}
         onChange={(e) => {
-          const num = Number(e.target.value);
+          const raw = e.target.value;
+          const num = raw === '' ? undefined : Number(raw);
           if (isDegree) {
-            setPhase({ ...phase, inclineDegree: num });
+            setPhase({ ...phase, inclineDegree: num as any });
           } else {
-            setPhase({ ...phase, resistanceLevel: num });
+            setPhase({ ...phase, resistanceLevel: num as any });
           }
         }}
         className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`}
@@ -75,38 +86,44 @@ export const renderParam1Field = (
   );
 };
 
-export const renderParam2Field = (
-  props: PhaseControlsProps
-) => {
+/**
+ * Trường nhập Tham số 2 (Tốc độ / Vòng quay / Nhịp chèo / Số bậc)
+ */
+export const renderParam2Field = (props: PhaseControlsProps) => {
   const { phase, setPhase, equipmentDef, colorRing } = props;
   const key = equipmentDef.param2.key;
-  let val: number = phase.speedKmh;
-  if (key === 'cadenceRpm') val = phase.cadenceRpm ?? 70;
-  else if (key === 'strokeRateSpm') val = phase.strokeRateSpm ?? 24;
-  else if (key === 'stepsPerMin') val = phase.stepsPerMin ?? 60;
+
+  let rawVal: number | undefined;
+  if (key === 'speedKmh') rawVal = phase.speedKmh;
+  else if (key === 'cadenceRpm') rawVal = phase.cadenceRpm;
+  else if (key === 'strokeRateSpm') rawVal = phase.strokeRateSpm;
+  else if (key === 'stepsPerMin') rawVal = phase.stepsPerMin;
+
+  const val = rawVal !== undefined ? rawVal : '';
 
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 mb-1 truncate">
-        Tốc độ (km/h)
+        {equipmentDef.param2.label || 'Tốc độ (km/h)'}
       </label>
       <input
         type="number"
         step={equipmentDef.param2.step}
         min={equipmentDef.param2.min}
         max={equipmentDef.param2.max}
+        placeholder="0"
         value={val}
         onChange={(e) => {
-          const num = Number(e.target.value);
-          if (key === 'speedKmh') {
-            setPhase({ ...phase, speedKmh: num });
-          } else if (key === 'cadenceRpm') {
-            setPhase({ ...phase, cadenceRpm: num });
-          } else if (key === 'strokeRateSpm') {
-            setPhase({ ...phase, strokeRateSpm: num });
-          } else if (key === 'stepsPerMin') {
-            setPhase({ ...phase, stepsPerMin: num });
-          }
+          const raw = e.target.value;
+          const num = raw === '' ? undefined : Number(raw);
+          
+          const updated = { ...phase };
+          if (key === 'speedKmh') updated.speedKmh = num as any;
+          else if (key === 'cadenceRpm') updated.cadenceRpm = num as any;
+          else if (key === 'strokeRateSpm') updated.strokeRateSpm = num as any;
+          else if (key === 'stepsPerMin') updated.stepsPerMin = num as any;
+          
+          setPhase(updated);
         }}
         className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`}
       />
@@ -114,6 +131,9 @@ export const renderParam2Field = (
   );
 };
 
+/**
+ * Trường nhập Quãng đường (distanceKm)
+ */
 export const renderDistanceField = (
   props: PhaseControlsProps & {
     className?: string;
@@ -121,8 +141,6 @@ export const renderDistanceField = (
   }
 ) => {
   const { phase, setPhase, colorRing, className, phaseDistance } = props;
-
-  // The input value is directly what the user sees on the machine at the end of this phase
   const machineDist = phase.distanceKm !== undefined ? phase.distanceKm : '';
 
   return (
@@ -162,15 +180,16 @@ export const renderDistanceField = (
   );
 };
 
-export const renderParam3Field = (
-  props: PhaseControlsProps
-) => {
+/**
+ * Trường nhập Tham số phụ thứ 3 (nếu có cấu hình)
+ */
+export const renderParam3Field = (props: PhaseControlsProps) => {
   const { phase, setPhase, equipmentDef, colorRing } = props;
   if (!equipmentDef.param3) return null;
 
   const key = equipmentDef.param3.key;
-  // NOTE: Assuming phase has a property corresponding to param3 key
-  const val = (phase as any)[key] || 0;
+  const rawVal = (phase as any)[key];
+  const val = rawVal !== undefined ? rawVal : '';
 
   return (
     <div>
@@ -182,10 +201,15 @@ export const renderParam3Field = (
         step={equipmentDef.param3.step}
         min={equipmentDef.param3.min}
         max={equipmentDef.param3.max}
+        placeholder="0"
         value={val}
         onChange={(e) => {
-          const num = Number(e.target.value);
-          setPhase({ ...phase, [key]: num });
+          const raw = e.target.value;
+          const num = raw === '' ? undefined : Number(raw);
+          setPhase({ 
+            ...phase, 
+            [key]: num 
+          } as WorkoutPhase); // Thêm "as WorkoutPhase" hoặc "as any" ở cuối để qua mặt TypeScript
         }}
         className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`}
       />

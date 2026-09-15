@@ -24,13 +24,13 @@ const getWorkouts = async (req, res) => {
 // 2. Hàm tạo buổi tập mới (Đã hoàn thiện)
 const createWorkout = async (req, res) => {
   try {
-    // Kiểm tra user đã xác thực chưa
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: 'Bạn cần đăng nhập để lưu buổi tập!' });
     }
 
     const {
+      id, // ⚠️ BẮT BUỘC: Client phải gửi ID phiên tập lên
       equipmentType,
       workoutStartTime,
       meals,
@@ -42,101 +42,105 @@ const createWorkout = async (req, res) => {
       fatigueLevel,
       waterConsumedMl,
       notes,
-      activeTime,   // Mới thêm: nhận từ client
-      calories      // Mới thêm: nhận từ client
+      activeTime,
+      calories
     } = req.body;
 
-    // Validation cơ bản
-    if (!equipmentType || !phases || !Array.isArray(phases)) {
-      return res.status(400).json({ message: "Thiếu thông tin thiết bị hoặc giai đoạn tập!" });
+    if (!id || !equipmentType || !phases || !Array.isArray(phases)) {
+      return res.status(400).json({ message: "Thiếu ID, thiết bị hoặc giai đoạn tập!" });
     }
 
-    // Map fatigue: Chuỗi -> Số (theo schema @db.TinyInt)
+    // Map fatigue
     const fatigueMapping = { 'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'EXTREME': 4, 'VERY_HIGH': 5 };
     let fatigueNumber = fatigueMapping[fatigueLevel] || 3; 
-    
     if (fatigueNumber < 1) fatigueNumber = 1;
     if (fatigueNumber > 5) fatigueNumber = 5;
 
-    const newWorkout = await prisma.workout.create({
-      data: {
+    // Chuẩn bị dữ liệu phases
+    const phasesData = phases.map((p, index) => ({
         id: crypto.randomUUID(),
-        userId,
+        phaseNumber: p.phaseNumber || index + 1,
+        name: p.name || `Pha ${index + 1}`,
+        durationMinutes: p.durationMinutes ? Number(p.durationMinutes) : 0,
+        speedKmh: p.speedKmh ? String(p.speedKmh) : "0",
+        inclineDegree: p.inclineDegree ? String(p.inclineDegree) : "0",
+        distanceKm: p.distanceKm !== undefined ? String(p.distanceKm) : null,
+        segmentDistanceKm: p.segmentDistanceKm !== undefined ? String(p.segmentDistanceKm) : null,
+        cumulativeDistanceKm: p.cumulativeDistanceKm !== undefined ? String(p.cumulativeDistanceKm) : null,
+        isCoreEngaged: !!p.isCoreEngaged,
+        subType: p.subType || "MAIN",
+        resistanceLevel: p.resistanceLevel !== undefined ? String(p.resistanceLevel) : null,
+        cadenceRpm: p.cadenceRpm ? Number(p.cadenceRpm) : null,
+        strokeRateSpm: p.strokeRateSpm ? Number(p.strokeRateSpm) : null,
+        stepsPerMin: p.stepsPerMin ? Number(p.stepsPerMin) : null,
+    }));
+
+    // Chuẩn bị dữ liệu meals
+    const mealsData = meals && meals.length > 0 ? meals.map((m) => ({
+        id: crypto.randomUUID(),
+        category: m.category,
+        mealTime: m.mealTime || new Date().toLocaleTimeString(),
+        totalCalories: m.totalCalories ? String(m.totalCalories) : "0",
+        foodItems: {
+            create: m.foodItems ? m.foodItems.map((item) => ({
+                id: crypto.randomUUID(),
+                foodName: item.foodName,
+                grams: String(item.grams || 0),
+                calories: String(item.calories || 0),
+            })) : []
+        }
+    })) : [];
+
+    // Thực hiện Upsert
+    const workout = await prisma.workout.upsert({
+      where: { id: id },
+      update: {
         equipmentType,
         workoutStartTime: new Date(workoutStartTime),
-        
-        // Decimal fields: Phải truyền dưới dạng String để Prisma parse chuẩn
         weightKg: weightKg ? String(weightKg) : null,
         waistCm: waistCm ? String(waistCm) : null,
         totalDistanceKm: totalDistanceKm ? String(totalDistanceKm) : null,
-        
         pauseDuration: pauseDuration ? Number(pauseDuration) : 0,
         fatigueLevel: fatigueNumber,
         waterConsumedMl: waterConsumedMl ? Number(waterConsumedMl) : 0,
         notes: notes || '',
-        
-        // Các trường mới:
         activeTime: activeTime ? Number(activeTime) : 0,
-        calories: calories ? String(calories) : "0", // Decimal
-
-        // Defaults
-        isZone2: false,
-        cortisolAlert: false,
-        preWorkoutAlert: false,
+        calories: calories ? String(calories) : "0",
         
+        // Xóa cũ và tạo mới để tránh trùng lặp
         workoutPhases: {
-          create: phases.map((p, index) => ({
-            id: crypto.randomUUID(),
-            phaseNumber: p.phaseNumber || index + 1,
-            name: p.name || `Pha ${index + 1}`,
-            durationMinutes: p.durationMinutes ? Number(p.durationMinutes) : 0,
-            
-            // Decimal fields trong Phase
-            speedKmh: p.speedKmh ? String(p.speedKmh) : "0",
-            inclineDegree: p.inclineDegree ? String(p.inclineDegree) : "0",
-            distanceKm: p.distanceKm !== undefined ? String(p.distanceKm) : null,
-            segmentDistanceKm: p.segmentDistanceKm !== undefined ? String(p.segmentDistanceKm) : null,
-            cumulativeDistanceKm: p.cumulativeDistanceKm !== undefined ? String(p.cumulativeDistanceKm) : null,
-            
-            isCoreEngaged: !!p.isCoreEngaged,
-            subType: p.subType || "MAIN",
-            resistanceLevel: p.resistanceLevel !== undefined ? String(p.resistanceLevel) : null,
-            
-            cadenceRpm: p.cadenceRpm ? Number(p.cadenceRpm) : null,
-            strokeRateSpm: p.strokeRateSpm ? Number(p.strokeRateSpm) : null,
-            stepsPerMin: p.stepsPerMin ? Number(p.stepsPerMin) : null,
-          })),
+          deleteMany: {},
+          create: phasesData
         },
-
-        meals: meals && meals.length > 0 ? {
-          create: meals.map((m) => ({
-            id: crypto.randomUUID(),
-            category: m.category,
-            mealTime: m.mealTime || new Date().toLocaleTimeString(),
-            totalCalories: m.totalCalories ? String(m.totalCalories) : "0", // Decimal
-            foodItems: {
-              create: m.foodItems ? m.foodItems.map((item) => ({
-                id: crypto.randomUUID(),
-                foodName: item.foodName,
-                grams: String(item.grams) || "0", // Decimal
-                calories: String(item.calories) || "0", // Decimal
-              })) : []
-            }
-          }))
-        } : undefined,
+        meals: {
+          deleteMany: {},
+          create: mealsData
+        }
+      },
+      create: {
+        id, // ID Client gửi lên
+        userId,
+        equipmentType,
+        workoutStartTime: new Date(workoutStartTime),
+        weightKg: weightKg ? String(weightKg) : null,
+        waistCm: waistCm ? String(waistCm) : null,
+        totalDistanceKm: totalDistanceKm ? String(totalDistanceKm) : null,
+        pauseDuration: pauseDuration ? Number(pauseDuration) : 0,
+        fatigueLevel: fatigueNumber,
+        waterConsumedMl: waterConsumedMl ? Number(waterConsumedMl) : 0,
+        notes: notes || '',
+        activeTime: activeTime ? Number(activeTime) : 0,
+        calories: calories ? String(calories) : "0",
+        workoutPhases: { create: phasesData },
+        meals: { create: mealsData }
       },
       include: {
         workoutPhases: true,
-        meals: {
-          include: { foodItems: true }
-        },
+        meals: { include: { foodItems: true } },
       },
     });
 
-    return res.status(201).json({
-      message: 'Lưu buổi tập thành công!',
-      workout: newWorkout,
-    });
+    return res.status(200).json({ message: 'Lưu buổi tập thành công!', workout });
   } catch (error) {
     console.error('Error creating workout:', error);
     return res.status(500).json({ message: 'Lỗi server khi lưu buổi tập', error: error.message });

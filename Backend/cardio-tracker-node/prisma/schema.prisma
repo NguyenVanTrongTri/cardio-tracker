@@ -42,8 +42,8 @@ model User {
 }
 
 model BodyMetric {
-  id         String   @id @db.VarChar(36)
-  userId     String   @map("user_id") @db.VarChar(36)
+  id         String   @id @db.VarChar(50)
+  userId     String   @map("user_id") @db.VarChar(50)
   metricDate DateTime @map("metric_date") @db.Date
   weightKg   Decimal? @map("weight_kg") @db.Decimal(5, 2)
   waistCm    Decimal? @map("waist_cm") @db.Decimal(5, 2)
@@ -55,8 +55,8 @@ model BodyMetric {
 }
 
 model Workout {
-  id               String         @id @db.VarChar(36)
-  userId           String         @map("user_id") @db.VarChar(36)
+  id               String         @id @db.VarChar(50)
+  userId           String         @map("user_id") @db.VarChar(50)
   equipmentType    EquipmentType  @map("equipment_type")
   workoutStartTime DateTime       @map("workout_start_time") @db.DateTime(0)
   weightKg         Decimal?       @map("weight_kg") @db.Decimal(5, 2)
@@ -84,7 +84,7 @@ model Workout {
 
 model WorkoutPhase {
   id                   String           @id @db.VarChar(50)
-  workoutId            String           @map("workout_id") @db.VarChar(36)
+  workoutId            String           @map("workout_id") @db.VarChar(50)
   phaseNumber          Int              @map("phase_number")
   name                 String           @db.VarChar(100)
   durationMinutes      Int?             @map("duration_minutes")
@@ -106,8 +106,8 @@ model WorkoutPhase {
 }
 
 model Meal {
-  id            String         @id @db.VarChar(36)
-  workoutId     String?        @map("workout_id") @db.VarChar(36) // Cho phép NULL nếu ăn vào ngày không tập
+  id            String         @id @db.VarChar(50)
+  workoutId     String?        @map("workout_id") @db.VarChar(50) // Cho phép NULL nếu ăn vào ngày không tập
   category      String         @db.VarChar(50)
   mealTime      String         @map("meal_time") @db.VarChar(20)
   totalCalories Decimal?       @map("total_calories") @db.Decimal(7, 2)
@@ -119,8 +119,8 @@ model Meal {
 }
 
 model MealFoodItem {
-  id       String @id @db.VarChar(36)
-  mealId   String @map("meal_id") @db.VarChar(36)
+  id       String @id @db.VarChar(50)
+  mealId   String @map("meal_id") @db.VarChar(50)
   foodName String @map("food_name") @db.VarChar(255)
   grams    Decimal @db.Decimal(6, 2)
   calories Decimal @db.Decimal(6, 2)

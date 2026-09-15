@@ -295,6 +295,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           weightKg: Number(weightKg) || 70,
           waistCm: Number(waistCm) || 80,
           phases: savedPhases,
+          activeTime: liveTotals.activeTime,
+          calories: liveTotals.calories,
           totalDistanceKm: liveTotals.totalDistanceKm,
           pauseDuration: Number(pauseDuration) || 0,
           fatigueLevel,

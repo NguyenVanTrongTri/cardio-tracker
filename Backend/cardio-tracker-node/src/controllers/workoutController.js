@@ -1,7 +1,27 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const crypto = require('crypto'); // 👈 Bổ sung bắt buộc để dùng crypto.randomUUID()
+const crypto = require('crypto'); // Dùng cho crypto.randomUUID()
 
+// 1. Hàm lấy danh sách buổi tập
+const getWorkouts = async (req, res) => {
+  try {
+    const workouts = await prisma.workout.findMany({
+      take: 10,
+      include: {
+        user: { select: { fullName: true, email: true } },
+        workoutPhases: true,
+        meals: { include: { foodItems: true } }
+      },
+      orderBy: { workoutStartTime: 'desc' }
+    });
+    return res.json({ success: true, data: workouts });
+  } catch (error) {
+    console.error('Error getting workouts:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// 2. Hàm tạo buổi tập mới
 const createWorkout = async (req, res) => {
   try {
     const userId = req.user.id; 
@@ -91,4 +111,5 @@ const createWorkout = async (req, res) => {
   }
 };
 
-module.exports = { createWorkout };
+// 3. Export ĐẦY ĐỦ cả hai hàm
+module.exports = { getWorkouts, createWorkout };

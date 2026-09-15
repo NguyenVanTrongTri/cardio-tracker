@@ -386,7 +386,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 step="0.1"
                 min="30"
                 max="200"
-                value={weightKg}
+                value={weightKg || ''}
                 onChange={(e) => setWeightKg(Number(e.target.value))}
                 className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-base font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
@@ -402,7 +402,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 step="0.5"
                 min="50"
                 max="180"
-                value={waistCm}
+                value={waistCm || ''}
                 onChange={(e) => setWaistCm(Number(e.target.value))}
                 className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-base font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
               />

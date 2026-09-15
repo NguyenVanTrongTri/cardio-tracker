@@ -11,6 +11,7 @@ const prisma = new PrismaClient();
 const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const workoutRoutes = require('./src/routes/workoutRoutes');
+console.log("Check workoutRoutes:", typeof workoutRoutes);
 const seedRoutes = require('./src/routes/seedRoutes');
 
 // Cấu hình CORS chuẩn

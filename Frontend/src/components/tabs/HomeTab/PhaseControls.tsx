@@ -29,14 +29,9 @@ export const renderDurationField = (
         value={phase?.durationMinutes || ''}
         onChange={(e) => {
           const newDur = Number(e.target.value);
-          const newDist =
-            phase && phase.speedKmh && newDur > 0
-              ? Math.round(((phase.speedKmh * newDur) / 60) * 100) / 100
-              : phase?.distanceKm;
           setPhase?.({
             ...phase!,
             durationMinutes: newDur,
-            distanceKm: newDist,
           });
         }}
         className={
@@ -104,11 +99,7 @@ export const renderParam2Field = (
         onChange={(e) => {
           const num = Number(e.target.value);
           if (key === 'speedKmh') {
-            const newDist =
-              phase.durationMinutes > 0 && num > 0
-                ? Math.round(((num * phase.durationMinutes) / 60) * 100) / 100
-                : phase.distanceKm;
-            setPhase({ ...phase, speedKmh: num, distanceKm: newDist });
+            setPhase({ ...phase, speedKmh: num });
           } else if (key === 'cadenceRpm') {
             setPhase({ ...phase, cadenceRpm: num });
           } else if (key === 'strokeRateSpm') {
@@ -126,28 +117,19 @@ export const renderParam2Field = (
 export const renderDistanceField = (
   props: PhaseControlsProps & {
     className?: string;
-    cumulativeDistance?: number;
+    phaseDistance?: number;
   }
 ) => {
-  const { phase, setPhase, equipmentDef, colorRing, className, cumulativeDistance } = props;
-  const isSpeedDriven =
-    equipmentDef.param2.key === 'speedKmh' ||
-    equipmentDef.param3?.key === 'speedKmh' ||
-    equipmentDef.id === 'TREADMILL' ||
-    equipmentDef.id === 'OUTDOOR_RUN';
+  const { phase, setPhase, colorRing, className, phaseDistance } = props;
 
-  const calculatedDist =
-    phase.distanceKm !== undefined
-      ? phase.distanceKm
-      : phase.speedKmh && phase.durationMinutes
-      ? Math.round(((phase.speedKmh * phase.durationMinutes) / 60) * 100) / 100
-      : 0;
+  // The input value is directly what the user sees on the machine at the end of this phase
+  const machineDist = phase.distanceKm !== undefined ? phase.distanceKm : '';
 
   return (
     <div>
       <label
         className="block text-xs font-semibold text-slate-600 mb-1 truncate"
-        title="Quãng đường (km) theo máy chạy để tính calo chuẩn xác"
+        title="Quãng đường hiển thị trên máy tại thời điểm kết thúc giai đoạn này (km)"
       >
         Quãng đường (km)
       </label>
@@ -155,19 +137,15 @@ export const renderDistanceField = (
         type="number"
         step="0.01"
         min="0"
-        max="50"
-        value={calculatedDist}
+        max="100"
+        placeholder="0.00"
+        value={machineDist}
         onChange={(e) => {
           const raw = e.target.value;
-          const num = raw === '' ? 0 : Number(raw);
-          const syncSpeed =
-            isSpeedDriven && phase.durationMinutes > 0 && num > 0
-              ? Math.round(((num * 60) / phase.durationMinutes) * 10) / 10
-              : phase.speedKmh;
+          const num = raw === '' ? undefined : Number(raw);
           setPhase({
             ...phase,
             distanceKm: num,
-            speedKmh: syncSpeed,
           });
         }}
         className={
@@ -175,9 +153,9 @@ export const renderDistanceField = (
           `w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-center text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 ${colorRing}`
         }
       />
-      {cumulativeDistance !== undefined && (
-        <p className="text-[10px] text-emerald-600 mt-1 font-mono font-bold">
-          Tích lũy: {cumulativeDistance.toFixed(2)} km
+      {phaseDistance !== undefined && (
+        <p className="text-[10px] text-emerald-600 mt-1 font-mono font-bold truncate" title="Quãng đường đi được riêng của giai đoạn này">
+          Đoạn này: {phaseDistance.toFixed(2)} km
         </p>
       )}
     </div>

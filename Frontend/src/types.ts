@@ -85,6 +85,7 @@ export interface WorkoutPhase {
   speedKmh: number;
   inclineDegree: number;
   distanceKm?: number;      // Quãng đường (km)
+  segmentDistanceKm?: number; // Quãng đường đoạn này (km)
   cumulativeDistanceKm?: number; // Tích lũy (km)
   isCoreEngaged?: boolean;
   subType?: 'MAIN' | 'RELIEF' | 'SURGE'; // Tùy chọn: Nhịp chính, Nhịp xả, Bứt tốc

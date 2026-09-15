@@ -159,6 +159,25 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     return getPhasesWithCumulativeDistance(phases);
   }, [phases]);
 
+  // Map of segment distances by phase index or role for PhaseControls
+  const phaseDistances = useMemo(() => {
+    // Return segment distances corresponding to each phase in the form
+    // [phase1, phase2, phase2Relief?, phase2Surge?, phase3]
+    const p1 = phasesWithCumulative.find((p) => p.phaseNumber === 1)?.segmentDistanceKm;
+    const p2Main = phasesWithCumulative.find((p) => p.phaseNumber === 2 && (!p.subType || p.subType === 'MAIN'))?.segmentDistanceKm;
+    const p2Relief = phasesWithCumulative.find((p) => p.subType === 'RELIEF')?.segmentDistanceKm;
+    const p2Surge = phasesWithCumulative.find((p) => p.subType === 'SURGE')?.segmentDistanceKm;
+    const p3 = phasesWithCumulative.find((p) => p.phaseNumber === 3)?.segmentDistanceKm;
+
+    return {
+      phase1: p1,
+      phase2: p2Main,
+      phase2Relief: p2Relief,
+      phase2Surge: p2Surge,
+      phase3: p3,
+    };
+  }, [phasesWithCumulative]);
+
   useEffect(() => {
     if (!isInitialized.current) {
       isInitialized.current = true;
@@ -170,7 +189,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         workoutStartTime,
         meals,
         equipmentType,
-        phases,
+        phases: phasesWithCumulative,
         pauseDuration,
         fatigueLevel,
         waterConsumedMl,
@@ -182,7 +201,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [meals, workoutStartTime, equipmentType, phases, pauseDuration, fatigueLevel, waterConsumedMl, notes, weightKg, waistCm]);
+  }, [meals, workoutStartTime, equipmentType, phasesWithCumulative, pauseDuration, fatigueLevel, waterConsumedMl, notes, weightKg, waistCm]);
 
   useEffect(() => {
     const workouts = getStoredWorkouts();
@@ -229,20 +248,15 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const handleSaveWorkout = (e: FormEvent) => {
     e.preventDefault();
 
-    const savedPhases = phases.map((p) => {
-      const pDist =
-        p.distanceKm !== undefined && Number(p.distanceKm) > 0
-          ? Number(p.distanceKm)
-          : Number(p.speedKmh) && Number(p.durationMinutes)
-          ? Math.round(((Number(p.speedKmh) * Number(p.durationMinutes)) / 60) * 100) / 100
-          : 0;
-
+    const savedPhases = phasesWithCumulative.map((p) => {
       return {
         ...p,
         durationMinutes: Number(p.durationMinutes) || 0,
         speedKmh: Number(p.speedKmh) || 0,
         inclineDegree: Number(p.inclineDegree) || 0,
-        distanceKm: pDist,
+        distanceKm: p.distanceKm !== undefined ? Number(p.distanceKm) : undefined,
+        segmentDistanceKm: p.segmentDistanceKm,
+        cumulativeDistanceKm: p.cumulativeDistanceKm,
         resistanceLevel: Number(p.resistanceLevel) || 0,
         cadenceRpm: Number(p.cadenceRpm) || 0,
         strokeRateSpm: Number(p.strokeRateSpm) || 0,
@@ -479,7 +493,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 setPhase: setPhase1, 
                 equipmentDef, 
                 colorRing: 'focus:ring-amber-500/20',
-                cumulativeDistance: (phase1.distanceKm ?? (phase1.speedKmh * phase1.durationMinutes) / 60)
+                phaseDistance: phaseDistances.phase1
               })}
             </div>
           </div>
@@ -534,7 +548,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 colorRing: 'focus:ring-emerald-500/30',
                 className:
                   'w-full bg-white border-2 border-emerald-300 rounded-xl px-2.5 py-2.5 text-center text-base font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30',
-                cumulativeDistance: (phase1.distanceKm ?? (phase1.speedKmh * phase1.durationMinutes) / 60) + (phase2.distanceKm ?? (phase2.speedKmh * phase2.durationMinutes) / 60)
+                phaseDistance: phaseDistances.phase2
               })}
             </div>
 
@@ -623,7 +637,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                       {renderDurationField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
                       {renderParam1Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
                       {renderParam2Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
-                      {renderDistanceField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
+                      {renderDistanceField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30', phaseDistance: phaseDistances.phase2Relief })}
                     </div>
                   ) : (
                     <p className="text-[11px] text-slate-400 italic">Đã tắt nhịp xả này.</p>
@@ -654,7 +668,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                       {renderDurationField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
                       {renderParam1Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
                       {renderParam2Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
-                      {renderDistanceField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
+                      {renderDistanceField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30', phaseDistance: phaseDistances.phase2Surge })}
                     </div>
                   ) : (
                     <p className="text-[11px] text-slate-400 italic">Đã tắt nhịp bứt tốc này.</p>
@@ -691,7 +705,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
 
               {renderParam1Field({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20' })}
               {renderParam2Field({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20' })}
-              {renderDistanceField({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20' })}
+              {renderDistanceField({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20', phaseDistance: phaseDistances.phase3 })}
             </div>
           </div>
 

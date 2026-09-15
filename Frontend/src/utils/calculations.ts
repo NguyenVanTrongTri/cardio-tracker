@@ -1,22 +1,58 @@
 import { EquipmentType, WorkoutPhase, WorkoutRecord } from '../types';
 
 /**
- * Helper to calculate cumulative distance for UI display
+ * Calculates individual segment distances for each phase.
+ * If user inputs odometer reading on treadmill (cumulative reading at that point),
+ * segment distance = phase.distanceKm - previousPhase.distanceKm.
+ * If phase.distanceKm is not set, calculates from (speed * duration) / 60.
+ */
+export function calculateSegmentDistances(phases: WorkoutPhase[]): number[] {
+  const segmentDistances: number[] = [];
+  let prevInputDist = 0;
+
+  for (let i = 0; i < phases.length; i++) {
+    const p = phases[i];
+    const rawInput = p.distanceKm !== undefined ? Number(p.distanceKm) : undefined;
+
+    if (rawInput !== undefined && rawInput > 0) {
+      if (rawInput >= prevInputDist) {
+        // User entered cumulative machine reading: segment = current - prev
+        const seg = Math.round((rawInput - prevInputDist) * 100) / 100;
+        segmentDistances.push(seg);
+        prevInputDist = rawInput;
+      } else {
+        // Fallback: if user entered an individual segment distance or smaller number
+        segmentDistances.push(Math.round(rawInput * 100) / 100);
+        prevInputDist = prevInputDist + rawInput;
+      }
+    } else {
+      // Default: calculate from speed * duration / 60 if not entered
+      const spd = Number(p.speedKmh) || 0;
+      const dur = Number(p.durationMinutes) || 0;
+      const seg = Math.round(((spd * dur) / 60) * 100) / 100;
+      segmentDistances.push(seg);
+      prevInputDist += seg;
+    }
+  }
+
+  return segmentDistances;
+}
+
+/**
+ * Helper to calculate cumulative distance and individual segment distance for UI display
  */
 export function getPhasesWithCumulativeDistance(phases: WorkoutPhase[]) {
-  let cumulativeSum = 0;
-  return phases.map((p) => {
-    // Calculate phase distance if not explicitly set (same logic as in calculateWorkoutTotals)
-    const phaseDist =
-      p.distanceKm !== undefined && Number(p.distanceKm) > 0
-        ? Number(p.distanceKm)
-        : (Number(p.speedKmh) * Number(p.durationMinutes)) / 60;
-    
-    cumulativeSum += phaseDist;
-    
+  const segmentDistances = calculateSegmentDistances(phases);
+  let runningTotal = 0;
+
+  return phases.map((p, idx) => {
+    const seg = segmentDistances[idx] ?? 0;
+    runningTotal += seg;
+
     return {
       ...p,
-      cumulativeDistanceKm: Math.round(cumulativeSum * 100) / 100,
+      segmentDistanceKm: Math.round(seg * 100) / 100,
+      cumulativeDistanceKm: Math.round(runningTotal * 100) / 100,
     };
   });
 }
@@ -32,17 +68,26 @@ export function getPhasesWithCumulativeDistance(phases: WorkoutPhase[]) {
 export function calculatePhaseCalories(
   phase: WorkoutPhase,
   weightKg: number,
-  equipmentType: EquipmentType = 'TREADMILL'
+  equipmentType: EquipmentType = 'TREADMILL',
+  phaseSegmentDistKm?: number
 ): number {
   if (phase.durationMinutes <= 0 || weightKg <= 0) return 0;
 
   let vo2 = 3.5;
 
   if (equipmentType === 'TREADMILL' || equipmentType === 'OUTDOOR_RUN') {
-    // Ưu tiên vận tốc thực tế tính từ quãng đường nếu có nhập quãng đường > 0
+    // Determine effective distance for this phase:
+    // If phaseSegmentDistKm is provided, use it; otherwise use phase.distanceKm or speed*time
+    const effectiveDist =
+      phaseSegmentDistKm !== undefined && phaseSegmentDistKm > 0
+        ? phaseSegmentDistKm
+        : phase.distanceKm !== undefined && phase.distanceKm > 0
+        ? phase.distanceKm
+        : undefined;
+
     const effectiveSpeedKmh =
-      phase.distanceKm !== undefined && phase.distanceKm > 0 && phase.durationMinutes > 0
-        ? (phase.distanceKm * 60) / phase.durationMinutes
+      effectiveDist !== undefined && phase.durationMinutes > 0
+        ? (effectiveDist * 60) / phase.durationMinutes
         : phase.speedKmh;
 
     const speedMetersPerMin = (effectiveSpeedKmh * 1000) / 60;
@@ -83,19 +128,13 @@ export function calculateWorkoutTotals(
   const grossTime = phases.reduce((sum, p) => sum + (Number(p.durationMinutes) || 0), 0);
   const activeTime = Math.max(0, grossTime - (Number(pauseDuration) || 0));
 
+  const segmentDistances = calculateSegmentDistances(phases);
   const totalDistanceKm = Math.round(
-    phases.reduce((sum, p) => {
-      if (p.distanceKm !== undefined && Number(p.distanceKm) > 0) {
-        return sum + Number(p.distanceKm);
-      }
-      const spd = Number(p.speedKmh) || 0;
-      const dur = Number(p.durationMinutes) || 0;
-      return sum + (spd * dur) / 60;
-    }, 0) * 100
+    segmentDistances.reduce((sum, d) => sum + d, 0) * 100
   ) / 100;
 
   const calories = phases.reduce(
-    (sum, p) => sum + calculatePhaseCalories(p, weightKg, equipmentType),
+    (sum, p, idx) => sum + calculatePhaseCalories(p, weightKg, equipmentType, segmentDistances[idx]),
     0
   );
 

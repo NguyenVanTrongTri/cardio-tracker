@@ -51,7 +51,9 @@ export const renderParam1Field = (
 ) => {
   const { phase, setPhase, equipmentDef, colorRing, className, phaseValue } = props;
   const isDegree = equipmentDef.param1.key === 'inclineDegree';
-  const val = isDegree ? phase.inclineDegree : (phase.resistanceLevel ?? 0);
+  // Use undefined for empty state to match distance field behavior
+  const rawVal = isDegree ? phase.inclineDegree : (phase.resistanceLevel);
+  const val = rawVal !== undefined && rawVal !== 0 ? rawVal : '';
   const label = equipmentDef.param1.label;
 
   return (
@@ -66,11 +68,12 @@ export const renderParam1Field = (
         max={equipmentDef.param1.max}
         value={val}
         onChange={(e) => {
-          const num = Number(e.target.value);
+          const raw = e.target.value;
+          const num = raw === '' ? undefined : Number(raw);
           if (isDegree) {
-            setPhase({ ...phase, inclineDegree: num });
+            setPhase({ ...phase, inclineDegree: num ?? 0 });
           } else {
-            setPhase({ ...phase, resistanceLevel: num });
+            setPhase({ ...phase, resistanceLevel: num ?? 0 });
           }
         }}
         className={
@@ -95,10 +98,18 @@ export const renderParam2Field = (
 ) => {
   const { phase, setPhase, equipmentDef, colorRing, className, phaseValue } = props;
   const key = equipmentDef.param2.key;
-  let val: number = phase.speedKmh;
-  if (key === 'cadenceRpm') val = phase.cadenceRpm ?? 70;
-  else if (key === 'strokeRateSpm') val = phase.strokeRateSpm ?? 24;
-  else if (key === 'stepsPerMin') val = phase.stepsPerMin ?? 60;
+  
+  // Get value, handle potential undefined
+  const getVal = () => {
+    if (key === 'speedKmh') return phase.speedKmh;
+    if (key === 'cadenceRpm') return phase.cadenceRpm;
+    if (key === 'strokeRateSpm') return phase.strokeRateSpm;
+    if (key === 'stepsPerMin') return phase.stepsPerMin;
+    return 0;
+  };
+  
+  const rawVal = getVal();
+  const val = rawVal !== undefined && rawVal !== 0 ? rawVal : '';
 
   return (
     <div>
@@ -112,9 +123,11 @@ export const renderParam2Field = (
         max={equipmentDef.param2.max}
         value={val}
         onChange={(e) => {
-          const num = Number(e.target.value);
+          const raw = e.target.value;
+          const num = raw === '' ? undefined : Number(raw);
+          
           if (key === 'speedKmh') {
-            setPhase({ ...phase, speedKmh: num });
+            setPhase({ ...phase, speedKmh: num || 0 });
           } else if (key === 'cadenceRpm') {
             setPhase({ ...phase, cadenceRpm: num });
           } else if (key === 'strokeRateSpm') {

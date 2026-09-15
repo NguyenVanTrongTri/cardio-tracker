@@ -1,21 +1,94 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { v4: uuidv4 } = require('uuid'); // Đảm bảo dự án đã cài uuid hoặc dùng crypto.randomUUID()
 
-const getWorkouts = async (req, res) => {
+const createWorkout = async (req, res) => {
   try {
-    const workouts = await prisma.workout.findMany({
-      take: 10,
-      include: {
-        user: { select: { fullName: true, email: true } },
-        workoutPhases: true,
-        meals: { include: { foodItems: true } }
+    const userId = req.user.id; 
+    const {
+      equipmentType,
+      workoutStartTime,
+      meals,
+      weightKg,
+      waistCm,
+      phases,
+      totalDistanceKm,
+      pauseDuration,
+      fatigueLevel,
+      waterConsumedMl,
+      notes,
+    } = req.body;
+
+    const newWorkout = await prisma.workout.create({
+      data: {
+        id: uuidv4(), // Sinh ID cho workout nếu schema yêu cầu chuỗi 36 ký tự không tự tăng
+        userId,
+        equipmentType,
+        workoutStartTime: new Date(workoutStartTime),
+        weightKg: weightKg ? Number(weightKg) : null,
+        waistCm: waistCm ? Number(waistCm) : null,
+        totalDistanceKm: totalDistanceKm ? Number(totalDistanceKm) : null,
+        pauseDuration: pauseDuration ? Number(pauseDuration) : 0,
+        fatigueLevel: fatigueLevel ? Number(fatigueLevel) : null,
+        waterConsumedMl: waterConsumedMl ? Number(waterConsumedMl) : 0,
+        notes: notes || '',
+        isZone2: false,
+        cortisolAlert: false,
+        preWorkoutAlert: false,
+        
+        // 👉 SỬA TỪ 'phases' THÀNH 'workoutPhases' CHO KHỚP VỚI SCHEMA
+        workoutPhases: {
+          create: phases.map((p, index) => ({
+            id: uuidv4(), // Sinh ID cho phase
+            phaseNumber: p.phaseNumber || index + 1,
+            name: p.name || `Pha ${index + 1}`,
+            durationMinutes: p.durationMinutes ? Number(p.durationMinutes) : 0,
+            speedKmh: p.speedKmh ? Number(p.speedKmh) : 0,
+            inclineDegree: p.inclineDegree ? Number(p.inclineDegree) : 0,
+            distanceKm: p.distanceKm !== undefined ? Number(p.distanceKm) : null,
+            segmentDistanceKm: p.segmentDistanceKm !== undefined ? Number(p.segmentDistanceKm) : null,
+            cumulativeDistanceKm: p.cumulativeDistanceKm !== undefined ? Number(p.cumulativeDistanceKm) : null,
+            isCoreEngaged: !!p.isCoreEngaged,
+            subType: p.subType || null,
+            resistanceLevel: p.resistanceLevel !== undefined ? Number(p.resistanceLevel) : null,
+            cadenceRpm: p.cadenceRpm !== undefined ? Number(p.cadenceRpm) : null,
+            strokeRateSpm: p.strokeRateSpm !== undefined ? Number(p.strokeRateSpm) : null,
+            stepsPerMin: p.stepsPerMin !== undefined ? Number(p.stepsPerMin) : null,
+          })),
+        },
+
+        // Xử lý meals và foodItems
+        meals: meals && meals.length > 0 ? {
+          create: meals.map((m) => ({
+            id: uuidv4(), // Sinh ID cho meal
+            category: m.category,
+            mealTime: m.mealTime || new Date().toLocaleTimeString(),
+            totalCalories: m.totalCalories ? Number(m.totalCalories) : 0,
+            foodItems: {
+              create: m.foodItems ? m.foodItems.map((item) => ({
+                id: uuidv4(), // 👉 CỰC KỲ QUAN TRỌNG: Sinh ID vì bảng MealFoodItem không có @default
+                foodName: item.foodName,
+                grams: Number(item.grams) || 0,
+                calories: Number(item.calories) || 0,
+              })) : []
+            }
+          }))
+        } : undefined,
       },
-      orderBy: { workoutStartTime: 'desc' }
+      include: {
+        workoutPhases: true,
+        meals: {
+          include: { foodItems: true }
+        },
+      },
     });
-    res.json({ success: true, data: workouts });
+
+    res.status(201).json({
+      message: 'Lưu buổi tập thành công!',
+      workout: newWorkout,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Error creating workout:', error);
+    res.status(500).json({ message: 'Lỗi server khi lưu buổi tập', error: error.message });
   }
 };
-
-module.exports = { getWorkouts };

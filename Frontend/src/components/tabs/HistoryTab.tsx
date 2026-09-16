@@ -315,28 +315,32 @@ export default function HistoryTab() {
                 <div className={`grid ${w.totalDistanceKm ? 'grid-cols-4' : 'grid-cols-3'} gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 my-2.5 text-center`}>
                   <div>
                     <span className="text-[10px] text-slate-400 block">Thời Gian</span>
-                    <span className="text-sm font-bold text-slate-800 font-mono">
-                      {w.activeTime} phút
+                    <span className="text-xs font-bold text-slate-800 font-mono">
+                      {w.activeTime}
+                      <span className="text-[10px] text-slate-500 font-normal ml-0.5">phút</span>
                     </span>
                   </div>
                   {w.totalDistanceKm ? (
                     <div>
                       <span className="text-[10px] text-slate-400 block">Quãng Đường</span>
-                      <span className="text-sm font-bold text-sky-600 font-mono">
-                        {w.totalDistanceKm} km
+                      <span className="text-xs font-bold text-sky-600 font-mono">
+                        {w.totalDistanceKm}
+                        <span className="text-[10px] text-sky-500 font-normal ml-0.5">km</span>
                       </span>
                     </div>
                   ) : null}
                   <div>
                     <span className="text-[10px] text-slate-400 block">Tiêu Hao</span>
-                    <span className="text-sm font-bold text-orange-600 font-mono">
-                      {w.calories} kcal
+                    <span className="text-xs font-bold text-orange-600 font-mono">
+                      {w.calories}
+                      <span className="text-[10px] text-orange-500 font-normal ml-0.5">kcal</span>
                     </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block">Mật Độ</span>
-                    <span className="text-sm font-bold text-emerald-600 font-mono">
-                      {w.efficiencyIndex} cal/p
+                    <span className="text-xs font-bold text-emerald-600 font-mono">
+                      {w.efficiencyIndex}
+                      <span className="text-[10px] text-emerald-500 font-normal ml-0.5">cal/p</span>
                     </span>
                   </div>
                 </div>

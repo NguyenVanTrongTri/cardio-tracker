@@ -5,18 +5,34 @@ const crypto = require('crypto'); // Dùng cho crypto.randomUUID()
 // 1. Hàm lấy danh sách buổi tập
 const getWorkouts = async (req, res) => {
   try {
-    const userId = req.user?.id; // Nên lọc theo userId của user đang đăng nhập (nếu cần bảo mật)
+    const userId = req.user?.id;
     
     const workouts = await prisma.workout.findMany({
-      where: userId ? { userId } : undefined, // Lọc theo user nếu có token
+      where: userId ? { userId } : undefined,
       take: 10,
       include: {
-        workoutPhases: true, // Chỉ lấy phases thuộc về workout
+        workoutPhases: true,
       },
       orderBy: { workoutStartTime: 'desc' }
     });
 
-    return res.json({ success: true, data: workouts });
+    // 🔍 Map và bổ sung tính toán chỉ số Mật độ (cal/p)
+    const enrichedWorkouts = workouts.map(workout => {
+      const totalCalories = parseFloat(workout.calories) || 0;
+      const activeMinutes = Number(workout.activeTime) || 0;
+      
+      // Công thức: Tổng Calories / Thời gian hoạt động (phút)
+      const calPerMinute = activeMinutes > 0 
+        ? (totalCalories / activeMinutes).toFixed(1) 
+        : "0.0";
+
+      return {
+        ...workout,
+        calPerMinute, // 👈 Gửi kèm chỉ số này về cho Frontend hiển thị trực tiếp
+      };
+    });
+
+    return res.json({ success: true, data: enrichedWorkouts });
   } catch (error) {
     console.error('Error getting workouts:', error);
     return res.status(500).json({ success: false, error: error.message });

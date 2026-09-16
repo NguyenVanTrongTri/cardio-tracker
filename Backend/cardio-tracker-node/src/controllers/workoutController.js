@@ -147,5 +147,28 @@ const createWorkout = async (req, res) => {
     return res.status(500).json({ message: 'Lỗi server khi lưu buổi tập', error: error.message });
   }
 };
+const deleteWorkout = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
 
-module.exports = { getWorkouts, createWorkout };
+    if (!userId) {
+      return res.status(401).json({ message: 'Bạn cần đăng nhập!' });
+    }
+
+    // Xóa các dữ liệu liên quan trước (nếu cần do constraint) hoặc dùng cascade delete
+    await prisma.workoutPhase.deleteMany({ where: { workoutId: id } });
+    await prisma.meal.deleteMany({ where: { workoutId: id } });
+
+    // Xóa buổi tập
+    const deleted = await prisma.workout.delete({
+      where: { id: id, userId: userId }
+    });
+
+    return res.json({ success: true, message: 'Đã xóa buổi tập!' });
+  } catch (error) {
+    console.error('Lỗi xóa buổi tập:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+module.exports = { getWorkouts, createWorkout , deleteWorkout };

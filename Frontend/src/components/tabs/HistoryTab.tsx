@@ -58,8 +58,12 @@ export default function HistoryTab() {
       });
       if (response.ok) {
         const data = await response.json();
-        // Cập nhật: truy xuất data.data theo cấu trúc backend trả về
-        setWorkouts(data.data || []);
+        // Cập nhật: ánh xạ workoutPhases từ backend sang phases ở frontend
+        const formattedData = (data.data || []).map((w: any) => ({
+          ...w,
+          phases: w.workoutPhases || [],
+        }));
+        setWorkouts(formattedData);
       } else {
         console.error('Lỗi tải dữ liệu buổi tập');
       }

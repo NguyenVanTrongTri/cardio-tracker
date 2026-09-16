@@ -91,8 +91,11 @@ const createWorkout = async (req, res) => {
             metricDate: metricDateOnly,
             weightKg: weightKg !== undefined && weightKg !== null ? String(weightKg) : null,
             waistCm: waistCm !== undefined && waistCm !== null ? String(waistCm) : null,
-          }
-        });
+          },
+        }, {
+            maxWait: 10000, // Thời gian tối đa chờ nhận connection từ pool (10 giây)
+            timeout: 15000  // Thời gian tối đa cho phép transaction chạy xong (15 giây)
+          });
       }
 
       // 2. Xử lý Meals theo ngày

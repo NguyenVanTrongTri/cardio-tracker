@@ -138,6 +138,10 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
 
   const [savedSuccessMessage, setSavedSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => {
+    console.log('isSaving changed:', isSaving);
+  }, [isSaving]);
+  console.log('Rendering HomeTab, isSaving:', isSaving);
   const [workoutId] = useState(() => crypto.randomUUID()); // New workout ID for this session
   const isInitialized = useRef(false);
 
@@ -269,12 +273,14 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   
   const handleSaveWorkout = async (e: FormEvent) => {
     e.preventDefault();
+    console.log('handleSaveWorkout called, isDirty:', isDirty);
     if (!isDirty) {
       onAddNotification?.('Thông báo', 'Dữ liệu không có thay đổi mới để lưu!');
       return;
     }
 
-    setIsSaving(true);
+    console.log('Setting isSaving to true');
+    setTimeout(() => setIsSaving(true), 0);
 
     const savedPhases = phasesWithCumulative.map((p) => {
       return {

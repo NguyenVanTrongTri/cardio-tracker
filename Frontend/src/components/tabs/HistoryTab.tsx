@@ -148,14 +148,15 @@ export default function HistoryTab() {
   const formatDate = (isoStr: string) => {
     try {
       const date = new Date(isoStr);
-      return new Intl.DateTimeFormat('vi-VN', {
-        weekday: 'short',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(date);
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      const hour = String(date.getUTCHours()).padStart(2, '0');
+      const minute = String(date.getUTCMinutes()).padStart(2, '0');
+      const weekdayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      const weekday = weekdayNames[date.getUTCDay()];
+
+      return `${hour}:${minute} ${weekday}, ${day}/${month}/${year}`;
     } catch {
       return isoStr;
     }

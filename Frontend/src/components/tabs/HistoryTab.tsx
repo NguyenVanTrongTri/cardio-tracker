@@ -395,13 +395,13 @@ export default function HistoryTab() {
                     <h4 className="font-bold text-slate-700 mb-2">
                       Chi Tiết Các Giai Đoạn ({eqDef.name})
                     </h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-center font-mono">
+                    <div className="grid grid-cols-3 gap-2 text-center font-mono">
                       {w.phases.map((p, idx) => {
                         const dist =
                           p.distanceKm !== undefined && Number(p.distanceKm) > 0
                             ? Number(p.distanceKm)
                             : p.speedKmh && p.durationMinutes
-                            ? Math.round(((p.speedKmh * p.durationMinutes) / 60) * 100) / 100
+                            ? Math.round(((Number(p.speedKmh) * Number(p.durationMinutes)) / 60) * 100) / 100
                             : null;
 
                         const isRelief = p.subType === 'RELIEF' || p.name.toLowerCase().includes('xả');
@@ -410,7 +410,7 @@ export default function HistoryTab() {
                         return (
                           <div
                             key={`${p.phaseNumber}-${idx}`}
-                            className={`p-2 rounded-xl border flex flex-col justify-between ${
+                            className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-0.5 ${
                               isRelief
                                 ? 'bg-sky-50/80 border-sky-200 text-sky-950'
                                 : isSurge
@@ -420,19 +420,19 @@ export default function HistoryTab() {
                                 : 'bg-white border-slate-200 text-slate-700'
                             }`}
                           >
-                            <div>
-                              <span className="text-[10px] text-slate-500 block truncate" title={p.name}>
-                                {isRelief ? '💧 Nhịp xả' : isSurge ? '⚡ Bứt tốc' : `P${p.phaseNumber}: ${p.name}`}
-                              </span>
-                              <div className="text-xs font-semibold text-slate-800">{p.durationMinutes} phút</div>
-                              {dist !== null && (
-                                <div className="text-[11px] font-bold text-sky-600 my-0.5">
-                                  {dist} km
-                                </div>
-                              )}
+                            <span className="text-[9px] text-slate-500 font-bold uppercase truncate w-full" title={p.name}>
+                              {isRelief ? 'Xả' : isSurge ? 'Bứt' : `P${p.phaseNumber}`}
+                            </span>
+                            <div className="text-xs font-black text-slate-900 leading-none">
+                              {p.durationMinutes}<span className="text-[9px] font-normal text-slate-500 ml-0.5">p</span>
                             </div>
-                            <div className="text-[10px] text-slate-500 mt-1">
-                              {renderPhaseDetails(p, w.equipmentType)}
+                            {dist !== null && (
+                              <div className="text-[10px] font-bold text-sky-600 leading-none">
+                                {dist}<span className="text-[8px] font-normal ml-0.5">km</span>
+                              </div>
+                            )}
+                            <div className="text-[9px] text-slate-500 mt-0.5 leading-none truncate w-full">
+                              {renderPhaseDetails(p, w.equipmentType).replace('•', '|')}
                             </div>
                           </div>
                         );

@@ -16,21 +16,39 @@ const getWorkouts = async (req, res) => {
       orderBy: { workoutStartTime: 'desc' }
     });
 
-    // 🔍 Map và bổ sung tính toán chỉ số Mật độ (cal/p)
-    const enrichedWorkouts = workouts.map(workout => {
+    // Lấy thêm BodyMetric của user để map vào workout theo ngày
+    const enrichedWorkouts = await Promise.all(workouts.map(async (workout) => {
       const totalCalories = parseFloat(workout.calories) || 0;
       const activeMinutes = Number(workout.activeTime) || 0;
-      
-      // Công thức: Tổng Calories / Thời gian hoạt động (phút)
       const calPerMinute = activeMinutes > 0 
         ? (totalCalories / activeMinutes).toFixed(1) 
         : "0.0";
 
+      // Chuẩn hóa ngày của buổi tập để tìm bodyMetric tương ứng
+      const workoutDateObj = new Date(workout.workoutStartTime);
+      const metricDateOnly = new Date(Date.UTC(
+        workoutDateObj.getFullYear(),
+        workoutDateObj.getMonth(),
+        workoutDateObj.getDate()
+      ));
+
+      // Truy vấn thông số cơ thể trong ngày đó
+      const bodyMetric = await prisma.bodyMetric.findUnique({
+        where: {
+          userId_metricDate: {
+            userId: workout.userId,
+            metricDate: metricDateOnly
+          }
+        }
+      });
+
       return {
         ...workout,
-       efficiencyIndex: calPerMinute, // 👈 Gửi kèm chỉ số này về cho Frontend hiển thị trực tiếp
+        efficiencyIndex: calPerMinute,
+        weightKg: bodyMetric?.weightKg || null, // 👈 Đính kèm cân nặng
+        waistCm: bodyMetric?.waistCm || null,   // 👈 Đính kèm vòng eo
       };
-    });
+    }));
 
     return res.json({ success: true, data: enrichedWorkouts });
   } catch (error) {

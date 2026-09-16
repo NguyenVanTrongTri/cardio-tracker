@@ -66,6 +66,8 @@ export default function HistoryTab() {
           ...w,
           phases: w.workoutPhases || [],
           efficiencyIndex: w.efficiencyIndex || "0.0",
+          weightKg: w.weightKg || null,
+          waistCm: w.waistCm || null,
           // Đảm bảo mapping trường cal/p (lấy từ calPerMinute do backend tính toán trả về)
           calPerMinute: w.calPerMinute || (w.activeTime > 0 ? (Number(w.calories) / Number(w.activeTime)).toFixed(1) : "0.0"),
         }));

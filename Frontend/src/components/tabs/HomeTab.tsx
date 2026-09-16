@@ -264,7 +264,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     // So sánh dữ liệu hiện tại với bản nháp gần nhất
     return JSON.stringify(lastStored.phases) !== JSON.stringify(phasesWithCumulative);
   }, [phasesWithCumulative, equipmentType, meals]);
-  // Real-time Pre-workout alert
+  // Real-time Pre-workout alert\
+  
   const handleSaveWorkout = async (e: FormEvent) => {
     e.preventDefault();
      if (!isDirty) {

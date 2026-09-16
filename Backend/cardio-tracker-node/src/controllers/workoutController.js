@@ -233,19 +233,29 @@ const deleteWorkout = async (req, res) => {
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({ message: 'Bạn cần đăng nhập!' });
+      return res.status(401).json({ success: false, message: 'Bạn cần đăng nhập!' });
     }
 
-    // Xóa các dữ liệu liên quan trước (nếu cần do constraint) hoặc dùng cascade delete
-    await prisma.workoutPhase.deleteMany({ where: { workoutId: id } });
-    await prisma.meal.deleteMany({ where: { workoutId: id } });
-
-    // Xóa buổi tập
-    const deleted = await prisma.workout.delete({
+    // Kiểm tra xem workout có thuộc về user này không trước khi xóa để bảo mật
+    const existingWorkout = await prisma.workout.findFirst({
       where: { id: id, userId: userId }
     });
 
-    return res.json({ success: true, message: 'Đã xóa buổi tập!' });
+    if (!existingWorkout) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy buổi tập hoặc bạn không có quyền xóa!' });
+    }
+
+    // 1. Xóa các giai đoạn tập (WorkoutPhase) liên quan trước
+    await prisma.workoutPhase.deleteMany({ 
+      where: { workoutId: id } 
+    });
+
+    // 2. Tiến hành xóa buổi tập chính
+    await prisma.workout.delete({
+      where: { id: id }
+    });
+
+    return res.json({ success: true, message: 'Đã xóa buổi tập thành công!' });
   } catch (error) {
     console.error('Lỗi xóa buổi tập:', error);
     return res.status(500).json({ success: false, error: error.message });

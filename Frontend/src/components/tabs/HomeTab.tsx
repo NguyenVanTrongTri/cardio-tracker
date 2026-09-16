@@ -137,6 +137,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const [notes, setNotes] = useState<string>('');
 
   const [savedSuccessMessage, setSavedSuccessMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [workoutId] = useState(() => crypto.randomUUID()); // New workout ID for this session
   const isInitialized = useRef(false);
 
@@ -268,10 +269,12 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   
   const handleSaveWorkout = async (e: FormEvent) => {
     e.preventDefault();
-     if (!isDirty) {
-    onAddNotification?.('Thông báo', 'Dữ liệu không có thay đổi mới để lưu!');
-    return;
+    if (!isDirty) {
+      onAddNotification?.('Thông báo', 'Dữ liệu không có thay đổi mới để lưu!');
+      return;
     }
+
+    setIsSaving(true);
 
     const savedPhases = phasesWithCumulative.map((p) => {
       return {
@@ -357,6 +360,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         'Lưu thất bại ❌',
         `Không thể lưu buổi tập: ${error.message || 'Lỗi kết nối server!'}`
       );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -996,10 +1001,11 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         {/* Primary Action Button */}
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-base py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/30 hover:shadow-xl active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
+          disabled={isSaving}
+          className={`w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-base py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/30 hover:shadow-xl active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           <Flame size={20} className="fill-white" />
-          <span>LƯU BUỔI TẬP ({equipmentDef.shortName.toUpperCase()})</span>
+          <span>{isSaving ? 'ĐANG LƯU...!' : `LƯU BUỔI TẬP (${equipmentDef.shortName.toUpperCase()})`}</span>
         </button>
       </form>
 

@@ -91,11 +91,8 @@ const createWorkout = async (req, res) => {
             metricDate: metricDateOnly,
             weightKg: weightKg !== undefined && weightKg !== null ? String(weightKg) : null,
             waistCm: waistCm !== undefined && waistCm !== null ? String(waistCm) : null,
-          },
-        }, {
-            maxWait: 10000, // Thời gian tối đa chờ nhận connection từ pool (10 giây)
-            timeout: 15000  // Thời gian tối đa cho phép transaction chạy xong (15 giây)
-          });
+          }
+        }); // 👈 Đã bỏ cấu hình timeout ở đây vì hàm upsert không nhận tham số này
       }
 
       // 2. Xử lý Meals theo ngày
@@ -179,6 +176,9 @@ const createWorkout = async (req, res) => {
       });
 
       return { workout, savedMeals, savedBodyMetric };
+    }, {
+      maxWait: 10000, // 👈 Đặt cấu hình timeout ở ĐÂY (đúng cú pháp của Prisma)
+      timeout: 20000  // 👈 Cho phép transaction chạy tối đa 20 giây
     });
 
     return res.status(200).json({ 

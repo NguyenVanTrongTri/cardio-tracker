@@ -46,6 +46,7 @@ export default function HistoryTab() {
 
   // Delete modal state
   const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Edit modal state
   const [editingWorkout, setEditingWorkout] = useState<WorkoutRecord | null>(null);
@@ -103,6 +104,7 @@ export default function HistoryTab() {
 
   const confirmDelete = async () => {
     if (!deleteCandidateId) return;
+    setIsDeleting(true);
     try {
       const response = await fetch(`https://backendcardio.vercel.app/api/workouts/${deleteCandidateId}`, {
         method: 'DELETE',
@@ -118,6 +120,8 @@ export default function HistoryTab() {
       }
     } catch (error) {
       console.error('Lỗi kết nối API:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -479,9 +483,10 @@ export default function HistoryTab() {
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition-colors shadow-xs"
+                disabled={isDeleting}
+                className={`flex-1 py-2.5 ${isDeleting ? 'bg-rose-400' : 'bg-rose-600 hover:bg-rose-700'} text-white rounded-xl font-bold text-xs transition-colors shadow-xs`}
               >
-                Xóa ngay
+                {isDeleting ? 'Đang xóa...' : 'Xóa ngay'}
               </button>
             </div>
           </div>

@@ -23,6 +23,7 @@ const getWorkouts = async (req, res) => {
 
 // 2. Hàm tạo buổi tập mới (Đã hoàn thiện)
 const createWorkout = async (req, res) => {
+  console.log('ID nhận được từ Client:', req.body.id);
   try {
     const userId = req.user?.id;
     if (!userId) {

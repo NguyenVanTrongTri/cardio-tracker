@@ -17,10 +17,26 @@ import {
   ShieldAlert,
   Info
 } from 'lucide-react';
-import { getStoredWorkouts, deleteWorkoutRecord, saveWorkoutRecord } from '../../services/storage';
 import { EquipmentType, WorkoutPhase, WorkoutRecord } from '../../types';
 import { getEquipmentDef } from '../workout/equipmentData';
 import { Bike, Waves, Footprints, Compass } from 'lucide-react';
+
+const getAuthToken = () => {
+  let token = '';
+  const sessionData = localStorage.getItem('cardio_session_v2');
+  if (sessionData) {
+    try {
+      const parsed = JSON.parse(sessionData);
+      token = parsed.token;
+    } catch (e) {
+      console.error('Lỗi đọc session token:', e);
+    }
+  }
+  if (!token) {
+    token = localStorage.getItem('token') || '';
+  }
+  return token;
+};
 
 export default function HistoryTab() {
   const [workouts, setWorkouts] = useState<WorkoutRecord[]>([]);
@@ -33,8 +49,22 @@ export default function HistoryTab() {
   // Edit modal state
   const [editingWorkout, setEditingWorkout] = useState<WorkoutRecord | null>(null);
 
-  const loadData = () => {
-    setWorkouts(getStoredWorkouts());
+  const loadData = async () => {
+    try {
+      const response = await fetch('https://backendcardio.vercel.app/api/workouts', {
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setWorkouts(data);
+      } else {
+        console.error('Lỗi tải dữ liệu buổi tập');
+      }
+    } catch (error) {
+      console.error('Lỗi kết nối API:', error);
+    }
   };
 
   useEffect(() => {
@@ -55,20 +85,49 @@ export default function HistoryTab() {
     return sorted;
   }, [workouts, filter]);
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteCandidateId) return;
-    const updated = deleteWorkoutRecord(deleteCandidateId);
-    setWorkouts(updated);
-    setDeleteCandidateId(null);
+    try {
+      const response = await fetch(`https://backendcardio.vercel.app/api/workouts/${deleteCandidateId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+      });
+      if (response.ok) {
+        setWorkouts(workouts.filter(w => w.id !== deleteCandidateId));
+        setDeleteCandidateId(null);
+      } else {
+        console.error('Lỗi xóa buổi tập');
+      }
+    } catch (error) {
+      console.error('Lỗi kết nối API:', error);
+    }
   };
 
-  const handleUpdateWorkout = (e: FormEvent) => {
+  const handleUpdateWorkout = async (e: FormEvent) => {
     e.preventDefault();
     if (!editingWorkout) return;
 
-    saveWorkoutRecord(editingWorkout);
-    setEditingWorkout(null);
-    loadData();
+    try {
+      const response = await fetch(`https://backendcardio.vercel.app/api/workouts/${editingWorkout.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`,
+        },
+        body: JSON.stringify(editingWorkout),
+      });
+
+      if (response.ok) {
+        setEditingWorkout(null);
+        loadData();
+      } else {
+        console.error('Lỗi cập nhật buổi tập');
+      }
+    } catch (error) {
+      console.error('Lỗi kết nối API:', error);
+    }
   };
 
   const formatDate = (isoStr: string) => {

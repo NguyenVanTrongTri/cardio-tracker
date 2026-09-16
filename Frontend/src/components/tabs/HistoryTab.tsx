@@ -322,12 +322,6 @@ export default function HistoryTab() {
                       {w.calories} kcal
                     </span>
                   </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Mật Độ</span>
-                    <span className="text-sm font-bold text-emerald-600 font-mono">
-                      {w.efficiencyIndex} cal/p
-                    </span>
-                  </div>
                 </div>
 
                 {/* Status Badges */}

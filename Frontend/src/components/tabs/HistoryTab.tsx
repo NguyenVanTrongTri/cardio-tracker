@@ -58,7 +58,8 @@ export default function HistoryTab() {
       });
       if (response.ok) {
         const data = await response.json();
-        setWorkouts(data);
+        // Cập nhật: truy xuất data.data theo cấu trúc backend trả về
+        setWorkouts(data.data || []);
       } else {
         console.error('Lỗi tải dữ liệu buổi tập');
       }
@@ -116,7 +117,13 @@ export default function HistoryTab() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getAuthToken()}`,
         },
-        body: JSON.stringify(editingWorkout),
+        // Đảm bảo gửi đúng cấu trúc backend mong đợi
+        body: JSON.stringify({
+            ...editingWorkout,
+            weightKg: Number(editingWorkout.weightKg),
+            waistCm: Number(editingWorkout.waistCm),
+            waterConsumedMl: Number(editingWorkout.waterConsumedMl),
+        }),
       });
 
       if (response.ok) {

@@ -5,22 +5,23 @@ const crypto = require('crypto'); // Dùng cho crypto.randomUUID()
 // 1. Hàm lấy danh sách buổi tập
 const getWorkouts = async (req, res) => {
   try {
+    const userId = req.user?.id; // Nên lọc theo userId của user đang đăng nhập (nếu cần bảo mật)
+    
     const workouts = await prisma.workout.findMany({
+      where: userId ? { userId } : undefined, // Lọc theo user nếu có token
       take: 10,
       include: {
-        user: { select: { fullName: true, email: true } },
-        workoutPhases: true,
-        meals: { include: { foodItems: true } }
+        workoutPhases: true, // Chỉ lấy phases thuộc về workout
       },
       orderBy: { workoutStartTime: 'desc' }
     });
+
     return res.json({ success: true, data: workouts });
   } catch (error) {
     console.error('Error getting workouts:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-
 // 2. Hàm tạo buổi tập mới (Đã hoàn thiện)
 const createWorkout = async (req, res) => {
   console.log('ID nhận được từ Client:', req.body.id);

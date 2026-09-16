@@ -60,15 +60,11 @@ export default function HistoryTab() {
       });
       if (response.ok) {
         const data = await response.json();
-        
-        // 🛠️ CẬP NHẬT: Ánh xạ chuẩn các trường dữ liệu từ backend sang state của frontend
+        // Cập nhật: ánh xạ workoutPhases từ backend sang phases ở frontend
         const formattedData = (data.data || []).map((w: any) => ({
           ...w,
           phases: w.workoutPhases || [],
-          // Đảm bảo mapping trường cal/p (lấy từ calPerMinute do backend tính toán trả về)
-          calPerMinute: w.calPerMinute || (w.activeTime > 0 ? (Number(w.calories) / Number(w.activeTime)).toFixed(1) : "0.0"),
         }));
-        
         setWorkouts(formattedData);
       } else {
         console.error('Lỗi tải dữ liệu buổi tập');

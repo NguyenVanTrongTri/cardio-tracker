@@ -40,6 +40,7 @@ const getAuthToken = () => {
 
 export default function HistoryTab() {
   const [workouts, setWorkouts] = useState<WorkoutRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'zone2' | 'cortisol'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -50,6 +51,7 @@ export default function HistoryTab() {
   const [editingWorkout, setEditingWorkout] = useState<WorkoutRecord | null>(null);
 
   const loadData = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch('https://backendcardio.vercel.app/api/workouts', {
         headers: {
@@ -69,6 +71,8 @@ export default function HistoryTab() {
       }
     } catch (error) {
       console.error('Lỗi kết nối API:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -228,8 +232,14 @@ export default function HistoryTab() {
         </div>
       </div>
 
-      {/* Empty State */}
-      {filteredWorkouts.length === 0 && (
+      {/* Loading & Empty State */}
+      {isLoading && (
+        <div className="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-xs">
+          <Activity size={32} className="mx-auto text-slate-300 mb-2 animate-spin" />
+          <p className="text-sm font-bold text-slate-700">Đang tải lịch sử tập...</p>
+        </div>
+      )}
+      {!isLoading && filteredWorkouts.length === 0 && (
         <div className="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-xs">
           <Activity size={32} className="mx-auto text-slate-300 mb-2" />
           <p className="text-sm font-bold text-slate-700">Chưa có dữ liệu phù hợp</p>

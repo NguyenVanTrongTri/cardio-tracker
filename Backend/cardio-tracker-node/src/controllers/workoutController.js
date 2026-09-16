@@ -32,27 +32,16 @@ const createWorkout = async (req, res) => {
     }
 
     const {
-      id, // ID phiên tập do Client gửi lên
-      equipmentType,
-      workoutStartTime,
-      meals,
-      weightKg,
-      waistCm,
-      phases,
-      totalDistanceKm,
-      pauseDuration,
-      fatigueLevel,
-      waterConsumedMl,
-      notes,
-      activeTime,
-      calories
+      id, equipmentType, workoutStartTime, meals,
+      weightKg, waistCm, phases, totalDistanceKm,
+      pauseDuration, fatigueLevel, waterConsumedMl,
+      notes, activeTime, calories
     } = req.body;
 
     if (!id || !equipmentType || !phases || !Array.isArray(phases)) {
       return res.status(400).json({ message: "Thiếu ID, thiết bị hoặc giai đoạn tập!" });
     }
 
-    // Xác định ngày tập (lấy phần Date chuẩn dạng YYYY-MM-DD từ workoutStartTime hoặc thời điểm hiện tại)
     const workoutDateObj = workoutStartTime ? new Date(workoutStartTime) : new Date();
     const metricDateOnly = new Date(Date.UTC(
       workoutDateObj.getFullYear(),
@@ -60,91 +49,14 @@ const createWorkout = async (req, res) => {
       workoutDateObj.getDate()
     ));
 
-    // Map fatigue
     const fatigueMapping = { 'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'EXTREME': 4, 'VERY_HIGH': 5 };
     let fatigueNumber = fatigueMapping[fatigueLevel] || 3; 
-    if (fatigueNumber < 1) fatigueNumber = 1;
-    if (fatigueNumber > 5) fatigueNumber = 5;
+    fatigueNumber = Math.max(1, Math.min(5, fatigueNumber));
 
-    // 1. XỬ LÝ BODY METRICS THEO NGÀY (Nếu người dùng có truyền cân nặng hoặc vòng eo)
-    if (weightKg !== undefined || waistCm !== undefined) {
-      await prisma.bodyMetric.upsert({
-        where: {
-          userId_metricDate: {
-            userId: userId,
-            metricDate: metricDateOnly
-          }
-        },
-        update: {
-          weightKg: weightKg !== undefined && weightKg !== null ? String(weightKg) : undefined,
-          waistCm: waistCm !== undefined && waistCm !== null ? String(waistCm) : undefined,
-        },
-        create: {
-          id: crypto.randomUUID(),
-          userId: userId,
-          metricDate: metricDateOnly,
-          weightKg: weightKg !== undefined && weightKg !== null ? String(weightKg) : null,
-          waistCm: waistCm !== undefined && waistCm !== null ? String(waistCm) : null,
-        }
-      });
-    }
+    const startOfDay = new Date(metricDateOnly);
+    const endOfDay = new Date(metricDateOnly);
+    endOfDay.setDate(endOfDay.getDate() + 1);
 
-    // 2. XỬ LÝ MEALS THEO NGÀY (Xóa các bữa cũ trong ngày và tạo mới toàn bộ bữa ăn của ngày đó)
-    if (meals && Array.isArray(meals)) {
-      // Tìm và xóa các bữa ăn cũ của user trong đúng ngày hôm đó
-      const startOfDay = new Date(metricDateOnly);
-      const endOfDay = new Date(metricDateOnly);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-
-      const existingMeals = await prisma.meal.findMany({
-        where: {
-          userId: userId,
-          mealDate: {
-            gte: startOfDay,
-            lt: endOfDay
-          }
-        },
-        select: { id: true }
-      });
-
-      if (existingMeals.length > 0) {
-        const mealIds = existingMeals.map(m => m.id);
-        // Xóa các món ăn bên trong các bữa cũ trước
-        await prisma.mealFoodItem.deleteMany({
-          where: { mealId: { in: mealIds } }
-        });
-        // Xóa các bữa cũ
-        await prisma.meal.deleteMany({
-          where: { id: { in: mealIds } }
-        });
-      }
-
-      // Tạo mới danh sách bữa ăn cho ngày hôm đó
-      if (meals.length > 0) {
-        for (const m of meals) {
-          await prisma.meal.create({
-            data: {
-              id: crypto.randomUUID(),
-              userId: userId,
-              mealDate: metricDateOnly,
-              category: m.category || 'Khác',
-              mealTime: m.mealTime || new Date().toLocaleTimeString(),
-              totalCalories: m.totalCalories ? String(m.totalCalories) : "0",
-              foodItems: {
-                create: m.foodItems ? m.foodItems.map((item) => ({
-                  id: crypto.randomUUID(),
-                  foodName: item.foodName,
-                  grams: String(item.grams || 0),
-                  calories: String(item.calories || 0),
-                })) : []
-              }
-            }
-          });
-        }
-      }
-    }
-
-    // 3. CHUẨN BỊ DỮ LIỆU PHASES CHO WORKOUT
     const phasesData = phases.map((p, index) => ({
       id: crypto.randomUUID(),
       phaseNumber: p.phaseNumber || index + 1,
@@ -163,69 +75,118 @@ const createWorkout = async (req, res) => {
       stepsPerMin: p.stepsPerMin ? Number(p.stepsPerMin) : null,
     }));
 
-    // 4. XỬ LÝ LƯU HOẶC CẬP NHẬT PHIÊN TẬP (WORKOUT) ĐỘC LẬP
-    const workout = await prisma.workout.upsert({
-      where: { id: id },
-      update: {
-        equipmentType,
-        workoutStartTime: new Date(workoutStartTime),
-        totalDistanceKm: totalDistanceKm ? String(totalDistanceKm) : null,
-        pauseDuration: pauseDuration ? Number(pauseDuration) : 0,
-        fatigueLevel: fatigueNumber,
-        waterConsumedMl: waterConsumedMl ? Number(waterConsumedMl) : 0,
-        notes: notes || '',
-        activeTime: activeTime ? Number(activeTime) : 0,
-        calories: calories ? String(calories) : "0",
-        
-        // Xóa phases cũ và tạo mới
-        workoutPhases: {
-          deleteMany: {},
-          create: phasesData
+    // 🚀 SỬ DỤNG TRANSACTION ĐỂ GOM NHÓM TẤT CẢ TRUY VẤN VÀ CHẠY CỰC NHANH
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Body Metrics Upsert
+      if (weightKg !== undefined || waistCm !== undefined) {
+        await tx.bodyMetric.upsert({
+          where: { userId_metricDate: { userId, metricDate: metricDateOnly } },
+          update: {
+            weightKg: weightKg !== undefined && weightKg !== null ? String(weightKg) : undefined,
+            waistCm: waistCm !== undefined && waistCm !== null ? String(waistCm) : undefined,
+          },
+          create: {
+            id: crypto.randomUUID(),
+            userId,
+            metricDate: metricDateOnly,
+            weightKg: weightKg !== undefined && weightKg !== null ? String(weightKg) : null,
+            waistCm: waistCm !== undefined && waistCm !== null ? String(waistCm) : null,
+          }
+        });
+      }
+
+      // 2. Xử lý Meals theo ngày
+      if (meals && Array.isArray(meals)) {
+        const existingMeals = await tx.meal.findMany({
+          where: { userId, mealDate: { gte: startOfDay, lt: endOfDay } },
+          select: { id: true }
+        });
+
+        if (existingMeals.length > 0) {
+          const mealIds = existingMeals.map(m => m.id);
+          await tx.mealFoodItem.deleteMany({ where: { mealId: { in: mealIds } } });
+          await tx.meal.deleteMany({ where: { id: { in: mealIds } } });
         }
-      },
-      create: {
-        id, // ID Client gửi lên
-        userId,
-        equipmentType,
-        workoutStartTime: new Date(workoutStartTime),
-        totalDistanceKm: totalDistanceKm ? String(totalDistanceKm) : null,
-        pauseDuration: pauseDuration ? Number(pauseDuration) : 0,
-        fatigueLevel: fatigueNumber,
-        waterConsumedMl: waterConsumedMl ? Number(waterConsumedMl) : 0,
-        notes: notes || '',
-        activeTime: activeTime ? Number(activeTime) : 0,
-        calories: calories ? String(calories) : "0",
-        workoutPhases: { create: phasesData },
-      },
-      include: {
-        workoutPhases: true,
-      },
-    });
 
-    // Lấy thêm thông tin meals và bodyMetrics của ngày hôm đó để trả về response cho client nếu cần
-    const savedMeals = await prisma.meal.findMany({
-      where: { userId: userId, mealDate: metricDateOnly },
-      include: { foodItems: true }
-    });
-
-    const savedBodyMetric = await prisma.bodyMetric.findUnique({
-      where: {
-        userId_metricDate: {
-          userId: userId,
-          metricDate: metricDateOnly
+        for (const m of meals) {
+          await tx.meal.create({
+            data: {
+              id: crypto.randomUUID(),
+              userId,
+              mealDate: metricDateOnly,
+              category: m.category || 'Khác',
+              mealTime: m.mealTime || new Date().toLocaleTimeString(),
+              totalCalories: m.totalCalories ? String(m.totalCalories) : "0",
+              foodItems: {
+                create: m.foodItems ? m.foodItems.map((item) => ({
+                  id: crypto.randomUUID(),
+                  foodName: item.foodName,
+                  grams: String(item.grams || 0),
+                  calories: String(item.calories || 0),
+                })) : []
+              }
+            }
+          });
         }
       }
+
+      // 3. Upsert Workout & Phases
+      const workout = await tx.workout.upsert({
+        where: { id },
+        update: {
+          equipmentType,
+          workoutStartTime: new Date(workoutStartTime),
+          totalDistanceKm: totalDistanceKm ? String(totalDistanceKm) : null,
+          pauseDuration: pauseDuration ? Number(pauseDuration) : 0,
+          fatigueLevel: fatigueNumber,
+          waterConsumedMl: waterConsumedMl ? Number(waterConsumedMl) : 0,
+          notes: notes || '',
+          activeTime: activeTime ? Number(activeTime) : 0,
+          calories: calories ? String(calories) : "0",
+          workoutPhases: {
+            deleteMany: {},
+            create: phasesData
+          }
+        },
+        create: {
+          id,
+          userId,
+          equipmentType,
+          workoutStartTime: new Date(workoutStartTime),
+          totalDistanceKm: totalDistanceKm ? String(totalDistanceKm) : null,
+          pauseDuration: pauseDuration ? Number(pauseDuration) : 0,
+          fatigueLevel: fatigueNumber,
+          waterConsumedMl: waterConsumedMl ? Number(waterConsumedMl) : 0,
+          notes: notes || '',
+          activeTime: activeTime ? Number(activeTime) : 0,
+          calories: calories ? String(calories) : "0",
+          workoutPhases: { create: phasesData },
+        },
+        include: { workoutPhases: true },
+      });
+
+      // Lấy dữ liệu trả về trong cùng transaction
+      const savedMeals = await tx.meal.findMany({
+        where: { userId, mealDate: metricDateOnly },
+        include: { foodItems: true }
+      });
+
+      const savedBodyMetric = await tx.bodyMetric.findUnique({
+        where: { userId_metricDate: { userId, metricDate: metricDateOnly } }
+      });
+
+      return { workout, savedMeals, savedBodyMetric };
     });
 
     return res.status(200).json({ 
       message: 'Lưu buổi tập và thông số ngày thành công!', 
-      workout,
-      meals: savedMeals,
-      bodyMetric: savedBodyMetric
+      workout: result.workout,
+      meals: result.savedMeals,
+      bodyMetric: result.savedBodyMetric
     });
 
   } catch (error) {
-    console.error('Error creating workout:', error);
+    console.error('Error creating workout (Transaction failed):', error);
     return res.status(500).json({ message: 'Lỗi server khi lưu buổi tập', error: error.message });
   }
 };

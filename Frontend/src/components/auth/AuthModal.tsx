@@ -12,7 +12,7 @@ import {
   User,
   Sparkles
 } from 'lucide-react';
-import { requestPasswordReset, verifyAndResetPassword } from '../../services/auth/forgotPasswordService';
+import { requestPasswordReset, verifyAndResetPassword } from '../../services/auth';
 import { UserAccount } from '../../types';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
@@ -47,48 +47,41 @@ export default function AuthModal({
 
 
   if (!isOpen) return null;
-  // Gửi yêu cầu lấy OTP
-  // Gửi yêu cầu lấy OTP
+
   const handleRequestOtp = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
-    try {
-      const res: any = await requestPasswordReset(forgotEmail);
-      if (res.success) {
-        setGeneratedOtpDisplay(res.otp); // Hiển thị OTP lên màn hình cho tiện test
-        setResetOtp(res.otp); // 👈 Tự động điền luôn vào ô input bước 2
-        setStepForgot('verify'); // Chuyển sang bước nhập OTP & mật khẩu mới
-        setSuccessMsg('Đã tạo mã OTP thành công!');
-      }
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || err.message || 'Không tìm thấy tài khoản hoặc có lỗi xảy ra.');
-    } finally {
-      setLoading(false);
+    setLoading(true);
+
+    const res = await requestPasswordReset(forgotEmail);
+    setLoading(false);
+    if (res.success && res.otp) {
+      setGeneratedOtpDisplay(res.otp);
+      setResetOtp(res.otp); // prefill for easy instant testing
+      setStepForgot('verify');
+      setSuccessMsg(`Mã xác thực OTP bảo mật đã được tạo: ${res.otp}`);
+    } else {
+      setErrorMsg(res.error || 'Không tìm thấy tài khoản');
     }
   };
 
-  // Gửi yêu cầu đổi mật khẩu mới
   const handleResetPassword = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg(null);
-    setSuccessMsg(null);
-    try {
-      const res = await verifyAndResetPassword(forgotEmail, resetOtp, newPassword);
-      if (res.success) {
-        alert('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
-        setMode('login'); // Quay về màn hình đăng nhập
+    setLoading(true);
+
+    const res = await verifyAndResetPassword(forgotEmail, resetOtp, newPassword);
+    setLoading(false);
+    if (res.success) {
+      setSuccessMsg('Đặt lại mật khẩu thành công! Hãy đăng nhập với mật khẩu mới.');
+      setTimeout(() => {
+        setMode('login');
         setStepForgot('request');
-        setResetOtp('');
-        setNewPassword('');
-        setGeneratedOtpDisplay(null);
-      }
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.error || err.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.');
-    } finally {
-      setLoading(false);
+        setSuccessMsg(null);
+      }, 1200);
+    } else {
+      setErrorMsg(res.error || 'Xác thực OTP thất bại');
     }
   };
 
@@ -117,9 +110,9 @@ export default function AuthModal({
             {mode === 'forgot' && 'Khôi Phục Mật Khẩu'}
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            {mode === 'login' && 'Quản lý lịch sử tập luyện và tiến trình giảm mỡ của bạn'}
-            {mode === 'register' && 'Bắt đầu hành trình siết cơ bụng và đốt mỡ'}
-            {mode === 'forgot' && 'Nhập email để nhận mã xác thực mật khẩu mới'}
+            {mode === 'login' && 'Quản lý lịch sử tập luyện & tiến trình giảm mỡ của bạn'}
+            {mode === 'register' && 'Bắt đầu hành trình siết cơ bụng và đốt mỡ Zone 2'}
+            {mode === 'forgot' && 'Nhập email để nhận mã xác thực đổi mật khẩu'}
           </p>
         </div>
 
@@ -197,13 +190,12 @@ export default function AuthModal({
                     />
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Hệ thống sẽ tạo mã OTP xác minh an toàn để cấp mật khẩu mới.
+                    Hệ thống sẽ tạo mã OTP xác minh an toàn để bạn đổi lại mật khẩu.
                   </p>
                 </div>
 
                 <button
                   type="submit"
-                  
                   className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs shadow-md active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <KeyRound size={15} />

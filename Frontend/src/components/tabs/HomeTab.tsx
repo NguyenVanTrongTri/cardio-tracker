@@ -430,10 +430,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           setPauseDuration={setPauseDuration}
         />
 
-
-
         <LiveWorkoutMetrics liveTotals={liveTotals} equipmentDef={equipmentDef} />
-
         <PostWorkoutAssessment
           fatigueLevel={fatigueLevel}
           setFatigueLevel={setFatigueLevel}

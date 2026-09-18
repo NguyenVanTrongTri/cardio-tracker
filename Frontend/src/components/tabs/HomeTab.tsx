@@ -625,7 +625,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                   onClick={applyEquipmentDefaults}
                   className="mt-2 px-3 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg shadow-2xs flex items-center gap-1.5 transition-all"
                 >
-                  💡 Gợi ý thông số mặc định
+                  💡 Gợi ý
                 </button>
               </div>
               <span className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md self-start">

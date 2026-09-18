@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Activity,
   TrendingUp,
@@ -84,12 +84,12 @@ export default function App() {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
-    setIsAdminPortalActive(false);
-    setActiveTab('home');
-  };
+  const handleLogout = useCallback(() => {
+  logout();
+  setShowUserMenu(false);
+  setIsAdminPortalActive(false);
+  setActiveTab('home');
+}, [logout]); // Thêm các dependencies thực sự cần thiết của hàm logout
 
   // Click Outside cho User Menu
   useEffect(() => {
@@ -123,62 +123,64 @@ export default function App() {
     };
   }, [showNotifications]);
   // Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
-  useEffect(() => {
-    if (!currentUser) return;
+  // Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
+useEffect(() => {
+  if (!currentUser) return; // Nếu không có user thì bỏ qua luôn
 
-    const raw = localStorage.getItem('cardio_session_v2');
-    if (!raw) return;
-    
-    let session: AuthSession;
-    try {
-      session = JSON.parse(raw);
-    } catch {
-      return;
-    }
+  const raw = localStorage.getItem('cardio_session_v2');
+  if (!raw) return;
+  
+  let session: AuthSession;
+  try {
+    session = JSON.parse(raw);
+  } catch {
+    return;
+  }
 
-    if (!session.expiresAt) return;
+  if (!session.expiresAt) return;
 
-    // 1. Chuẩn hóa thời gian hết hạn (token expiry)
-    let expiryTime = Number(session.expiresAt);
-    if (expiryTime < 10000000000) {
-      expiryTime *= 1000;
-    }
+  let expiryTime = Number(session.expiresAt);
+  if (expiryTime < 10000000000) {
+    expiryTime *= 1000;
+  }
 
-    const timeLeft = expiryTime - Date.now();
+  const timeLeft = expiryTime - Date.now();
 
-    // Thiết lập timer cho Token Expiry
-    const absoluteTimer = setTimeout(() => {
+  const absoluteTimer = setTimeout(() => {
+    // Kiểm tra xem hiện tại còn user không rồi mới gọi logout
+    if (currentUser) {
       handleLogout();
-    }, Math.max(timeLeft, 0));
+    }
+  }, Math.max(timeLeft, 0));
 
-    // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
-    const IDLE_TIMEOUT_MS = 5 * 1000;
-    let idleTimer: NodeJS.Timeout;
+  const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+  let idleTimer: NodeJS.Timeout;
 
-    const handleUserActivity = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
+  const handleUserActivity = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (currentUser) {
         handleLogout();
-      }, IDLE_TIMEOUT_MS);
-    };
+      }
+    }, IDLE_TIMEOUT_MS);
+  };
 
-    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-    
+  const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+  
+  activityEvents.forEach((event) => {
+    window.addEventListener(event, handleUserActivity);
+  });
+
+  handleUserActivity();
+
+  return () => {
+    clearTimeout(absoluteTimer);
+    clearTimeout(idleTimer);
     activityEvents.forEach((event) => {
-      window.addEventListener(event, handleUserActivity);
+      window.removeEventListener(event, handleUserActivity);
     });
-
-    handleUserActivity();
-
-    // Dọn dẹp khi component unmount hoặc khi user thay đổi
-    return () => {
-      clearTimeout(absoluteTimer);
-      clearTimeout(idleTimer);
-      activityEvents.forEach((event) => {
-        window.removeEventListener(event, handleUserActivity);
-      });
-    };
-  }, [currentUser]);
+  };
+}, [currentUser, handleLogout]); // Thêm handleLogout vào dependency
 
 
   const handleWorkoutSaved = () => {

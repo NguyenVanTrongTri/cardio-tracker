@@ -42,6 +42,7 @@ import { WorkoutBanner } from './HomeTab/WorkoutBanner';
 import MealSection, { MEAL_CATEGORIES } from './HomeTab/MealSection';
 import { getEquipmentIcon } from './HomeTab/utils';
 import { renderParam1Field, renderParam2Field, renderDurationField, renderDistanceField } from './HomeTab/PhaseControls';
+import WorkoutPhasesSection from './HomeTab/WorkoutPhasesSection';
 import { useWorkoutForm } from '../../hooks/useWorkoutForm';
 
 interface HomeTabProps {
@@ -124,23 +125,6 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   }, [phases]);
 
   // Map of segment distances by phase index or role for PhaseControls
-  const phaseDistances = useMemo(() => {
-    // Return segment distances corresponding to each phase in the form
-    // [phase1, phase2, phase2Relief?, phase2Surge?, phase3]
-    const p1 = phasesWithCumulative.find((p) => p.phaseNumber === 1)?.segmentDistanceKm;
-    const p2Main = phasesWithCumulative.find((p) => p.phaseNumber === 2 && (!p.subType || p.subType === 'MAIN'))?.segmentDistanceKm;
-    const p2Relief = phasesWithCumulative.find((p) => p.subType === 'RELIEF')?.segmentDistanceKm;
-    const p2Surge = phasesWithCumulative.find((p) => p.subType === 'SURGE')?.segmentDistanceKm;
-    const p3 = phasesWithCumulative.find((p) => p.phaseNumber === 3)?.segmentDistanceKm;
-
-    return {
-      phase1: p1,
-      phase2: p2Main,
-      phase2Relief: p2Relief,
-      phase2Surge: p2Surge,
-      phase3: p3,
-    };
-  }, [phasesWithCumulative]);
 
   useEffect(() => {
     if (!isInitialized.current) {
@@ -208,6 +192,24 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const liveTotals = useMemo(() => {
     return calculateWorkoutTotals(phases, pauseDuration, weightKg, equipmentType);
   }, [phases, pauseDuration, weightKg, equipmentType]);
+
+  const phaseDistances = useMemo(() => {
+    // Return segment distances corresponding to each phase in the form
+    // [phase1, phase2, phase2Relief?, phase2Surge?, phase3]
+    const p1 = phasesWithCumulative.find((p) => p.phaseNumber === 1)?.segmentDistanceKm;
+    const p2Main = phasesWithCumulative.find((p) => p.phaseNumber === 2 && (!p.subType || p.subType === 'MAIN'))?.segmentDistanceKm;
+    const p2Relief = phasesWithCumulative.find((p) => p.subType === 'RELIEF')?.segmentDistanceKm;
+    const p2Surge = phasesWithCumulative.find((p) => p.subType === 'SURGE')?.segmentDistanceKm;
+    const p3 = phasesWithCumulative.find((p) => p.phaseNumber === 3)?.segmentDistanceKm;
+
+    return {
+      phase1: p1 || 0,
+      phase2: p2Main || 0,
+      phase2Relief: p2Relief || 0,
+      phase2Surge: p2Surge || 0,
+      phase3: p3 || 0,
+    };
+  }, [phasesWithCumulative]);
 
   // Tính toán xem dữ liệu có thay đổi so với bản nháp gần nhất không
   const isDirty = useMemo(() => {
@@ -482,330 +484,28 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           </div>
         </div>
 
-        {/* 3-PHASE WORKOUT SECTION WITH WORKOUT MODALITY SELECTOR */}
-        <div className="space-y-3">
-          {/* Header with Workout Modality Button */}
-          <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-2.5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Activity size={17} className="text-emerald-600" />
-                <span>Chi Tiết 3 Giai Đoạn Tập</span>
-              </h3>
+        <WorkoutPhasesSection
+          equipmentType={equipmentType}
+          equipmentDef={equipmentDef}
+          enabledEquipmentList={enabledEquipmentList}
+          phase1={phase1} setPhase1={setPhase1}
+          phase2={phase2} setPhase2={setPhase2}
+          phase3={phase3} setPhase3={setPhase3}
+          isIntervalMode={isIntervalMode} setIsIntervalMode={setIsIntervalMode}
+          enableRelief={enableRelief} setEnableRelief={setEnableRelief}
+          enableSurge={enableSurge} setEnableSurge={setEnableSurge}
+          phase2Relief={phase2Relief} setPhase2Relief={setPhase2Relief}
+          phase2Surge={phase2Surge} setPhase2Surge={setPhase2Surge}
+          phaseDistances={phaseDistances}
+          handleSelectEquipment={handleSelectEquipment}
+          setIsEquipmentModalOpen={setIsEquipmentModalOpen}
+          applyEquipmentDefaults={applyEquipmentDefaults}
+          liveTotals={liveTotals}
+          pauseDuration={pauseDuration}
+          setPauseDuration={setPauseDuration}
+        />
 
-              {/* Nút Lựa Chọn Hình Thức Tập Luyện (Button to Choose Modality) */}
-              <button
-                type="button"
-                onClick={() => setIsEquipmentModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
-                title="Bấm để thay đổi hình thức tập luyện"
-              >
-                <SlidersHorizontal size={13} className="text-emerald-400" />
-                <span>Đổi Hình Thức</span>
-              </button>
-            </div>
 
-            {/* Quick Horizontal Modality Pills Bar */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
-              {enabledEquipmentList.map((item) => {
-                const isSelected = item.id === equipmentType;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleSelectEquipment(item.id)}
-                    className={`shrink-0 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer select-none ${
-                      isSelected
-                        ? 'bg-emerald-600 text-white shadow-xs scale-[1.02]'
-                        : 'bg-slate-100 hover:bg-slate-200/80 text-slate-600 border border-slate-200/60'
-                    }`}
-                  >
-                    {getEquipmentIcon(item.id, 14)}
-                    <span>{item.shortName}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Active Modality Description Banner */}
-            <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/60 flex items-start justify-between gap-2">
-              <div className="text-xs">
-                <span className="font-extrabold text-slate-800 block">
-                  Đang chọn: {equipmentDef.name}
-                </span>
-                <span className="text-slate-500 text-[11px] block mt-0.5">
-                  {equipmentDef.description}
-                </span>
-                <button
-                  type="button"
-                  onClick={applyEquipmentDefaults}
-                  className="mt-2 px-3 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg shadow-2xs flex items-center gap-1.5 transition-all"
-                >
-                  💡 Gợi ý thông số mặc định
-                </button>
-              </div>
-              <span className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md self-start">
-                {equipmentDef.tag}
-              </span>
-            </div>
-            {/* Phase 1: Warm-up */}
-          <div className="bg-white p-4 rounded-2xl border border-amber-200/60 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center justify-center">
-                  1
-                </span>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Giai đoạn 1: Warm-up (Khởi động)
-                </h4>
-              </div>
-              <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-medium">
-                Kích hoạt khớp & tim mạch
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {renderDurationField({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
-              {renderParam1Field({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
-              {renderParam2Field({ phase: phase1, setPhase: setPhase1, equipmentDef, colorRing: 'focus:ring-amber-500/20' })}
-              {renderDistanceField({ 
-                phase: phase1, 
-                setPhase: setPhase1, 
-                equipmentDef, 
-                colorRing: 'focus:ring-amber-500/20',
-                phaseDistance: phaseDistances.phase1
-              })}
-            </div>
-          </div>
-
-          {/* Phase 2: Fat Burn (Trọng tâm) */}
-          <div className="bg-gradient-to-b from-emerald-50/70 to-white p-4.5 rounded-2xl border-2 border-emerald-500 shadow-md relative overflow-hidden">
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-extrabold flex items-center justify-center shadow-xs">
-                  2
-                </span>
-                <div>
-                  <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                    Giai đoạn 2: Fat Burn (Đốt Mỡ)
-                    <Flame size={16} className="text-orange-500 fill-orange-500" />
-                  </h4>
-                  <p className="text-xs text-emerald-800">
-                    Trọng tâm Zone 2 • Tối ưu chuyển hóa mỡ thừa
-                  </p>
-                </div>
-              </div>
-
-              {liveTotals.isZone2 ? (
-                <span className="bg-emerald-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-xs flex items-center gap-1">
-                  <CheckCircle2 size={13} />
-                  Chuẩn Zone 2
-                </span>
-              ) : (
-                <span className="text-xs text-slate-500 bg-white/80 border border-slate-200 px-2 py-0.5 rounded-md font-mono">
-                  {equipmentDef.zone2Criteria}
-                </span>
-              )}
-            </div>
-
-            {/* Standard Phase 2 View (Single Phase) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3.5">
-              {renderDurationField({
-                phase: phase2,
-                setPhase: setPhase2,
-                min: 5,
-                max: 60,
-                className:
-                  'w-full bg-white border-2 border-emerald-300 rounded-xl px-2.5 py-2.5 text-center text-base font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30',
-              })}
-
-              {renderParam1Field({ phase: phase2, setPhase: setPhase2, equipmentDef, colorRing: 'focus:ring-emerald-500/30' })}
-              {renderParam2Field({ phase: phase2, setPhase: setPhase2, equipmentDef, colorRing: 'focus:ring-emerald-500/30' })}
-              {renderDistanceField({
-                phase: phase2,
-                setPhase: setPhase2,
-                equipmentDef,
-                colorRing: 'focus:ring-emerald-500/30',
-                className:
-                  'w-full bg-white border-2 border-emerald-300 rounded-xl px-2.5 py-2.5 text-center text-base font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30',
-                phaseDistance: phaseDistances.phase2
-              })}
-            </div>
-
-            {/* Core Focus / Engagement Toggle tailored for current equipment */}
-            <div className="bg-white/90 p-3.5 rounded-xl border border-emerald-200/90 flex items-center justify-between gap-2">
-              <div className="pr-2">
-                <div className="flex items-center gap-2">
-                  <Zap
-                    size={16}
-                    className={
-                      phase2.isCoreEngaged
-                        ? 'text-amber-500 fill-amber-500'
-                        : 'text-slate-400'
-                    }
-                  />
-                  <span className="text-xs font-bold text-slate-800">
-                    {equipmentDef.coreFocus.label}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                  {equipmentDef.coreFocus.description}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setPhase2({ ...phase2, isCoreEngaged: !phase2.isCoreEngaged })
-                }
-                className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  phase2.isCoreEngaged ? 'bg-emerald-600' : 'bg-slate-300'
-                }`}
-                aria-label="Toggle Core Engagement"
-              >
-                <span
-                  className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                    phase2.isCoreEngaged ? 'translate-x-6' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Nút nhỏ Tạo nhịp phụ ngay dưới Siết Cơ Bụng */}
-            <div className="mt-2.5 pt-2 border-t border-emerald-100 flex items-center justify-between">
-              <span className="text-[11px] text-slate-500">
-                {isIntervalMode ? 'Đang mở nhịp xả & bứt tốc' : 'Cần xả nhịp hay bứt tốc đợt 2?'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsIntervalMode(!isIntervalMode)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
-                  isIntervalMode
-                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
-                    : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50 shadow-2xs'
-                }`}
-              >
-                <SlidersHorizontal size={12} />
-                <span>{isIntervalMode ? 'Ẩn nhịp phụ' : '+ Tạo nhịp phụ'}</span>
-              </button>
-            </div>
-
-            {/* Khối Nhịp Phụ Tùy Chọn khi người dùng bấm "+ Tạo nhịp phụ" */}
-            {isIntervalMode && (
-              <div className="space-y-3 mt-3 pt-3 border-t border-emerald-200/80">
-                {/* Sub-block 1: Relief Phase (Nhịp xả bớt mệt) */}
-                <div className="bg-sky-50/70 p-3 rounded-xl border border-sky-200 shadow-2xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Wind size={14} className="text-sky-600" />
-                      <span className="text-xs font-bold text-slate-900">
-                        Nhịp xả bớt mệt (Hạ dốc 0°)
-                      </span>
-                    </div>
-                    <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={enableRelief}
-                        onChange={(e) => setEnableRelief(e.target.checked)}
-                        className="rounded text-sky-600 focus:ring-sky-500 w-3.5 h-3.5 cursor-pointer"
-                      />
-                      <span className="text-[11px] font-bold text-sky-900">Bật</span>
-                    </label>
-                  </div>
-                  {enableRelief ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {renderDurationField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
-                      {renderParam1Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
-                      {renderParam2Field({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30' })}
-                      {renderDistanceField({ phase: phase2Relief, setPhase: setPhase2Relief, equipmentDef, colorRing: 'focus:ring-sky-500/30', phaseDistance: phaseDistances.phase2Relief })}
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-400 italic">Đã tắt nhịp xả này.</p>
-                  )}
-                </div>
-
-                {/* Sub-block 2: Surge Phase (Bứt tốc / Leo dốc đợt 2) */}
-                <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200 shadow-2xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Flame size={14} className="text-orange-500" />
-                      <span className="text-xs font-bold text-slate-900">
-                        Bứt tốc / Leo dốc đợt 2 (Surge)
-                      </span>
-                    </div>
-                    <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={enableSurge}
-                        onChange={(e) => setEnableSurge(e.target.checked)}
-                        className="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer"
-                      />
-                      <span className="text-[11px] font-bold text-amber-900">Bật</span>
-                    </label>
-                  </div>
-                  {enableSurge ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {renderDurationField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
-                      {renderParam1Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
-                      {renderParam2Field({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30' })}
-                      {renderDistanceField({ phase: phase2Surge, setPhase: setPhase2Surge, equipmentDef, colorRing: 'focus:ring-amber-500/30', phaseDistance: phaseDistances.phase2Surge })}
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-400 italic">Đã tắt nhịp bứt tốc này.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Phase 3: Cool-down */}
-          <div className="bg-white p-4 rounded-2xl border border-sky-200/70 shadow-xs">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-800 text-xs font-bold flex items-center justify-center">
-                  3
-                </span>
-                <h4 className="text-sm font-bold text-slate-800">
-                  Giai đoạn 3: Cool-down (Hạ nhiệt)
-                </h4>
-              </div>
-              <span className="text-xs text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md font-medium">
-                Hạ nhịp tim an toàn
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {renderDurationField({
-                phase: phase3,
-                setPhase: setPhase3,
-                min: 1,
-                max: 20,
-                colorRing: 'focus:ring-sky-500/20',
-              })}
-
-              {renderParam1Field({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20' })}
-              {renderParam2Field({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20' })}
-              {renderDistanceField({ phase: phase3, setPhase: setPhase3, equipmentDef, colorRing: 'focus:ring-sky-500/20', phaseDistance: phaseDistances.phase3 })}
-            </div>
-          </div>
-
-          {/* Pause duration */}
-          <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">
-              Thời gian tạm dừng trong buổi (Pause, phút)
-            </span>
-            <div className="w-24">
-              <input
-                type="number"
-                min="0"
-                max="20"
-                value={pauseDuration}
-                onChange={(e) => setPauseDuration(Number(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-center text-sm font-bold text-slate-800 focus:outline-none"
-              />
-            </div>
-          </div>
-          </div>
-        </div>
 
         {/* Live Calculation Metric Bar */}
         <div className="bg-slate-900 text-white p-4.5 rounded-3xl shadow-xl space-y-3.5 border border-slate-800">

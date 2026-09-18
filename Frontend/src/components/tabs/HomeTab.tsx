@@ -352,6 +352,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       if (!response.ok) {
         throw new Error(data.message || `Lỗi server HTTP ${response.status}`);
       }
+      localStorage.removeItem('workout_draft');
 
       // Thông báo thành công
       onAddNotification?.(

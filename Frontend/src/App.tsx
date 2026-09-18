@@ -140,15 +140,6 @@ useEffect(() => {
     }
 
     const timeLeft = expiryTime - Date.now();
-
-    if (timeLeft <= 0) {
-      handleLogout();
-      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
-      return;
-    }
-
-   
-
     // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
     const IDLE_TIMEOUT_MS = 5 * 1000; // 15 phút
     let idleTimer: NodeJS.Timeout;
@@ -159,7 +150,7 @@ useEffect(() => {
 
       idleTimer = setTimeout(() => {
         handleLogout();
-        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
+        alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
       }, IDLE_TIMEOUT_MS);
     };
 

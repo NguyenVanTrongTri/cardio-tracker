@@ -239,13 +239,33 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const handleSelectEquipment = (newType: EquipmentType) => {
     setEquipmentType(newType);
     
-    // Reset to "empty" state (or initial state with 0 values)
+    // Reset to "empty" state with 0 values
     setPhase1({ phaseNumber: 1, name: 'Warm-up', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
     setPhase2({ phaseNumber: 2, name: 'Fat Burn', durationMinutes: 0, speedKmh: 0, inclineDegree: 0, isCoreEngaged: false });
     setPhase3({ phaseNumber: 3, name: 'Cool-down', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
     
-    setPhase2Relief((prev) => ({ ...prev, durationMinutes: 0, speedKmh: 0, inclineDegree: 0, distanceKm: 0, resistanceLevel: 0, cadenceRpm: 0, strokeRateSpm: 0, stepsPerMin: 0 }));
-    setPhase2Surge((prev) => ({ ...prev, durationMinutes: 0, speedKmh: 0, inclineDegree: 0, distanceKm: 0, resistanceLevel: 0, cadenceRpm: 0, strokeRateSpm: 0, stepsPerMin: 0 }));
+    setPhase2Relief((prev) => ({ 
+      ...prev, 
+      durationMinutes: 0, 
+      speedKmh: 0, 
+      inclineDegree: 0, 
+      distanceKm: 0, 
+      resistanceLevel: 0, 
+      cadenceRpm: 0, 
+      strokeRateSpm: 0, 
+      stepsPerMin: 0 
+    }));
+    setPhase2Surge((prev) => ({ 
+      ...prev, 
+      durationMinutes: 0, 
+      speedKmh: 0, 
+      inclineDegree: 0, 
+      distanceKm: 0, 
+      resistanceLevel: 0, 
+      cadenceRpm: 0, 
+      strokeRateSpm: 0, 
+      stepsPerMin: 0 
+    }));
   };
 
   // Populate equipment defaults

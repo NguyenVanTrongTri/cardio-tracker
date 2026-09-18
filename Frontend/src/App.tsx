@@ -440,7 +440,7 @@ export default function App() {
                     className="w-full flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors text-left"
                   >
                     <User size={14} className="text-slate-500" />
-                    <span>Hồ sơ & Mục tiêu eo</span>
+                    <span>Hồ sơ & Mục tiêu eo1</span>
                   </button>
 
                   <button
@@ -451,7 +451,7 @@ export default function App() {
                     className="w-full flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors text-left"
                   >
                     <KeyRound size={14} className="text-indigo-600" />
-                    <span>Đổi Mật Khẩu</span>
+                    <span>Đổi Mật Khẩu1</span>
                   </button>
 
                   <div className="border-t border-slate-100 my-1 pt-1">

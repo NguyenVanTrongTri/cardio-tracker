@@ -140,32 +140,41 @@ useEffect(() => {
     }
 
     const timeLeft = expiryTime - Date.now();
-    // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
-    const IDLE_TIMEOUT_MS = 5 * 1000; // 15 phút
+
+    if (timeLeft <= 0) {
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    // 👉 Khai báo biến absoluteTimer ở đây
+    const absoluteTimer = setTimeout(() => {
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+    }, timeLeft);
+
+    // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // Đổi lại 15 phút sau khi test xong
     let idleTimer: NodeJS.Timeout;
 
     const handleUserActivity = () => {
-      // Mỗi khi người dùng có hành động (chuột, phím, chạm), reset lại bộ đếm idle
       if (idleTimer) clearTimeout(idleTimer);
 
       idleTimer = setTimeout(() => {
         handleLogout();
-        alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
       }, IDLE_TIMEOUT_MS);
     };
 
-    // Danh sách các sự kiện ghi nhận hoạt động người dùng
     const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
     
-    // Đăng ký lắng nghe sự kiện
     activityEvents.forEach((event) => {
       window.addEventListener(event, handleUserActivity);
     });
 
-    // Khởi chạy bộ đếm idle lần đầu khi load component
     handleUserActivity();
 
-    // Dọn dẹp sạch sẽ toàn bộ timer và event listener khi component unmount hoặc logout
+    // Dọn dẹp sạch sẽ
     return () => {
       clearTimeout(absoluteTimer);
       if (idleTimer) clearTimeout(idleTimer);

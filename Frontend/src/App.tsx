@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Activity,
   TrendingUp,
@@ -27,7 +27,7 @@ import ChangePasswordModal from './components/auth/ChangePasswordModal';
 import LandingPage from './components/landing/LandingPage';
 import AdminPortal from './admin/AdminPortal';
 import { getCurrentUser, logout, subscribeAuth } from './services/auth';
-import { UserAccount, AuthSession } from './types';
+import { UserAccount } from './types';
 
 // Kiểu dữ liệu cho Thông báo
 interface AppNotification {
@@ -84,13 +84,6 @@ export default function App() {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const handleLogout = useCallback(() => {
-  logout();
-  setShowUserMenu(false);
-  setIsAdminPortalActive(false);
-  setActiveTab('home');
-}, [logout]); // Thêm các dependencies thực sự cần thiết của hàm logout
-
   // Click Outside cho User Menu
   useEffect(() => {
     const handleClickOutsideMenu = (event: MouseEvent) => {
@@ -122,66 +115,14 @@ export default function App() {
       document.removeEventListener('mousedown', handleClickOutsideNotif);
     };
   }, [showNotifications]);
-  // Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
-  // Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
-useEffect(() => {
-  if (!currentUser) return; // Nếu không có user thì bỏ qua luôn
 
-  const raw = localStorage.getItem('cardio_session_v2');
-  if (!raw) return;
-  
-  let session: AuthSession;
-  try {
-    session = JSON.parse(raw);
-  } catch {
-    return;
-  }
-
-  if (!session.expiresAt) return;
-
-  let expiryTime = Number(session.expiresAt);
-  if (expiryTime < 10000000000) {
-    expiryTime *= 1000;
-  }
-
-  const timeLeft = expiryTime - Date.now();
-
-  const absoluteTimer = setTimeout(() => {
-    // Kiểm tra xem hiện tại còn user không rồi mới gọi logout
-    if (currentUser) {
-      handleLogout();
-    }
-  }, Math.max(timeLeft, 0));
-
-  const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
-  let idleTimer: NodeJS.Timeout;
-
-  const handleUserActivity = () => {
-    if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-      if (currentUser) {
-        handleLogout();
-      }
-    }, IDLE_TIMEOUT_MS);
-  };
-
-  const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-  
-  activityEvents.forEach((event) => {
-    window.addEventListener(event, handleUserActivity);
-  });
-
-  handleUserActivity();
-
-  return () => {
-    clearTimeout(absoluteTimer);
-    clearTimeout(idleTimer);
-    activityEvents.forEach((event) => {
-      window.removeEventListener(event, handleUserActivity);
+  useEffect(() => {
+    const unsubscribe = subscribeAuth((user) => {
+      setCurrentUser(user);
+      setDataRefreshKey((k) => k + 1);
     });
-  };
-}, [currentUser, handleLogout]); // Thêm handleLogout vào dependency
-
+    return unsubscribe;
+  }, []);
 
   const handleWorkoutSaved = () => {
     setDataRefreshKey((prev) => prev + 1);
@@ -194,7 +135,12 @@ useEffect(() => {
     setShowUserMenu(false);
   };
 
-  
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    setIsAdminPortalActive(false);
+    setActiveTab('home');
+  };
 
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));

@@ -170,7 +170,6 @@ export default function App() {
 
     // Dọn dẹp khi component unmount hoặc khi user thay đổi
     return () => {
-      clearTimeout(absoluteTimer);
       clearTimeout(idleTimer);
       activityEvents.forEach((event) => {
         window.removeEventListener(event, handleUserActivity);

@@ -186,10 +186,36 @@ export async function register(data: {
   }
 }
 
-export function logout(): void {
-  localStorage.removeItem(SESSION_STORAGE_KEY);
-  localStorage.setItem('cardio_explicit_logout', 'true');
-  notifyListeners(null);
+export function logout(isAutoLogout: boolean = false): void {
+  try {
+    // 1. Dọn dẹp toàn bộ các dấu vết phiên đăng nhập trong localStorage
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem('cardio_user');
+    localStorage.removeItem('token');
+    
+    // 2. Xử lý cờ đánh dấu
+    if (isAutoLogout) {
+      // Nếu là tự động đăng xuất (hết hạn / timeout), xóa cờ explicit logout
+      localStorage.removeItem('cardio_explicit_logout');
+    } else {
+      // Nếu là người dùng chủ động bấm nút đăng xuất
+      localStorage.setItem('cardio_explicit_logout', 'true');
+    }
+
+    // 3. Bắn thông báo cập nhật State toàn cục cho các component đang lắng nghe
+    if (typeof notifyListeners === 'function') {
+      notifyListeners(null);
+    }
+
+    // 4. Kích hoạt sự kiện storage để đồng bộ hóa đóng phiên ở các tab trình duyệt khác
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: SESSION_STORAGE_KEY,
+      newValue: null
+    }));
+
+  } catch (error) {
+    console.error('Lỗi trong quá trình xử lý đăng xuất:', error);
+  }
 }
 
 export function changePassword(

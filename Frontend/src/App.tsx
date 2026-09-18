@@ -125,36 +125,44 @@ export default function App() {
   }, []);
 
   // Auto-logout logic
-useEffect(() => {
+  useEffect(() => {
     if (!currentUser) return;
 
     const raw = localStorage.getItem('cardio_session_v2');
     if (!raw) return;
     
-    const session: AuthSession = JSON.parse(raw);
-    
-    // 👉 1. Xử lý thời hạn tuyệt đối của Token (Token Expiry)
-    let expiryTime = session.expiresAt;
-    if (expiryTime && expiryTime < 10000000000) {
+    let session: AuthSession;
+    try {
+      session = JSON.parse(raw);
+    } catch {
+      return;
+    }
+
+    if (!session.expiresAt) return;
+
+    // 👉 Chuẩn hóa: Nếu expiresAt là dạng giây (nhỏ hơn 10 tỷ), đổi sang mili-giây
+    let expiryTime = Number(session.expiresAt);
+    if (expiryTime < 10000000000) {
       expiryTime *= 1000;
     }
 
     const timeLeft = expiryTime - Date.now();
 
+    // 🛑 KIỂM TRA AN TOÀN: Nếu thời gian còn lại <= 0 thì mới logout
     if (timeLeft <= 0) {
+      console.warn("Token đã hết hạn, tiến hành đăng xuất.");
       handleLogout();
       alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
       return;
     }
 
-    // 👉 Khai báo biến absoluteTimer ở đây
     const absoluteTimer = setTimeout(() => {
       handleLogout();
       alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
     }, timeLeft);
 
     // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout)
-    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // Đổi lại 15 phút sau khi test xong
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
     let idleTimer: NodeJS.Timeout;
 
     const handleUserActivity = () => {
@@ -174,7 +182,6 @@ useEffect(() => {
 
     handleUserActivity();
 
-    // Dọn dẹp sạch sẽ
     return () => {
       clearTimeout(absoluteTimer);
       if (idleTimer) clearTimeout(idleTimer);

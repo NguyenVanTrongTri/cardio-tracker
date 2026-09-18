@@ -84,6 +84,13 @@ export default function App() {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    setIsAdminPortalActive(false);
+    setActiveTab('home');
+  };
+
   // Click Outside cho User Menu
   useEffect(() => {
     const handleClickOutsideMenu = (event: MouseEvent) => {
@@ -185,12 +192,7 @@ export default function App() {
     setShowUserMenu(false);
   };
 
-  const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
-    setIsAdminPortalActive(false);
-    setActiveTab('home');
-  };
+  
 
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));

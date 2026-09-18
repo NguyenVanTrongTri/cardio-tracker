@@ -125,14 +125,21 @@ export default function App() {
   }, []);
 
   // Auto-logout logic
-  useEffect(() => {
+ useEffect(() => {
     if (!currentUser) return;
 
     const raw = localStorage.getItem('cardio_session_v2');
     if (!raw) return;
     
     const session: AuthSession = JSON.parse(raw);
-    const timeLeft = session.expiresAt - Date.now();
+    
+    // 👉 Chuẩn hóa: Nếu expiresAt tính bằng giây (nhỏ hơn 10 tỷ), đổi sang mili-giây
+    let expiryTime = session.expiresAt;
+    if (expiryTime && expiryTime < 10000000000) {
+      expiryTime *= 1000;
+    }
+
+    const timeLeft = expiryTime - Date.now();
 
     if (timeLeft <= 0) {
       handleLogout();

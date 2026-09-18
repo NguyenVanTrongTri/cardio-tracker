@@ -620,17 +620,19 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 <span className="text-slate-500 text-[11px] block mt-0.5">
                   {equipmentDef.description}
                 </span>
+              </div>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">
+                  {equipmentDef.tag}
+                </span>
                 <button
                   type="button"
                   onClick={applyEquipmentDefaults}
-                  className="mt-2 px-3 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg shadow-2xs flex items-center gap-1.5 transition-all"
+                  className="px-3 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg shadow-2xs flex items-center gap-1.5 transition-all"
                 >
                   💡 Gợi ý
                 </button>
               </div>
-              <span className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md self-start">
-                {equipmentDef.tag}
-              </span>
             </div>
             {/* Phase 1: Warm-up */}
           <div className="bg-white p-4 rounded-2xl border border-amber-200/60 shadow-xs">

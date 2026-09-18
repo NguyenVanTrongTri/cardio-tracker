@@ -143,13 +143,13 @@ export default function App() {
     if (timeLeft <= 0) {
       console.warn("Token đã hết hạn, tiến hành đăng xuất.");
       handleLogout();
-      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại1.');
       return;
     }
 
     const absoluteTimer = setTimeout(() => {
       handleLogout();
-      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại2.');
     }, timeLeft);
 
     // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout)

@@ -27,7 +27,7 @@ import ChangePasswordModal from './components/auth/ChangePasswordModal';
 import LandingPage from './components/landing/LandingPage';
 import AdminPortal from './admin/AdminPortal';
 import { getCurrentUser, logout, subscribeAuth } from './services/auth';
-import { UserAccount } from './types';
+import { UserAccount, AuthSession } from './types';
 
 // Kiểu dữ liệu cho Thông báo
 interface AppNotification {
@@ -84,6 +84,13 @@ export default function App() {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    setIsAdminPortalActive(false);
+    setActiveTab('home');
+  };
+
   // Click Outside cho User Menu
   useEffect(() => {
     const handleClickOutsideMenu = (event: MouseEvent) => {
@@ -116,13 +123,72 @@ export default function App() {
     };
   }, [showNotifications]);
 
+  // Đăng ký listener để cập nhật state khi login/logout từ các nguồn khác
   useEffect(() => {
     const unsubscribe = subscribeAuth((user) => {
       setCurrentUser(user);
-      setDataRefreshKey((k) => k + 1);
     });
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
+
+  // Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const raw = localStorage.getItem('cardio_session_v2');
+    if (!raw) return;
+    
+    let session: AuthSession;
+    try {
+      session = JSON.parse(raw);
+    } catch {
+      return;
+    }
+
+    if (!session.expiresAt) return;
+
+    // 1. Chuẩn hóa thời gian hết hạn (token expiry)
+    let expiryTime = Number(session.expiresAt);
+    if (expiryTime < 10000000000) {
+      expiryTime *= 1000;
+    }
+
+    const timeLeft = expiryTime - Date.now();
+
+    // Thiết lập timer cho Token Expiry
+    const absoluteTimer = setTimeout(() => {
+      handleLogout();
+    }, Math.max(timeLeft, 0));
+
+    // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+    let idleTimer: NodeJS.Timeout;
+
+    const handleUserActivity = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        handleLogout();
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, handleUserActivity);
+    });
+
+    handleUserActivity();
+
+    // Dọn dẹp khi component unmount hoặc khi user thay đổi
+    return () => {
+      clearTimeout(absoluteTimer);
+      clearTimeout(idleTimer);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
+  }, [currentUser]);
+
 
   const handleWorkoutSaved = () => {
     setDataRefreshKey((prev) => prev + 1);
@@ -135,12 +201,7 @@ export default function App() {
     setShowUserMenu(false);
   };
 
-  const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
-    setIsAdminPortalActive(false);
-    setActiveTab('home');
-  };
+  
 
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));

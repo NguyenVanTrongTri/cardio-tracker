@@ -142,7 +142,6 @@ export default function App() {
     // Thiết lập timer cho Token Expiry
     const absoluteTimer = setTimeout(() => {
       handleLogout();
-      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
     }, Math.max(timeLeft, 0));
 
     // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
@@ -153,7 +152,6 @@ export default function App() {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         handleLogout();
-        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
       }, IDLE_TIMEOUT_MS);
     };
 

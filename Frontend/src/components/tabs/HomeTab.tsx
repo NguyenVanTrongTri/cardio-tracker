@@ -235,17 +235,30 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     setProfile(getStoredProfile());
   }, []);
 
-  // Handle Equipment Switch: updates equipment and phase presets
+  // Handle Equipment Switch: updates equipment and resets phases
   const handleSelectEquipment = (newType: EquipmentType) => {
     setEquipmentType(newType);
-    const def = getEquipmentDef(newType);
+    
+    // Reset to "empty" state (or initial state with 0 values)
+    setPhase1({ phaseNumber: 1, name: 'Warm-up', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
+    setPhase2({ phaseNumber: 2, name: 'Fat Burn', durationMinutes: 0, speedKmh: 0, inclineDegree: 0, isCoreEngaged: false });
+    setPhase3({ phaseNumber: 3, name: 'Cool-down', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
+    
+    setPhase2Relief((prev) => ({ ...prev, durationMinutes: 0, speedKmh: 0, inclineDegree: 0, distanceKm: 0, resistanceLevel: 0, cadenceRpm: 0, strokeRateSpm: 0, stepsPerMin: 0 }));
+    setPhase2Surge((prev) => ({ ...prev, durationMinutes: 0, speedKmh: 0, inclineDegree: 0, distanceKm: 0, resistanceLevel: 0, cadenceRpm: 0, strokeRateSpm: 0, stepsPerMin: 0 }));
+  };
+
+  // Populate equipment defaults
+  const applyEquipmentDefaults = () => {
+    const def = getEquipmentDef(equipmentType);
     setPhase1(def.defaultPhases.phase1);
     setPhase2(def.defaultPhases.phase2);
     setPhase3(def.defaultPhases.phase3);
-    if (newType === 'TREADMILL' || newType === 'OUTDOOR_RUN') {
+    
+    if (equipmentType === 'TREADMILL' || equipmentType === 'OUTDOOR_RUN') {
       setPhase2Relief((prev) => ({ ...prev, inclineDegree: 0, speedKmh: 5.0, distanceKm: 0.42 }));
       setPhase2Surge((prev) => ({ ...prev, inclineDegree: 8, speedKmh: 5.5, distanceKm: 0.46 }));
-    } else if (newType === 'STATIONARY_BIKE') {
+    } else if (equipmentType === 'STATIONARY_BIKE') {
       setPhase2Relief((prev) => ({ ...prev, resistanceLevel: 3, cadenceRpm: 65, speedKmh: 18 }));
       setPhase2Surge((prev) => ({ ...prev, resistanceLevel: 8, cadenceRpm: 80, speedKmh: 24 }));
     }
@@ -587,6 +600,13 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 <span className="text-slate-500 text-[11px] block mt-0.5">
                   {equipmentDef.description}
                 </span>
+                <button
+                  type="button"
+                  onClick={applyEquipmentDefaults}
+                  className="mt-2 px-3 py-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg shadow-2xs flex items-center gap-1.5 transition-all"
+                >
+                  💡 Gợi ý thông số mặc định
+                </button>
               </div>
               <span className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md self-start">
                 {equipmentDef.tag}

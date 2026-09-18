@@ -254,45 +254,7 @@ export function changePassword(
   return { success: true };
 }
 
-export async function requestPasswordReset(email: string): Promise<{ success: boolean; otp?: string; error?: string }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/request-password-reset`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      return { success: false, error: result.error || 'Yêu cầu thất bại' };
-    }
-    return { success: true, otp: result.otp };
-  } catch (error) {
-    console.error('Lỗi kết nối API reset:', error);
-    return { success: false, error: 'Không thể kết nối máy chủ' };
-  }
-}
-
-export async function verifyAndResetPassword(
-  email: string,
-  otp: string,
-  newPass: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-password-reset`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp, newPass }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      return { success: false, error: result.error || 'Xác thực thất bại' };
-    }
-    return { success: true };
-  } catch (error) {
-    console.error('Lỗi kết nối API xác thực reset:', error);
-    return { success: false, error: 'Không thể kết nối máy chủ' };
-  }
-}
+// Chuyển sang dùng fetch trực tiếp giống hàm register để đồng bộ và không lỗi axiosClient
 
 
 export function updateCurrentUserProfile(

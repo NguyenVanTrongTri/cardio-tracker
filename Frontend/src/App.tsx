@@ -116,7 +116,7 @@ export default function App() {
     };
   }, [showNotifications]);
 
- useEffect(() => {
+useEffect(() => {
     if (!currentUser) return;
 
     const raw = localStorage.getItem('cardio_session_v2');
@@ -125,28 +125,23 @@ export default function App() {
     let session: AuthSession;
     try {
       session = JSON.parse(raw);
-    } catch (e) {
-      console.error("Lỗi parse session từ localStorage:", e);
+    } catch {
       return;
     }
 
-    // 🛑 KIỂM TRA AN TOÀN: Nếu không có expiresAt, tự động gán mặc định 24h để tránh crash
-    const expiryTimeNumber = Number(session.expiresAt);
-    let expiryTime = (!isNaN(expiryTimeNumber) && expiryTimeNumber > 0) 
-      ? expiryTimeNumber 
-      : Date.now() + 24 * 60 * 60 * 1000;
+    if (!session.expiresAt) return;
 
-    // Nếu expiresAt tính bằng giây (dưới 10 tỷ), đổi sang mili-giây
+    // 👉 Chuẩn hóa: Nếu expiresAt là dạng giây (nhỏ hơn 10 tỷ), đổi sang mili-giây
+    let expiryTime = Number(session.expiresAt);
     if (expiryTime < 10000000000) {
       expiryTime *= 1000;
     }
 
     const timeLeft = expiryTime - Date.now();
-    console.log("Debug Session TimeLeft (ms):", timeLeft); // Bật F12 xem dòng này ra số dương hay âm
 
-    // Nếu thời gian còn lại <= 0 thì mới gọi logout
+    // 🛑 KIỂM TRA AN TOÀN: Nếu thời gian còn lại <= 0 thì mới logout
     if (timeLeft <= 0) {
-      console.warn("Phiên đã thực sự hết hạn!");
+      console.warn("Token đã hết hạn, tiến hành đăng xuất.");
       handleLogout();
       alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
       return;
@@ -157,8 +152,8 @@ export default function App() {
       alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
     }, timeLeft);
 
-    // 👉 Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
-    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; 
+    // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
     let idleTimer: NodeJS.Timeout;
 
     const handleUserActivity = () => {
@@ -166,7 +161,7 @@ export default function App() {
 
       idleTimer = setTimeout(() => {
         handleLogout();
-        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảoטח.');
+        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
       }, IDLE_TIMEOUT_MS);
     };
 

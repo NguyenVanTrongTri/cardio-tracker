@@ -116,66 +116,13 @@ export default function App() {
     };
   }, [showNotifications]);
 
-// Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
-// Auto-logout & Idle Timeout logic
   useEffect(() => {
-    if (!currentUser) return;
-
-    const raw = localStorage.getItem('cardio_session_v2');
-    if (!raw) return;
-    
-    let session: AuthSession;
-    try {
-      session = JSON.parse(raw);
-    } catch {
-      localStorage.removeItem('cardio_session_v2'); // Xóa rác nếu parse lỗi
-      return;
-    }
-
-    // 🛑 BẪY AN TOÀN: Nếu không có expiresAt hoặc expiresAt không phải là số hợp lệ -> Xóa luôn session cũ rích
-    if (!session.expiresAt || isNaN(Number(session.expiresAt))) {
-      localStorage.removeItem('cardio_session_v2');
-      return;
-    }
-
-    // 1. Chuẩn hóa thời gian hết hạn (token expiry)
-    let expiryTime = Number(session.expiresAt);
-    if (expiryTime < 10000000000) {
-      expiryTime *= 1000;
-    }
-
-    const timeLeft = expiryTime - Date.now();
-
-    // Nếu token đã hết hạn thực sự từ trước đó -> Xóa session và yêu cầu đăng nhập lại
-
-    // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
-    const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
-    let idleTimer: NodeJS.Timeout;
-
-    const handleUserActivity = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        handleLogout();
-        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
-      }, IDLE_TIMEOUT_MS);
-    };
-
-    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-    
-    activityEvents.forEach((event) => {
-      window.addEventListener(event, handleUserActivity);
+    const unsubscribe = subscribeAuth((user) => {
+      setCurrentUser(user);
+      setDataRefreshKey((k) => k + 1);
     });
-
-    handleUserActivity();
-
-    // Dọn dẹp khi component unmount hoặc khi user thay đổi
-    return () => {
-      clearTimeout(idleTimer);
-      activityEvents.forEach((event) => {
-        window.removeEventListener(event, handleUserActivity);
-      });
-    };
-  }, [currentUser]);
+    return unsubscribe;
+  }, []);
 
   // Auto-logout logic
   useEffect(() => {

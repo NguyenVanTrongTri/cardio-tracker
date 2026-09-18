@@ -443,26 +443,7 @@ export default function App() {
                     <span>Hồ sơ & Mục tiêu eo1</span>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setIsChangePasswordOpen(true);
-                      setShowUserMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors text-left"
-                  >
-                    <KeyRound size={14} className="text-indigo-600" />
-                    <span>Đổi Mật Khẩu1</span>
-                  </button>
-
-                  <div className="border-t border-slate-100 my-1 pt-1">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors text-left font-semibold"
-                    >
-                      <LogOut size={14} />
-                      <span>Đăng Xuất1</span>
-                    </button>
-                  </div>
+                 
                 </div>
               )}
             </div>

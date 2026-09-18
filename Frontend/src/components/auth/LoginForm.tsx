@@ -45,28 +45,23 @@ export default function LoginForm({
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('Response Status:', response.status);
       const rawText = await response.text();
-      console.log('Raw Response Body:', rawText);
-
       let data;
       try {
         data = JSON.parse(rawText);
       } catch {
         data = { error: rawText || 'Invalid JSON response' };
       }
+      
       if (response.ok && data.success && data.user) {
         setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
         if (rememberMe) {
-          // 👉 Sửa lại cấu trúc lưu thành dạng session có chứa token và user, 
-          // khớp tuyệt đối với các hàm kiểm tra đăng nhập khác:
           const sessionData = {
             user: data.user,
             token: data.token,
             expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
           };
           
-          // Lưu đồng thời cả 2 key để code cũ hay mới đều đọc được trơn tru:
           localStorage.setItem('cardio_session_v2', JSON.stringify(sessionData));
           localStorage.setItem('cardio_user', JSON.stringify(data.user));
         }

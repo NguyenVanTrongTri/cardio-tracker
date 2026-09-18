@@ -42,6 +42,7 @@ import { WorkoutBanner } from './HomeTab/WorkoutBanner';
 import MealSection, { MEAL_CATEGORIES } from './HomeTab/MealSection';
 import { getEquipmentIcon } from './HomeTab/utils';
 import { renderParam1Field, renderParam2Field, renderDurationField, renderDistanceField } from './HomeTab/PhaseControls';
+import { useWorkoutForm } from '../../hooks/useWorkoutForm';
 
 interface HomeTabProps {
   key?: string;
@@ -51,23 +52,33 @@ interface HomeTabProps {
 }
 
 export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNotification }: HomeTabProps) {
-  // Load recent workouts for smart advice
-  const [recentWorkouts, setRecentWorkouts] = useState<WorkoutRecord[]>([]);
-  const [profile, setProfile] = useState(getStoredProfile());
-
-  // Form State
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
-  const localDate = new Date(now.getTime() - offset * 60 * 1000);
-  const defaultDateStr = localDate.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
-
-  const [workoutStartTime, setWorkoutStartTime] = useState(defaultDateStr);
-  const [meals, setMeals] = useState<Meal[]>([]);
-
-  // Equipment selection state
-  const [equipmentType, setEquipmentType] = useState<EquipmentType>('TREADMILL');
-  const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false);
-  const equipmentDef = useMemo(() => getEquipmentDef(equipmentType), [equipmentType]);
+  const {
+    recentWorkouts,
+    profile,
+    workoutStartTime, setWorkoutStartTime,
+    meals, setMeals,
+    equipmentType,
+    isEquipmentModalOpen, setIsEquipmentModalOpen,
+    equipmentDef,
+    weightKg, setWeightKg,
+    waistCm, setWaistCm,
+    phase1, setPhase1,
+    phase2, setPhase2,
+    phase3, setPhase3,
+    isIntervalMode, setIsIntervalMode,
+    enableRelief, setEnableRelief,
+    enableSurge, setEnableSurge,
+    phase2Relief, setPhase2Relief,
+    phase2Surge, setPhase2Surge,
+    pauseDuration, setPauseDuration,
+    fatigueLevel, setFatigueLevel,
+    waterConsumedMl, setWaterConsumedMl,
+    notes, setNotes,
+    isSaving, setIsSaving,
+    workoutId,
+    handleSelectEquipment,
+    applyEquipmentDefaults
+  } = useWorkoutForm();
 
   const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('practices-enabled-status');
@@ -84,66 +95,10 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     }
   }, [enabledEquipmentList, equipmentType, enabledMap]);
 
-  // Body metrics
-  const latestMetric = useMemo(() => getLatestBodyMetric(), []);
-  const [weightKg, setWeightKg] = useState<number>(latestMetric.weightKg);
-  const [waistCm, setWaistCm] = useState<number>(latestMetric.waistCm);
-
-  // 3-Phase State (initialized with empty values)
-  const [phase1, setPhase1] = useState<WorkoutPhase>({ phaseNumber: 1, name: 'Warm-up', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
-  const [phase2, setPhase2] = useState<WorkoutPhase>({ phaseNumber: 2, name: 'Fat Burn', durationMinutes: 0, speedKmh: 0, inclineDegree: 0, isCoreEngaged: false });
-  const [phase3, setPhase3] = useState<WorkoutPhase>({ phaseNumber: 3, name: 'Cool-down', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
-
-  // Flexible Interval Mode in Phase 2 (Đốt mỡ chính linh hoạt)
-  const [isIntervalMode, setIsIntervalMode] = useState<boolean>(false);
-  const [enableRelief, setEnableRelief] = useState<boolean>(true);
-  const [enableSurge, setEnableSurge] = useState<boolean>(true);
-
   const [draftToRestore, setDraftToRestore] = useState<WorkoutRecord | null>(null);
   const [showDraftModal, setShowDraftModal] = useState(false);
-
-  // Sub-phases for Relief (nhịp xả) and Surge (bứt tốc)
-  const [phase2Relief, setPhase2Relief] = useState<WorkoutPhase>({
-    phaseNumber: 2,
-    name: 'Nhịp xả bớt mệt (Relief)',
-    durationMinutes: 5,
-    speedKmh: 5.0,
-    inclineDegree: 0,
-    distanceKm: 0.42,
-    resistanceLevel: 2,
-    cadenceRpm: 60,
-    strokeRateSpm: 18,
-    stepsPerMin: 40,
-    subType: 'RELIEF',
-  });
-
-  const [phase2Surge, setPhase2Surge] = useState<WorkoutPhase>({
-    phaseNumber: 2,
-    name: 'Bứt tốc / Leo dốc 2 (Surge)',
-    durationMinutes: 5,
-    speedKmh: 5.5,
-    inclineDegree: 8,
-    distanceKm: 0.46,
-    resistanceLevel: 8,
-    cadenceRpm: 75,
-    strokeRateSpm: 26,
-    stepsPerMin: 70,
-    subType: 'SURGE',
-  });
-
-  const [pauseDuration, setPauseDuration] = useState<number>(0);
-  const [fatigueLevel, setFatigueLevel] = useState<1 | 2 | 3 | 4 | 5>(3);
-  const [waterConsumedMl, setWaterConsumedMl] = useState<number>(500);
-  const [notes, setNotes] = useState<string>('');
-
-  const [savedSuccessMessage, setSavedSuccessMessage] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  useEffect(() => {
-    console.log('isSaving changed:', isSaving);
-  }, [isSaving]);
-  console.log('Rendering HomeTab, isSaving:', isSaving);
-  const [workoutId] = useState(() => crypto.randomUUID()); // New workout ID for this session
   const isInitialized = useRef(false);
+  const [savedSuccessMessage, setSavedSuccessMessage] = useState<string | null>(null);
 
   // Real-time calculated phases
   const phases = useMemo(() => {
@@ -231,58 +186,18 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       }
     }
     
-    setRecentWorkouts(workouts);
-    setProfile(getStoredProfile());
+    
+    // setRecentWorkouts(workouts);
+    // setProfile(getStoredProfile());
   }, []);
 
   // Handle Equipment Switch: updates equipment and resets phases
-  const handleSelectEquipment = (newType: EquipmentType) => {
-    setEquipmentType(newType);
-    
-    // Reset to "empty" state with 0 values
-    setPhase1({ phaseNumber: 1, name: 'Warm-up', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
-    setPhase2({ phaseNumber: 2, name: 'Fat Burn', durationMinutes: 0, speedKmh: 0, inclineDegree: 0, isCoreEngaged: false });
-    setPhase3({ phaseNumber: 3, name: 'Cool-down', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
-    
-    setPhase2Relief((prev) => ({ 
-      ...prev, 
-      durationMinutes: 0, 
-      speedKmh: 0, 
-      inclineDegree: 0, 
-      distanceKm: 0, 
-      resistanceLevel: 0, 
-      cadenceRpm: 0, 
-      strokeRateSpm: 0, 
-      stepsPerMin: 0 
-    }));
-    setPhase2Surge((prev) => ({ 
-      ...prev, 
-      durationMinutes: 0, 
-      speedKmh: 0, 
-      inclineDegree: 0, 
-      distanceKm: 0, 
-      resistanceLevel: 0, 
-      cadenceRpm: 0, 
-      strokeRateSpm: 0, 
-      stepsPerMin: 0 
-    }));
-  };
+  // handleSelectEquipment is now from hook
+  const handleSelectEquipmentLocal = handleSelectEquipment;
 
   // Populate equipment defaults
-  const applyEquipmentDefaults = () => {
-    const def = getEquipmentDef(equipmentType);
-    setPhase1(def.defaultPhases.phase1);
-    setPhase2(def.defaultPhases.phase2);
-    setPhase3(def.defaultPhases.phase3);
-    
-    if (equipmentType === 'TREADMILL' || equipmentType === 'OUTDOOR_RUN') {
-      setPhase2Relief((prev) => ({ ...prev, inclineDegree: 0, speedKmh: 5.0, distanceKm: 0.42 }));
-      setPhase2Surge((prev) => ({ ...prev, inclineDegree: 8, speedKmh: 5.5, distanceKm: 0.46 }));
-    } else if (equipmentType === 'STATIONARY_BIKE') {
-      setPhase2Relief((prev) => ({ ...prev, resistanceLevel: 3, cadenceRpm: 65, speedKmh: 18 }));
-      setPhase2Surge((prev) => ({ ...prev, resistanceLevel: 8, cadenceRpm: 80, speedKmh: 24 }));
-    }
-  };
+  // applyEquipmentDefaults is now from hook
+  const applyEquipmentDefaultsLocal = applyEquipmentDefaults;
 
   // Smart Recommendation
   const smartRec = useMemo(() => {
@@ -449,7 +364,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 // ... trong phần Khôi phục (dòng 403 trở đi)
                 onClick={() => {
                   setMeals(draftToRestore.meals);
-                  setEquipmentType(draftToRestore.equipmentType);
+                  handleSelectEquipment(draftToRestore.equipmentType);
                   setWorkoutStartTime(draftToRestore.workoutStartTime);
                   setPauseDuration(draftToRestore.pauseDuration);
                   setFatigueLevel(draftToRestore.fatigueLevel as 1|2|3|4|5);

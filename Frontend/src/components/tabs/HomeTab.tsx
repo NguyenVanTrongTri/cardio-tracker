@@ -89,10 +89,10 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const [weightKg, setWeightKg] = useState<number>(latestMetric.weightKg);
   const [waistCm, setWaistCm] = useState<number>(latestMetric.waistCm);
 
-  // 3-Phase State (initialized with current equipment defaults)
-  const [phase1, setPhase1] = useState<WorkoutPhase>(equipmentDef.defaultPhases.phase1);
-  const [phase2, setPhase2] = useState<WorkoutPhase>(equipmentDef.defaultPhases.phase2);
-  const [phase3, setPhase3] = useState<WorkoutPhase>(equipmentDef.defaultPhases.phase3);
+  // 3-Phase State (initialized with empty values)
+  const [phase1, setPhase1] = useState<WorkoutPhase>({ phaseNumber: 1, name: 'Warm-up', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
+  const [phase2, setPhase2] = useState<WorkoutPhase>({ phaseNumber: 2, name: 'Fat Burn', durationMinutes: 0, speedKmh: 0, inclineDegree: 0, isCoreEngaged: false });
+  const [phase3, setPhase3] = useState<WorkoutPhase>({ phaseNumber: 3, name: 'Cool-down', durationMinutes: 0, speedKmh: 0, inclineDegree: 0 });
 
   // Flexible Interval Mode in Phase 2 (Đốt mỡ chính linh hoạt)
   const [isIntervalMode, setIsIntervalMode] = useState<boolean>(false);

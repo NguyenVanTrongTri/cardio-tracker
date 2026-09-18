@@ -27,7 +27,7 @@ import ChangePasswordModal from './components/auth/ChangePasswordModal';
 import LandingPage from './components/landing/LandingPage';
 import AdminPortal from './admin/AdminPortal';
 import { getCurrentUser, logout, subscribeAuth } from './services/auth';
-import { UserAccount, AuthSession } from './types';
+import { UserAccount } from './types';
 
 // Kiểu dữ liệu cho Thông báo
 interface AppNotification {
@@ -84,13 +84,6 @@ export default function App() {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
-    setIsAdminPortalActive(false);
-    setActiveTab('home');
-  };
-
   // Click Outside cho User Menu
   useEffect(() => {
     const handleClickOutsideMenu = (event: MouseEvent) => {
@@ -122,64 +115,14 @@ export default function App() {
       document.removeEventListener('mousedown', handleClickOutsideNotif);
     };
   }, [showNotifications]);
-  // Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
+
   useEffect(() => {
-    if (!currentUser) return;
-
-    const raw = localStorage.getItem('cardio_session_v2');
-    if (!raw) return;
-    
-    let session: AuthSession;
-    try {
-      session = JSON.parse(raw);
-    } catch {
-      return;
-    }
-
-    if (!session.expiresAt) return;
-
-    // 1. Chuẩn hóa thời gian hết hạn (token expiry)
-    let expiryTime = Number(session.expiresAt);
-    if (expiryTime < 10000000000) {
-      expiryTime *= 1000;
-    }
-
-    const timeLeft = expiryTime - Date.now();
-
-    // Thiết lập timer cho Token Expiry
-    const absoluteTimer = setTimeout(() => {
-      handleLogout();
-    }, Math.max(timeLeft, 0));
-
-    // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
-    const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
-    let idleTimer: NodeJS.Timeout;
-
-    const handleUserActivity = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        handleLogout();
-      }, IDLE_TIMEOUT_MS);
-    };
-
-    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-    
-    activityEvents.forEach((event) => {
-      window.addEventListener(event, handleUserActivity);
+    const unsubscribe = subscribeAuth((user) => {
+      setCurrentUser(user);
+      setDataRefreshKey((k) => k + 1);
     });
-
-    handleUserActivity();
-
-    // Dọn dẹp khi component unmount hoặc khi user thay đổi
-    return () => {
-      clearTimeout(absoluteTimer);
-      clearTimeout(idleTimer);
-      activityEvents.forEach((event) => {
-        window.removeEventListener(event, handleUserActivity);
-      });
-    };
-  }, [currentUser]);
-
+    return unsubscribe;
+  }, []);
 
   const handleWorkoutSaved = () => {
     setDataRefreshKey((prev) => prev + 1);
@@ -192,7 +135,12 @@ export default function App() {
     setShowUserMenu(false);
   };
 
-  
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    setIsAdminPortalActive(false);
+    setActiveTab('home');
+  };
 
   const handleMarkAllAsRead = () => {
     setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
@@ -440,10 +388,29 @@ export default function App() {
                     className="w-full flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors text-left"
                   >
                     <User size={14} className="text-slate-500" />
-                    <span>Hồ sơ & Mục tiêu eo1</span>
+                    <span>Hồ sơ & Mục tiêu eo</span>
                   </button>
 
-                 
+                  <button
+                    onClick={() => {
+                      setIsChangePasswordOpen(true);
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 rounded-xl transition-colors text-left"
+                  >
+                    <KeyRound size={14} className="text-indigo-600" />
+                    <span>Đổi Mật Khẩu</span>
+                  </button>
+
+                  <div className="border-t border-slate-100 my-1 pt-1">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors text-left font-semibold"
+                    >
+                      <LogOut size={14} />
+                      <span>Đăng Xuất</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

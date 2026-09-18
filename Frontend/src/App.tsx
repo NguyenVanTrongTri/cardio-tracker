@@ -125,7 +125,7 @@ export default function App() {
   }, []);
 
   // Auto-logout logic
- useEffect(() => {
+useEffect(() => {
     if (!currentUser) return;
 
     const raw = localStorage.getItem('cardio_session_v2');
@@ -133,7 +133,7 @@ export default function App() {
     
     const session: AuthSession = JSON.parse(raw);
     
-    // 👉 Chuẩn hóa: Nếu expiresAt tính bằng giây (nhỏ hơn 10 tỷ), đổi sang mili-giây
+    // 👉 1. Xử lý thời hạn tuyệt đối của Token (Token Expiry)
     let expiryTime = session.expiresAt;
     if (expiryTime && expiryTime < 10000000000) {
       expiryTime *= 1000;
@@ -143,15 +143,48 @@ export default function App() {
 
     if (timeLeft <= 0) {
       handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
       return;
     }
 
-    const timer = setTimeout(() => {
+    const absoluteTimer = setTimeout(() => {
       handleLogout();
       alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
     }, timeLeft);
 
-    return () => clearTimeout(timer);
+    // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
+    let idleTimer: NodeJS.Timeout;
+
+    const handleUserActivity = () => {
+      // Mỗi khi người dùng có hành động (chuột, phím, chạm), reset lại bộ đếm idle
+      if (idleTimer) clearTimeout(idleTimer);
+
+      idleTimer = setTimeout(() => {
+        handleLogout();
+        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    // Danh sách các sự kiện ghi nhận hoạt động người dùng
+    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    
+    // Đăng ký lắng nghe sự kiện
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, handleUserActivity);
+    });
+
+    // Khởi chạy bộ đếm idle lần đầu khi load component
+    handleUserActivity();
+
+    // Dọn dẹp sạch sẽ toàn bộ timer và event listener khi component unmount hoặc logout
+    return () => {
+      clearTimeout(absoluteTimer);
+      if (idleTimer) clearTimeout(idleTimer);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
   }, [currentUser]);
 
 

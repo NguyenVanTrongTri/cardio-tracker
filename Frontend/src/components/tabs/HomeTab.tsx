@@ -43,6 +43,9 @@ import MealSection, { MEAL_CATEGORIES } from './HomeTab/MealSection';
 import { getEquipmentIcon } from './HomeTab/utils';
 import { renderParam1Field, renderParam2Field, renderDurationField, renderDistanceField } from './HomeTab/PhaseControls';
 import WorkoutPhasesSection from './HomeTab/WorkoutPhasesSection';
+import LiveWorkoutMetrics from './HomeTab/LiveWorkoutMetrics';
+import PostWorkoutAssessment from './HomeTab/PostWorkoutAssessment';
+import DraftRestoreModal from './HomeTab/DraftRestoreModal';
 import { useWorkoutForm } from '../../hooks/useWorkoutForm';
 
 interface HomeTabProps {
@@ -322,14 +325,6 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     }
   };
 
-  const fatigueLabels: Record<1 | 2 | 3 | 4 | 5, { emoji: string; text: string; color: string }> = {
-    1: { emoji: '😄', text: 'Rất nhẹ', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    2: { emoji: '😊', text: 'Vừa sức', color: 'bg-teal-50 text-teal-700 border-teal-200' },
-    3: { emoji: '😐', text: 'Chuẩn Zone 2', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-    4: { emoji: '😫', text: 'Rất mệt', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-    5: { emoji: '😵', text: 'Kiệt sức', color: 'bg-rose-50 text-rose-700 border-rose-200' },
-  };
-
   return (
     <div className="max-w-xl mx-auto px-4 pt-4 pb-28 space-y-5">
       {/* Top Welcome & Smart Coaching Banner */}
@@ -345,49 +340,25 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         </div>
       )}
       {showDraftModal && draftToRestore && (
-        <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-3xl shadow-2xl max-w-sm w-full">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Tìm thấy bản nháp!</h3>
-            <p className="text-sm text-slate-600 mb-6">
-              Bạn có một buổi tập chưa hoàn thành từ ngày {draftToRestore.workoutStartTime.split('T')[0]}. Bạn có muốn khôi phục lại không?
-            </p>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => {
-                  // HÀNH ĐỘNG HỦY: Xóa nháp
-                  localStorage.removeItem('workout_draft'); // Thay bằng key bạn dùng
-                  setShowDraftModal(false);
-                }}
-                className="flex-1 py-3 text-sm font-bold text-slate-600 bg-slate-100 rounded-xl"
-              >
-                Bỏ qua
-              </button>
-              <button 
-                // ... trong phần Khôi phục (dòng 403 trở đi)
-                onClick={() => {
-                  setMeals(draftToRestore.meals);
-                  handleSelectEquipment(draftToRestore.equipmentType);
-                  setWorkoutStartTime(draftToRestore.workoutStartTime);
-                  setPauseDuration(draftToRestore.pauseDuration);
-                  setFatigueLevel(draftToRestore.fatigueLevel as 1|2|3|4|5);
-                  setWaterConsumedMl(draftToRestore.waterConsumedMl);
-                  setNotes(draftToRestore.notes || '');
-                  setWeightKg(Number(draftToRestore.weightKg));
-                  setWaistCm(Number(draftToRestore.waistCm));
-                  
-                  // Bạn có thể cần set lại cả các state phase (phase1, phase2, phase3) 
-                  // nếu muốn khôi phục cả chi tiết bài tập
-                  setShowDraftModal(false);
-                }}
-                  
-
-                className="flex-1 py-3 text-sm font-bold text-white bg-emerald-600 rounded-xl"
-              >
-                Khôi phục
-              </button>
-            </div>
-          </div>
-        </div>
+        <DraftRestoreModal
+          draft={draftToRestore}
+          onDiscard={() => {
+            localStorage.removeItem('workout_draft');
+            setShowDraftModal(false);
+          }}
+          onRestore={() => {
+            setMeals(draftToRestore.meals);
+            handleSelectEquipment(draftToRestore.equipmentType);
+            setWorkoutStartTime(draftToRestore.workoutStartTime);
+            setPauseDuration(draftToRestore.pauseDuration);
+            setFatigueLevel(draftToRestore.fatigueLevel as 1|2|3|4|5);
+            setWaterConsumedMl(draftToRestore.waterConsumedMl);
+            setNotes(draftToRestore.notes || '');
+            setWeightKg(Number(draftToRestore.weightKg));
+            setWaistCm(Number(draftToRestore.waistCm));
+            setShowDraftModal(false);
+          }}
+        />
       )}
 
       {/* Main Form */}
@@ -507,158 +478,16 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
 
 
 
-        {/* Live Calculation Metric Bar */}
-        <div className="bg-slate-900 text-white p-4.5 rounded-3xl shadow-xl space-y-3.5 border border-slate-800">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Activity size={15} className="text-emerald-400" />
-              <span>Ước Tính Tiêu Hao: {equipmentDef.shortName}</span>
-            </span>
-            {liveTotals.isZone2 && (
-              <span className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
-                ✓ Đạt Zone 2
-              </span>
-            )}
-          </div>
+        <LiveWorkoutMetrics liveTotals={liveTotals} equipmentDef={equipmentDef} />
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
-            <div className="bg-slate-800/60 p-2.5 rounded-2xl border border-slate-700/50">
-              <span className="text-xs text-slate-400 block mb-0.5">Thời Gian</span>
-              <span className="text-xl font-black text-white font-mono">
-                {liveTotals.activeTime}
-              </span>
-              <span className="text-xs text-slate-400 ml-1">phút</span>
-            </div>
-
-            <div className="bg-slate-800/60 p-2.5 rounded-2xl border border-slate-700/50">
-              <span className="text-xs text-slate-400 block mb-0.5">Quãng Đường</span>
-              <span className="text-xl font-black text-sky-400 font-mono">
-                {liveTotals.totalDistanceKm ?? 0}
-              </span>
-              <span className="text-xs text-slate-400 ml-1">km</span>
-            </div>
-
-            <div className="bg-slate-800/60 p-2.5 rounded-2xl border border-slate-700/50">
-              <span className="text-xs text-slate-400 block mb-0.5">Tiêu Hao</span>
-              <span className="text-xl font-black text-orange-400 font-mono">
-                {liveTotals.calories}
-              </span>
-              <span className="text-xs text-slate-400 ml-1">kcal</span>
-            </div>
-
-            <div className="bg-slate-800/60 p-2.5 rounded-2xl border border-slate-700/50">
-              <span className="text-xs text-slate-400 block mb-0.5">Mật độ</span>
-              <span className="text-xl font-black text-emerald-400 font-mono">
-                {liveTotals.efficiencyIndex}
-              </span>
-              <span className="text-xs text-slate-400 ml-1">cal/p</span>
-            </div>
-          </div>
-
-          {/* Cortisol Alert if Active Time > 50 min */}
-          {liveTotals.cortisolAlert && (
-            <div className="bg-rose-950/80 border border-rose-600/60 p-3 rounded-2xl flex items-start gap-2.5 text-rose-200 animate-pulse">
-              <ShieldAlert size={20} className="text-rose-400 shrink-0 mt-0.5" />
-              <div className="text-xs leading-relaxed">
-                <strong className="text-rose-300 block">
-                  🚨 CẢNH BÁO CORTISOL: Vượt quá 50 phút!
-                </strong>
-                Tập cardio quá dài sẽ làm tăng nồng độ hoóc-môn Cortisol, gây dị hóa cơ bắp
-                và tích trữ mỡ bụng. Khuyến nghị kết thúc trong 40-48 phút.
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Secondary Assessment (Mệt mỏi & Nước & Note) */}
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-slate-800">
-            Đánh Giá Cảm Giác Sau Buổi Tập
-          </h3>
-
-          {/* Fatigue Level (5 Emojis) */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-2">
-              Mức độ mệt mỏi (Fatigue 1 - 5)
-            </label>
-            <div className="grid grid-cols-5 gap-2">
-              {([1, 2, 3, 4, 5] as const).map((level) => {
-                const item = fatigueLabels[level];
-                const isSelected = fatigueLevel === level;
-                return (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => setFatigueLevel(level)}
-                    className={`py-2 px-1 rounded-2xl border transition-all flex flex-col items-center gap-1 cursor-pointer ${
-                      isSelected
-                        ? `${item.color} border-2 shadow-xs scale-105 font-bold`
-                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span className="text-2xl">{item.emoji}</span>
-                    <span className="text-[10px] leading-tight text-center">
-                      {item.text}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Water Consumed */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                <Droplets size={14} className="text-sky-500" />
-                Lượng nước bổ sung (ml)
-              </label>
-              <span className="text-xs font-mono font-bold text-sky-600">
-                {waterConsumedMl} ml
-              </span>
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="number"
-                step="50"
-                min="0"
-                max="3000"
-                value={waterConsumedMl}
-                onChange={(e) => setWaterConsumedMl(Number(e.target.value))}
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => setWaterConsumedMl((prev) => prev + 150)}
-                className="px-3 py-2 bg-sky-50 text-sky-700 font-bold text-xs rounded-xl border border-sky-200 hover:bg-sky-100 cursor-pointer"
-              >
-                +150ml
-              </button>
-              <button
-                type="button"
-                onClick={() => setWaterConsumedMl((prev) => prev + 250)}
-                className="px-3 py-2 bg-sky-50 text-sky-700 font-bold text-xs rounded-xl border border-sky-200 hover:bg-sky-100 cursor-pointer"
-              >
-                +250ml
-              </button>
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              Ghi chú buổi tập
-            </label>
-            <textarea
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="VD: Chân thanh thoát, giữ nhịp thở đều, mồ hôi toát tốt..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-            />
-          </div>
-        </div>
+        <PostWorkoutAssessment
+          fatigueLevel={fatigueLevel}
+          setFatigueLevel={setFatigueLevel}
+          waterConsumedMl={waterConsumedMl}
+          setWaterConsumedMl={setWaterConsumedMl}
+          notes={notes}
+          setNotes={setNotes}
+        />
 
         {/* Primary Action Button */}
         <button

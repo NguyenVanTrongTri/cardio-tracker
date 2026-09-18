@@ -116,7 +116,8 @@ export default function App() {
     };
   }, [showNotifications]);
 
-useEffect(() => {
+// Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
+  useEffect(() => {
     if (!currentUser) return;
 
     const raw = localStorage.getItem('cardio_session_v2');
@@ -131,7 +132,7 @@ useEffect(() => {
 
     if (!session.expiresAt) return;
 
-    // 👉 Chuẩn hóa: Nếu expiresAt là dạng giây (nhỏ hơn 10 tỷ), đổi sang mili-giây
+    // 1. Chuẩn hóa thời gian hết hạn (token expiry)
     let expiryTime = Number(session.expiresAt);
     if (expiryTime < 10000000000) {
       expiryTime *= 1000;
@@ -139,26 +140,18 @@ useEffect(() => {
 
     const timeLeft = expiryTime - Date.now();
 
-    // 🛑 KIỂM TRA AN TOÀN: Nếu thời gian còn lại <= 0 thì mới logout
-    if (timeLeft <= 0) {
-      console.warn("Token đã hết hạn, tiến hành đăng xuất.");
-      handleLogout();
-      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
-      return;
-    }
-
+    // Thiết lập timer cho Token Expiry
     const absoluteTimer = setTimeout(() => {
       handleLogout();
       alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
-    }, timeLeft);
+    }, Math.max(timeLeft, 0)); // Đảm bảo không truyền số âm vào setTimeout
 
-    // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout)
-    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
+    // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
     let idleTimer: NodeJS.Timeout;
 
     const handleUserActivity = () => {
       if (idleTimer) clearTimeout(idleTimer);
-
       idleTimer = setTimeout(() => {
         handleLogout();
         alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
@@ -173,9 +166,10 @@ useEffect(() => {
 
     handleUserActivity();
 
+    // Dọn dẹp khi component unmount hoặc khi user thay đổi
     return () => {
       clearTimeout(absoluteTimer);
-      if (idleTimer) clearTimeout(idleTimer);
+      clearTimeout(idleTimer);
       activityEvents.forEach((event) => {
         window.removeEventListener(event, handleUserActivity);
       });

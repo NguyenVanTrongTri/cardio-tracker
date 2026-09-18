@@ -27,7 +27,7 @@ import ChangePasswordModal from './components/auth/ChangePasswordModal';
 import LandingPage from './components/landing/LandingPage';
 import AdminPortal from './admin/AdminPortal';
 import { getCurrentUser, logout, subscribeAuth } from './services/auth';
-import { UserAccount } from './types';
+import { UserAccount, AuthSession } from './types';
 
 // Kiểu dữ liệu cho Thông báo
 interface AppNotification {
@@ -123,6 +123,30 @@ export default function App() {
     });
     return unsubscribe;
   }, []);
+
+  // Auto-logout logic
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const raw = localStorage.getItem('cardio_session_v2');
+    if (!raw) return;
+    
+    const session: AuthSession = JSON.parse(raw);
+    const timeLeft = session.expiresAt - Date.now();
+
+    if (timeLeft <= 0) {
+      handleLogout();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+    }, timeLeft);
+
+    return () => clearTimeout(timer);
+  }, [currentUser]);
+
 
   const handleWorkoutSaved = () => {
     setDataRefreshKey((prev) => prev + 1);

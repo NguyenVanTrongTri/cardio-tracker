@@ -168,7 +168,6 @@ export default function App() {
     handleUserActivity();
 
     return () => {
-      clearTimeout(absoluteTimer);
       if (idleTimer) clearTimeout(idleTimer);
       activityEvents.forEach((event) => {
         window.removeEventListener(event, handleUserActivity);

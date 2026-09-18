@@ -116,13 +116,76 @@ export default function App() {
     };
   }, [showNotifications]);
 
-  useEffect(() => {
-    const unsubscribe = subscribeAuth((user) => {
-      setCurrentUser(user);
-      setDataRefreshKey((k) => k + 1);
+ useEffect(() => {
+    if (!currentUser) return;
+
+    const raw = localStorage.getItem('cardio_session_v2');
+    if (!raw) return;
+    
+    let session: AuthSession;
+    try {
+      session = JSON.parse(raw);
+    } catch (e) {
+      console.error("Lỗi parse session từ localStorage:", e);
+      return;
+    }
+
+    // 🛑 KIỂM TRA AN TOÀN: Nếu không có expiresAt, tự động gán mặc định 24h để tránh crash
+    const expiryTimeNumber = Number(session.expiresAt);
+    let expiryTime = (!isNaN(expiryTimeNumber) && expiryTimeNumber > 0) 
+      ? expiryTimeNumber 
+      : Date.now() + 24 * 60 * 60 * 1000;
+
+    // Nếu expiresAt tính bằng giây (dưới 10 tỷ), đổi sang mili-giây
+    if (expiryTime < 10000000000) {
+      expiryTime *= 1000;
+    }
+
+    const timeLeft = expiryTime - Date.now();
+    console.log("Debug Session TimeLeft (ms):", timeLeft); // Bật F12 xem dòng này ra số dương hay âm
+
+    // Nếu thời gian còn lại <= 0 thì mới gọi logout
+    if (timeLeft <= 0) {
+      console.warn("Phiên đã thực sự hết hạn!");
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    const absoluteTimer = setTimeout(() => {
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+    }, timeLeft);
+
+    // 👉 Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; 
+    let idleTimer: NodeJS.Timeout;
+
+    const handleUserActivity = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+
+      idleTimer = setTimeout(() => {
+        handleLogout();
+        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảoטח.');
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, handleUserActivity);
     });
-    return unsubscribe;
-  }, []);
+
+    handleUserActivity();
+
+    return () => {
+      clearTimeout(absoluteTimer);
+      if (idleTimer) clearTimeout(idleTimer);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
+  }, [currentUser]);
 
   // Auto-logout logic
   useEffect(() => {

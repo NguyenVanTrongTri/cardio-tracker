@@ -85,10 +85,14 @@ export default function App() {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleLogout = () => {
-    logout();
-    setShowUserMenu(false);
-    setIsAdminPortalActive(false);
-    setActiveTab('home');
+    try {
+      logout();
+      setShowUserMenu(false);
+      setIsAdminPortalActive(false);
+      setActiveTab('home');
+    } catch (error) {
+      console.error('Lỗi khi thực hiện đăng xuất:', error);
+    }
   };
 
   // Click Outside cho User Menu

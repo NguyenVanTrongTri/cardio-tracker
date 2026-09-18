@@ -460,7 +460,7 @@ export default function App() {
                       className="w-full flex items-center gap-2 px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-colors text-left font-semibold"
                     >
                       <LogOut size={14} />
-                      <span>Đăng Xuất</span>
+                      <span>Đăng Xuất1</span>
                     </button>
                   </div>
                 </div>

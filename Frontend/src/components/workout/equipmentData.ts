@@ -95,6 +95,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         durationMinutes: 7,
         speedKmh: 4.5,
         inclineDegree: 3.0,
+        distanceKm: 0.5,
       },
       phase2: {
         phaseNumber: 2,
@@ -103,6 +104,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         speedKmh: 5.2,
         inclineDegree: 8.5,
         isCoreEngaged: true,
+        distanceKm: 2.6,
       },
       phase3: {
         phaseNumber: 3,
@@ -110,6 +112,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         durationMinutes: 5,
         speedKmh: 4.0,
         inclineDegree: 2.0,
+        distanceKm: 0.3,
       },
     },
   },
@@ -161,6 +164,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         inclineDegree: 0,
         resistanceLevel: 4,
         cadenceRpm: 65,
+        distanceKm: 1.8,
       },
       phase2: {
         phaseNumber: 2,
@@ -171,6 +175,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         resistanceLevel: 8,
         cadenceRpm: 78,
         isCoreEngaged: true,
+        distanceKm: 11.0,
       },
       phase3: {
         phaseNumber: 3,
@@ -180,6 +185,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         inclineDegree: 0,
         resistanceLevel: 3,
         cadenceRpm: 55,
+        distanceKm: 1.2,
       },
     },
   },
@@ -231,6 +237,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         inclineDegree: 0,
         resistanceLevel: 3,
         strokeRateSpm: 20,
+        distanceKm: 0.7,
       },
       phase2: {
         phaseNumber: 2,
@@ -241,6 +248,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         resistanceLevel: 5,
         strokeRateSpm: 24,
         isCoreEngaged: true,
+        distanceKm: 6.7,
       },
       phase3: {
         phaseNumber: 3,
@@ -250,6 +258,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         inclineDegree: 0,
         resistanceLevel: 2,
         strokeRateSpm: 18,
+        distanceKm: 0.6,
       },
     },
   },
@@ -293,6 +302,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         inclineDegree: 0,
         resistanceLevel: 3,
         stepsPerMin: 45,
+        distanceKm: 0.2,
       },
       phase2: {
         phaseNumber: 2,
@@ -303,6 +313,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         resistanceLevel: 7,
         stepsPerMin: 68,
         isCoreEngaged: true,
+        distanceKm: 2.0,
       },
       phase3: {
         phaseNumber: 3,
@@ -312,6 +323,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         inclineDegree: 0,
         resistanceLevel: 2,
         stepsPerMin: 35,
+        distanceKm: 0.15,
       },
     },
   },
@@ -353,6 +365,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         durationMinutes: 8,
         speedKmh: 4.8,
         inclineDegree: 0,
+        distanceKm: 0.6,
       },
       phase2: {
         phaseNumber: 2,
@@ -361,6 +374,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         speedKmh: 6.2,
         inclineDegree: 2.0,
         isCoreEngaged: true,
+        distanceKm: 3.1,
       },
       phase3: {
         phaseNumber: 3,
@@ -368,6 +382,7 @@ export const EQUIPMENT_LIST: EquipmentDef[] = [
         durationMinutes: 5,
         speedKmh: 4.2,
         inclineDegree: 0,
+        distanceKm: 0.35,
       },
     },
   },

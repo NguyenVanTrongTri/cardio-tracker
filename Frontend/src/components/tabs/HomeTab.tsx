@@ -173,8 +173,6 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         // ... bạn có thể khôi phục các state khác ở đây nếu muốn
       }
     }
-    
-    
     // setRecentWorkouts(workouts);
     // setProfile(getStoredProfile());
   }, []);

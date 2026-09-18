@@ -27,7 +27,7 @@ import ChangePasswordModal from './components/auth/ChangePasswordModal';
 import LandingPage from './components/landing/LandingPage';
 import AdminPortal from './admin/AdminPortal';
 import { getCurrentUser, logout, subscribeAuth } from './services/auth';
-import { UserAccount } from './types';
+import { UserAccount, AuthSession } from './types';
 
 // Kiểu dữ liệu cho Thông báo
 interface AppNotification {
@@ -116,13 +116,139 @@ export default function App() {
     };
   }, [showNotifications]);
 
-  useEffect(() => {
-    const unsubscribe = subscribeAuth((user) => {
-      setCurrentUser(user);
-      setDataRefreshKey((k) => k + 1);
+useEffect(() => {
+    if (!currentUser) return;
+
+    const raw = localStorage.getItem('cardio_session_v2');
+    if (!raw) return;
+    
+    let session: AuthSession;
+    try {
+      session = JSON.parse(raw);
+    } catch {
+      return;
+    }
+
+    if (!session.expiresAt) return;
+
+    // 👉 Chuẩn hóa: Nếu expiresAt là dạng giây (nhỏ hơn 10 tỷ), đổi sang mili-giây
+    let expiryTime = Number(session.expiresAt);
+    if (expiryTime < 10000000000) {
+      expiryTime *= 1000;
+    }
+
+    const timeLeft = expiryTime - Date.now();
+
+    // 🛑 KIỂM TRA AN TOÀN: Nếu thời gian còn lại <= 0 thì mới logout
+    if (timeLeft <= 0) {
+      console.warn("Token đã hết hạn, tiến hành đăng xuất.");
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    const absoluteTimer = setTimeout(() => {
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+    }, timeLeft);
+
+    // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
+    let idleTimer: NodeJS.Timeout;
+
+    const handleUserActivity = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+
+      idleTimer = setTimeout(() => {
+        handleLogout();
+        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, handleUserActivity);
     });
-    return unsubscribe;
-  }, []);
+
+    handleUserActivity();
+
+    return () => {
+      clearTimeout(absoluteTimer);
+      if (idleTimer) clearTimeout(idleTimer);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
+  }, [currentUser]);
+
+  // Auto-logout logic
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const raw = localStorage.getItem('cardio_session_v2');
+    if (!raw) return;
+    
+    let session: AuthSession;
+    try {
+      session = JSON.parse(raw);
+    } catch {
+      return;
+    }
+
+    if (!session.expiresAt) return;
+
+    // 👉 Chuẩn hóa: Nếu expiresAt là dạng giây (nhỏ hơn 10 tỷ), đổi sang mili-giây
+    let expiryTime = Number(session.expiresAt);
+    if (expiryTime < 10000000000) {
+      expiryTime *= 1000;
+    }
+
+    const timeLeft = expiryTime - Date.now();
+
+    // 🛑 KIỂM TRA AN TOÀN: Nếu thời gian còn lại <= 0 thì mới logout
+    if (timeLeft <= 0) {
+      console.warn("Token đã hết hạn, tiến hành đăng xuất.");
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    const absoluteTimer = setTimeout(() => {
+      handleLogout();
+      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
+    }, timeLeft);
+
+    // 👉 2. Xử lý thời gian không hoạt động (Idle Timeout)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
+    let idleTimer: NodeJS.Timeout;
+
+    const handleUserActivity = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+
+      idleTimer = setTimeout(() => {
+        handleLogout();
+        alert('Bạn đã rời máy quá lâu (15 phút không hoạt động). Phiên làm việc đã tự động khóa để bảo mật.');
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, handleUserActivity);
+    });
+
+    handleUserActivity();
+
+    return () => {
+      clearTimeout(absoluteTimer);
+      if (idleTimer) clearTimeout(idleTimer);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
+  }, [currentUser]);
+
 
   const handleWorkoutSaved = () => {
     setDataRefreshKey((prev) => prev + 1);

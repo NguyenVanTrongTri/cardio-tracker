@@ -147,17 +147,6 @@ export default function App() {
     const timeLeft = expiryTime - Date.now();
 
     // Nếu token đã hết hạn thực sự từ trước đó -> Xóa session và yêu cầu đăng nhập lại
-    if (timeLeft <= 0) {
-      handleLogout();
-      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
-      return;
-    }
-
-    // Thiết lập timer cho Token Expiry
-    const absoluteTimer = setTimeout(() => {
-      handleLogout();
-      alert('Phiên làm việc của bạn đã hết hạn. Vui lòng đăng nhập lại.');
-    }, timeLeft);
 
     // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
     const IDLE_TIMEOUT_MS = 15 * 60 * 1000;

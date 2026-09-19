@@ -51,8 +51,6 @@ const login = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
-
 const register = async (req, res) => {
   try {
     const { fullName, email, password, heightCm, gender, birthYear } = req.body;

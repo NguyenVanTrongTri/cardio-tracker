@@ -6,7 +6,52 @@ const { JWT_SECRET } = require('../middlewares/authMiddleware');
 const crypto = require('crypto');
 
 const login = async (req, res) => {
-  
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Vui lòng nhập đầy đủ email và mật khẩu' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+    
+    // So sánh mật khẩu bằng bcryptjs
+    const isPasswordValid = user ? await bcrypt.compare(password, user.passwordHash) : false;
+
+    // ✅ Sửa thành dùng biến isPasswordValid
+    if (!user || !isPasswordValid) {
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Email hoặc mật khẩu không chính xác' 
+      });
+    }
+    
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+    console.log("DEBUG_LOG: Đang trả về response từ dòng này...");
+
+    res.json({
+      success: true,
+      message: 'Đăng nhập thành công!',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        gender: user.gender,
+      }
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 };
 const register = async (req, res) => {
   try {

@@ -23,6 +23,8 @@ interface AdminPracticeTabProps {
   onRefreshStats: () => void;
 }
 
+const API_BASE_URL = 'https://backendcardio.vercel.app/api/practices';
+
 export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPracticeTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [practices, setPractices] = useState<EquipmentDef[]>([]);
@@ -36,15 +38,20 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     setTimeout(() => setFeedback(null), 3000);
   };
 
-  // 1. Lấy danh sách bài tập động từ Backend khi component mount
+  // 1. Lấy danh sách bài tập động từ Backend (Domain đầy đủ)
   const fetchPractices = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/practices'); // Lấy toàn bộ (bao gồm cả đang bật/tắt)
-      const data = await res.json();
+      const res = await fetch(API_BASE_URL);
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = { success: false, error: rawText };
+      }
       
       if (data.success) {
-        // Map lại cấu trúc trường dữ liệu từ DB (snake_case -> camelCase nếu cần)
         const formatted = data.data.map((item: any) => ({
           id: item.id,
           name: item.name,
@@ -54,10 +61,9 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
           bgLight: item.bgLight || item.bg_light,
           description: item.description,
           enabled: item.enabled,
-          ...(item.configJson || item.config_json || {}) // Trải phẳng cấu hình param1, param2, defaultPhases...
+          ...(item.configJson || item.config_json || {})
         }));
         setPractices(formatted);
-         showToast('Thành công!', 'success');
       } else {
         showToast('Không thể tải danh sách bài tập từ server!', 'error');
       }
@@ -80,7 +86,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     });
   }, [practices, searchTerm]);
 
-  // 2. Bật / Tắt trạng thái bài tập gọi API PUT
+  // 2. Bật / Tắt trạng thái bài tập gọi API PUT (Domain đầy đủ)
   const togglePractice = async (id: string) => {
     const practice = practices.find(p => p.id === id);
     if (!practice) return;
@@ -88,7 +94,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     const nextEnabledStatus = !practice.enabled;
 
     try {
-      const res = await fetch(`/api/practices/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: nextEnabledStatus })
@@ -111,13 +117,12 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     }
   };
 
-  // 3. Lưu cấu hình chỉnh sửa bài tập gọi API PUT
+  // 3. Lưu cấu hình chỉnh sửa bài tập gọi API PUT (Domain đầy đủ)
   const handleSavePractice = async (updated: EquipmentDef) => {
     try {
-      // Tách cấu hình chung và phần configJson (param1, param2, defaultPhases...)
       const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = updated;
 
-      const res = await fetch(`/api/practices/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -128,7 +133,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
           bgLight,
           description,
           enabled,
-          configJson: configRest // Gom các cấu hình phụ vào JSON
+          configJson: configRest
         })
       });
       const data = await res.json();
@@ -137,7 +142,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
         setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
         setEditingPractice(null);
         showToast('Đã lưu cấu hình bài tập lên database!');
-        fetchPractices(); // Reload lại dữ liệu mới nhất
+        fetchPractices();
       } else {
         showToast(data.message || 'Lưu cấu hình thất bại!', 'error');
       }
@@ -147,12 +152,12 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     }
   };
 
-  // 4. Thêm bài tập mới gọi API POST
+  // 4. Thêm bài tập mới gọi API POST (Domain đầy đủ)
   const handleCreatePractice = async (newPractice: EquipmentDef) => {
     try {
       const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = newPractice;
 
-      const res = await fetch('/api/practices', {
+      const res = await fetch(API_BASE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -172,7 +177,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
       if (data.success) {
         setIsCreateModalOpen(false);
         showToast('Đã thêm bài tập mới thành công!');
-        fetchPractices(); // Reload lại danh sách từ DB
+        fetchPractices();
         onRefreshStats();
       } else {
         showToast(data.message || 'Thêm bài tập thất bại!', 'error');

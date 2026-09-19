@@ -161,6 +161,7 @@ export default function App() {
 
     // Thiết lập timer cho Token Expiry
     const absoluteTimer = setTimeout(() => {
+      console.warn("-> Bị logout do: Token hết hạn (absoluteTimer)");
       handleLogout();
     }, Math.max(timeLeft, 0));
 
@@ -171,10 +172,10 @@ export default function App() {
     const handleUserActivity = () => {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
+        console.warn("-> Bị logout do: Quá thời gian không hoạt động (Idle Timeout)");
         handleLogout();
       }, IDLE_TIMEOUT_MS);
     };
-
     const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
     
     activityEvents.forEach((event) => {

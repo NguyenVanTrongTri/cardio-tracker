@@ -1,7 +1,7 @@
 import { UserAccount, AuthSession, UserProfile } from '../types';
 const USERS_STORAGE_KEY = 'cardio_users_v2';
 const SESSION_STORAGE_KEY = 'cardio_session_v2';
-const API_BASE_URL = 'https://backendcardio.vercel.app/api';
+const API_BASE_URL = 'https://cardio-tracker-2uf7.vercel.app/api';
 
 // Pre-seeded users
 export const INITIAL_ADMIN_USER: UserAccount = {

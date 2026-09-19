@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://backendcardio.vercel.app/api';
+const API_BASE_URL = 'https://cardio-tracker-2uf7.vercel.app/api';
 
 // 1. Gửi yêu cầu lấy mã OTP quên mật khẩu
 export async function requestPasswordReset(email: string) {

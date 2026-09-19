@@ -13,7 +13,7 @@ const userRoutes = require('./src/routes/userRoutes');
 const workoutRoutes = require('./src/routes/workoutRoutes');
 console.log("Check workoutRoutes:", typeof workoutRoutes);
 const seedRoutes = require('./src/routes/seedRoutes');
-const practiceRoutes = require('./src/routes/practiceRoutes');
+
 
 // Cấu hình CORS chuẩn
 app.use(cors({

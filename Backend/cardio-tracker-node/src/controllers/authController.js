@@ -33,6 +33,7 @@ const login = async (req, res) => {
       JWT_SECRET,
       { expiresIn: '1d' }
     );
+    console.log("DEBUG_LOG: Đang trả về response từ dòng này...");
 
     res.json({
       success: true,

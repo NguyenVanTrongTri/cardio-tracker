@@ -38,46 +38,46 @@ export default function LoginForm({
   setErrorMsg(null);
   setLoading(true);
 
-  try {
-    // Bước 1: Gọi API đăng nhập (Server sẽ tự set HttpOnly Cookie)
-    const loginRes = await fetch('https://backendcardio.vercel.app/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include', // Bắt buộc để nhận cookie
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      // Bước 1: Gọi API đăng nhập (Server sẽ tự set HttpOnly Cookie)
+      const loginRes = await fetch('https://backendcardio.vercel.app/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Bắt buộc để nhận cookie
+        body: JSON.stringify({ email, password }),
+      });
 
-    const loginData = await loginRes.json();
+      const loginData = await loginRes.json();
 
-    if (!loginRes.ok || !loginData.success) {
-      throw new Error(loginData.error || 'Đăng nhập thất bại');
+      if (!loginRes.ok || !loginData.success) {
+        throw new Error(loginData.error || 'Đăng nhập thất bại');
+      }
+
+      setSuccessMsg('Đăng nhập thành công! Đang tải thông tin...');
+
+      // Bước 2: Gọi tiếp API /me để lấy thông tin user (Trình duyệt tự đính kèm cookie ngầm)
+      const profileRes = await fetch('https://backendcardio.vercel.app/api/users/me', {
+        method: 'GET',
+        credentials: 'include', // Bắt buộc để gửi cookie lên server
+      });
+
+      const profileData = await profileRes.json();
+
+      if (profileRes.ok && profileData.success) {
+        setTimeout(() => {
+          onSuccess(profileData.user as UserAccount);
+        }, 500);
+      } else {
+        throw new Error('Không thể tải thông tin tài khoản');
+      }
+
+    } catch (err: any) {
+      console.error('Login flow error:', err);
+      setErrorMsg(err.message || 'Lỗi kết nối server');
+    } finally {
+      setLoading(false);
     }
-
-    setSuccessMsg('Đăng nhập thành công! Đang tải thông tin...');
-
-    // Bước 2: Gọi tiếp API /me để lấy thông tin user (Trình duyệt tự đính kèm cookie ngầm)
-    const profileRes = await fetch('https://backendcardio.vercel.app/api/users/me', {
-      method: 'GET',
-      credentials: 'include', // Bắt buộc để gửi cookie lên server
-    });
-
-    const profileData = await profileRes.json();
-
-    if (profileRes.ok && profileData.success) {
-      setTimeout(() => {
-        onSuccess(profileData.user as UserAccount);
-      }, 500);
-    } else {
-      throw new Error('Không thể tải thông tin tài khoản');
-    }
-
-  } catch (err: any) {
-    console.error('Login flow error:', err);
-    setErrorMsg(err.message || 'Lỗi kết nối server');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <form onSubmit={handleLogin} className="space-y-3.5">

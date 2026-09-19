@@ -34,51 +34,55 @@ export default function LoginForm({
   };
 
   const handleLogin = async (e: FormEvent) => {
-    e.preventDefault();
-    setErrorMsg(null);
-    setLoading(true);
+  e.preventDefault();
+  setErrorMsg(null);
+  setLoading(true);
 
+  try {
+    const response = await fetch('https://backendcardio.vercel.app/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // 👈 QUAN TRỌNG: Giúp trình duyệt nhận và lưu HttpOnly Cookie từ Server
+      body: JSON.stringify({ email, password }),
+    });
+
+    const rawText = await response.text();
+    let data;
     try {
-      const response = await fetch('https://backendcardio.vercel.app/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const rawText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        data = { error: rawText || 'Invalid JSON response' };
+      data = JSON.parse(rawText);
+    } catch {
+      data = { error: rawText || 'Invalid JSON response' };
+    }
+    
+    // Kiểm tra thành công dựa trên success và user
+    if (response.ok && data.success) {
+      setSuccessMsg(`Chào mừng bạn trở lại, ${data.user?.fullName || 'bạn'}!`);
+      
+      if (rememberMe) {
+        const sessionData = {
+          user: data.user,
+          // ❌ Đã loại bỏ token: data.token ở đây vì token nằm an toàn trong HttpOnly Cookie
+          expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        };
+        
+        localStorage.setItem('cardio_session_v2', JSON.stringify(sessionData));
+        localStorage.setItem('cardio_user', JSON.stringify(data.user));
       }
       
-      if (response.ok && data.success && data.user) {
-        setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
-        if (rememberMe) {
-          const sessionData = {
-            user: data.user,
-            token: data.token,
-            expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-          };
-          
-          localStorage.setItem('cardio_session_v2', JSON.stringify(sessionData));
-          localStorage.setItem('cardio_user', JSON.stringify(data.user));
-        }
-        setTimeout(() => {
-          onSuccess(data.user as UserAccount);
-        }, 700);
-      }
-      else {
-        setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
-      }
-    } catch (err: any) {
-      console.error('Network/Fetch Catch Error:', err);
-      setErrorMsg(`Network Error: ${err.message || 'Không kết nối được server'}`);
-    } finally {
-      setLoading(false);
+      setTimeout(() => {
+        onSuccess(data.user as UserAccount);
+      }, 700);
     }
-  };
+    else {
+      setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
+    }
+  } catch (err: any) {
+    console.error('Network/Fetch Catch Error:', err);
+    setErrorMsg(`Network Error: ${err.message || 'Không kết nối được server'}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <form onSubmit={handleLogin} className="space-y-3.5">

@@ -1,23 +1,14 @@
 const jwt = require('jsonwebtoken');
 
+// Lấy JWT Secret từ biến môi trường (hoặc dùng chuỗi mặc định tạm thời)
 const JWT_SECRET = process.env.JWT_SECRET || 'cardio_tracker_super_secret_key_2026';
 
 const verifyToken = (req, res, next) => {
-  let token = null;
+  const authHeader = req.headers['authorization'];
+  
+  // Format token chuẩn: "Bearer <token>"
+  const token = authHeader && authHeader.split(' ')[1];
 
-  // 1. Ưu tiên lấy token từ HttpOnly Cookie (Bảo mật cao, chống XSS)
-  if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
-  } 
-  // 2. Dự phòng lấy từ Header "Authorization: Bearer <token>" (Dùng cho Postman hoặc client cũ)
-  else {
-    const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-    }
-  }
-
-  // Nếu không tìm thấy token ở cả 2 nơi
   if (!token) {
     return res.status(401).json({ 
       success: false, 
@@ -25,7 +16,6 @@ const verifyToken = (req, res, next) => {
     });
   }
 
-  // Xác thực tính hợp lệ của JWT
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
       return res.status(403).json({ 
@@ -34,13 +24,13 @@ const verifyToken = (req, res, next) => {
       });
     }
     
-    // Gắn thông tin user vào request để dùng tiếp ở controller
+    // Gắn thông tin user vào request để dùng tiếp ở controller nếu cần
     req.user = user;
     next();
   });
 };
 
-// Middleware kiểm tra quyền Admin
+// Middleware kiểm tra quyền Admin (để chống đội pentest lấy tài khoản user thường mò vào khu vực quản trị)
 const verifyAdmin = (req, res, next) => {
   verifyToken(req, res, () => {
     if (req.user && req.user.role === 'ADMIN') {

@@ -64,6 +64,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
           ...(item.configJson || item.config_json || {})
         }));
         setPractices(formatted);
+        showToast('Thành công!', 'success');
       } else {
         showToast('Không thể tải danh sách bài tập từ server!', 'error');
       }

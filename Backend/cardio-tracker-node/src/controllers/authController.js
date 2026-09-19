@@ -7,6 +7,7 @@ const crypto = require('crypto');
 
 const login = async (req, res) => {
 };
+
 const register = async (req, res) => {
   try {
     const { fullName, email, password, heightCm, gender, birthYear } = req.body;

@@ -6,7 +6,7 @@ const { getWorkouts, createWorkout, deleteWorkout } = require('../controllers/wo
 const { verifyToken } = require('../middlewares/authMiddleware'); 
 
 // 1. Route lấy danh sách buổi tập
-router.get('/', getWorkouts);
+router.get('/', verifyToken, getWorkouts);
 
 // 2. Route tạo buổi tập mới
 router.post('/', verifyToken, createWorkout);

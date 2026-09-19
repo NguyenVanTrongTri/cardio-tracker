@@ -28,7 +28,7 @@ export default function LoginForm({
 
   const handleFillAdmin = () => {
     setEmail('admin@cardiotracker.com');
-    setPassword('admin123');
+    setPassword('admin123456');
     setErrorMsg(null);
     setSuccessMsg('Đã điền thông tin tài khoản Quản Trị Viên (Admin). Bấm ĐĂNG NHẬP để tiếp tục!');
   };
@@ -39,47 +39,27 @@ export default function LoginForm({
     setLoading(true);
 
     try {
-      const response = await fetch('https://backendcardio.vercel.app/api/auth/login', {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      console.log('Response Status:', response.status);
-      const rawText = await response.text();
-      console.log('Raw Response Body:', rawText);
+      const data = await response.json();
 
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        data = { error: rawText || 'Invalid JSON response' };
-      }
-      if (response.ok && data.success && data.user) {
+      if (data.success && data.user) {
         setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
         if (rememberMe) {
-          // 👉 Sửa lại cấu trúc lưu thành dạng session có chứa token và user, 
-          // khớp tuyệt đối với các hàm kiểm tra đăng nhập khác:
-          const sessionData = {
-            user: data.user,
-            token: data.token,
-            expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-          };
-          
-          // Lưu đồng thời cả 2 key để code cũ hay mới đều đọc được trơn tru:
-          localStorage.setItem('cardio_session_v2', JSON.stringify(sessionData));
           localStorage.setItem('cardio_user', JSON.stringify(data.user));
         }
         setTimeout(() => {
           onSuccess(data.user as UserAccount);
         }, 700);
+      } else {
+        setErrorMsg(data.error || 'Đăng nhập không thành công');
       }
-      else {
-        setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
-      }
-    } catch (err: any) {
-      console.error('Network/Fetch Catch Error:', err);
-      setErrorMsg(`Network Error: ${err.message || 'Không kết nối được server'}`);
+    } catch (err) {
+      setErrorMsg('Không thể kết nối đến server backend!');
     } finally {
       setLoading(false);
     }

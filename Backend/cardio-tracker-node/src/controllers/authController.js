@@ -27,6 +27,7 @@ const login = async (req, res) => {
         error: 'Email hoặc mật khẩu không chính xác' 
       });
     }
+    
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },

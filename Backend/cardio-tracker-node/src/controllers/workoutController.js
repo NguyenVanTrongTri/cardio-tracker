@@ -5,10 +5,20 @@ const crypto = require('crypto'); // Dùng cho crypto.randomUUID()
 // 1. Hàm lấy danh sách buổi tập
 const getWorkouts = async (req, res) => {
   try {
+    // Lấy userId trực tiếp từ middleware verifyToken đã giải mã
     const userId = req.user?.id;
     
+    // Kiểm tra an toàn (dù đã có middleware chặn, giữ lại để code cực kỳ an toàn)
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để xem lịch sử tập luyện!' 
+      });
+    }
+    
+    // Chỉ lấy dữ liệu của đúng user sở hữu token
     const workouts = await prisma.workout.findMany({
-      where: userId ? { userId } : undefined,
+      where: { userId }, 
       take: 10,
       include: {
         workoutPhases: true,
@@ -16,39 +26,50 @@ const getWorkouts = async (req, res) => {
       orderBy: { workoutStartTime: 'desc' }
     });
 
-    // Lấy thêm BodyMetric của user để map vào workout theo ngày
-    const enrichedWorkouts = await Promise.all(workouts.map(async (workout) => {
+    // Gom tất cả các ngày tập unique để truy vấn BodyMetric 1 lần duy nhất (Tránh lỗi N+1 Query)
+    const metricDates = workouts.map(workout => {
+      const workoutDateObj = new Date(workout.workoutStartTime);
+      return new Date(Date.UTC(
+        workoutDateObj.getFullYear(),
+        workoutDateObj.getMonth(),
+        workoutDateObj.getDate()
+      ));
+    });
+
+    // Lấy danh sách bodyMetrics tương ứng trong 1 câu lệnh query duy nhất
+    const bodyMetrics = await prisma.bodyMetric.findMany({
+      where: {
+        userId,
+        metricDate: { in: metricDates }
+      }
+    });
+
+    // Tạo một map để tra cứu nhanh theo định dạng chuỗi ngày YYYY-MM-DD
+    const metricMap = new Map();
+    bodyMetrics.forEach(m => {
+      const dateKey = new Date(m.metricDate).toISOString().split('T')[0];
+      metricMap.set(dateKey, m);
+    });
+
+    // Map dữ liệu trả về cho client kèm theo các chỉ số cơ thể trong ngày
+    const enrichedWorkouts = workouts.map((workout) => {
       const totalCalories = parseFloat(workout.calories) || 0;
       const activeMinutes = Number(workout.activeTime) || 0;
       const calPerMinute = activeMinutes > 0 
         ? (totalCalories / activeMinutes).toFixed(1) 
         : "0.0";
 
-      // Chuẩn hóa ngày của buổi tập để tìm bodyMetric tương ứng
       const workoutDateObj = new Date(workout.workoutStartTime);
-      const metricDateOnly = new Date(Date.UTC(
-        workoutDateObj.getFullYear(),
-        workoutDateObj.getMonth(),
-        workoutDateObj.getDate()
-      ));
-
-      // Truy vấn thông số cơ thể trong ngày đó
-      const bodyMetric = await prisma.bodyMetric.findUnique({
-        where: {
-          userId_metricDate: {
-            userId: workout.userId,
-            metricDate: metricDateOnly
-          }
-        }
-      });
+      const dateKey = workoutDateObj.toISOString().split('T')[0];
+      const bodyMetric = metricMap.get(dateKey);
 
       return {
         ...workout,
         efficiencyIndex: calPerMinute,
-        weightKg: bodyMetric?.weightKg || null, // 👈 Đính kèm cân nặng
-        waistCm: bodyMetric?.waistCm || null,   // 👈 Đính kèm vòng eo
+        weightKg: bodyMetric?.weightKg || null, // Đính kèm cân nặng
+        waistCm: bodyMetric?.waistCm || null,   // Đính kèm vòng eo
       };
-    }));
+    });
 
     return res.json({ success: true, data: enrichedWorkouts });
   } catch (error) {

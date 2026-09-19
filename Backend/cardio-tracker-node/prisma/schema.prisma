@@ -135,6 +135,23 @@ model MealFoodItem {
   @@map("meal_food_items")
 }
 
+model Practice {
+  id          String   @id @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  shortName   String   @map("short_name") @db.VarChar(50)
+  tag         String?  @db.VarChar(100)
+  badgeColor  String?  @map("badge_color") @db.VarChar(100)
+  bgLight     String?  @map("bg_light") @db.VarChar(100)
+  description String?  @db.Text
+  enabled     Boolean  @default(true)
+  configJson  Json?    @map("config_json") // Chứa param1, param2, param3, coreFocus, defaultPhases
+  
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
+
+  @@map("practices")
+}
+
 model migrations {
   id        Int      @id @default(autoincrement()) @db.UnsignedInt
   migration String   @db.VarChar(255)

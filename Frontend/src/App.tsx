@@ -137,63 +137,65 @@ export default function App() {
 
   // Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
   useEffect(() => {
-    if (!currentUser) return;
+  if (!currentUser) return;
 
-    const raw = localStorage.getItem('cardio_session_v2');
-    if (!raw) return;
-    
-    let session: AuthSession;
-    try {
-      session = JSON.parse(raw);
-    } catch {
-      return;
-    }
+  const raw = localStorage.getItem('cardio_session_v2');
+  if (!raw) return;
+  
+  let session: AuthSession;
+  try {
+    session = JSON.parse(raw);
+  } catch {
+    return;
+  }
 
-    if (!session.expiresAt) return;
+  if (!session.expiresAt) return;
 
-    // 1. Chuẩn hóa thời gian hết hạn (token expiry)
-    let expiryTime = Number(session.expiresAt);
-    if (expiryTime < 10000000000) {
-      expiryTime *= 1000;
-    }
-    console.log("Expiry time:", expiryTime, "Current time:", Date.now(), "Time left (ms):", expiryTime - Date.now());
-    const timeLeft = expiryTime - Date.now();
+  // 1. Chuẩn hóa thời gian hết hạn (token expiry)
+  let expiryTime = Number(session.expiresAt);
+  if (expiryTime < 10000000000) {
+    expiryTime *= 1000;
+  }
 
-    // Thiết lập timer cho Token Expiry
-    const absoluteTimer = setTimeout(() => {
-      console.warn("-> Bị logout do: Token hết hạn (absoluteTimer)");
+  const timeLeft = expiryTime - Date.now();
+
+  // 🛑 KIỂM TRA AN TOÀN: Nếu hết hạn ngay từ đầu thì logout luôn
+  if (timeLeft <= 0) {
+    console.warn("Token đã hết hạn từ trước.");
+    handleLogout();
+    return;
+  }
+
+  // ❌ XÓA BỎ absoluteTimer vì nó gây tràn số (integer overflow) với token dài ngày!
+
+  // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
+  const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+  let idleTimer: NodeJS.Timeout;
+
+  const handleUserActivity = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      console.warn("-> Bị logout do: Quá thời gian không hoạt động (Idle Timeout)");
       handleLogout();
-    }, Math.max(timeLeft, 0));
+    }, IDLE_TIMEOUT_MS);
+  };
 
-    // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
-    const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
-    let idleTimer: NodeJS.Timeout;
+  const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+  
+  activityEvents.forEach((event) => {
+    window.addEventListener(event, handleUserActivity);
+  });
 
-    const handleUserActivity = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        console.warn("-> Bị logout do: Quá thời gian không hoạt động (Idle Timeout)");
-        handleLogout();
-      }, IDLE_TIMEOUT_MS);
-    };
-    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-    
+  handleUserActivity();
+
+  // Dọn dẹp khi component unmount hoặc khi user thay đổi
+  return () => {
+    if (idleTimer) clearTimeout(idleTimer);
     activityEvents.forEach((event) => {
-      window.addEventListener(event, handleUserActivity);
+      window.removeEventListener(event, handleUserActivity);
     });
-
-    handleUserActivity();
-
-    // Dọn dẹp khi component unmount hoặc khi user thay đổi
-    return () => {
-      clearTimeout(absoluteTimer);
-      clearTimeout(idleTimer);
-      activityEvents.forEach((event) => {
-        window.removeEventListener(event, handleUserActivity);
-      });
-    };
-  }, [currentUser]);
-
+  };
+  }, [currentUser, handleLogout]);
 
   const handleWorkoutSaved = () => {
     setDataRefreshKey((prev) => prev + 1);

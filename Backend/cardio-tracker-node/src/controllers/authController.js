@@ -10,52 +10,34 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     
     if (!email || !password) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Vui lòng nhập đầy đủ email và mật khẩu' 
-      });
+      return res.status(400).json({ success: false, error: 'Vui lòng nhập đầy đủ email và mật khẩu' });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-    
-    // So sánh mật khẩu bằng bcryptjs
+    const user = await prisma.user.findUnique({ where: { email } });
     const isPasswordValid = user ? await bcrypt.compare(password, user.passwordHash) : false;
 
     if (!user || !isPasswordValid) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Email hoặc mật khẩu không chính xác' 
-      });
+      return res.status(401).json({ success: false, error: 'Email hoặc mật khẩu không chính xác' });
     }
 
-    // Tạo JWT token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
 
-    // Cấu hình HttpOnly Cookie để bảo mật token tuyệt đối (chống XSS)
+    // Gắn token vào HttpOnly Cookie như cũ
     res.cookie('token', token, {
-      httpOnly: true, // Ngăn chặn hoàn toàn JavaScript phía client đọc cookie
-      secure: process.env.NODE_ENV === 'production', // Bắt buộc chạy HTTPS trên production (Vercel)
-      sameSite: 'none', // Bắt buộc là 'none' khi Frontend và Backend nằm ở 2 tên miền Vercel khác nhau
-      maxAge: 24 * 60 * 60 * 1000 // Hạn sử dụng: 1 ngày (tính bằng mili-giây)
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+      maxAge: 24 * 60 * 60 * 1000
     });
 
-    // Trả về response thành công (Đã loại bỏ token khỏi body để tăng bảo mật, loại bỏ id bị lặp)
+    // CHỈ TRẢ VỀ THÔNG BÁO THÀNH CÔNG (Không lộ thông tin user trong body nữa)
     res.json({
       success: true,
-      message: 'Đăng nhập thành công!',
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role,
-        gender: user.gender,
-      }
+      message: 'Đăng nhập thành công!'
     });
   } catch (error) {
     console.error("Login error:", error);

@@ -5,5 +5,6 @@ const { verifyAdmin } = require('../middlewares/authMiddleware');
 
 // GET /api/users
 router.get('/', verifyAdmin, getUsers);
+router.get('/me', verifyToken, getMyProfile);
 
 module.exports = router;

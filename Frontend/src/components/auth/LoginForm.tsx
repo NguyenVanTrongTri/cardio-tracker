@@ -55,13 +55,13 @@ export default function LoginForm({
     }
     
     // Kiểm tra thành công dựa trên success và user
-    if (response.ok && data.success) {
-      setSuccessMsg(`Chào mừng bạn trở lại, ${data.user?.fullName || 'bạn'}!`);
+   // Thêm lại điều kiện && data.user để chặn đứng trường hợp user bị thiếu
+    if (response.ok && data.success && data.user) {
+      setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
       
       if (rememberMe) {
         const sessionData = {
           user: data.user,
-          // ❌ Đã loại bỏ token: data.token ở đây vì token nằm an toàn trong HttpOnly Cookie
           expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
         };
         
@@ -74,7 +74,8 @@ export default function LoginForm({
       }, 700);
     }
     else {
-      setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
+      // Nếu không có user hoặc success không đúng, sẽ báo lỗi rõ ràng thay vì sập app
+      setErrorMsg(data.error || 'Phản hồi từ server thiếu thông tin người dùng (user)');
     }
   } catch (err: any) {
     console.error('Network/Fetch Catch Error:', err);

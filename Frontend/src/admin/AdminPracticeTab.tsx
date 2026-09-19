@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Bike,
   Search,
@@ -10,9 +10,10 @@ import {
   Power,
   PowerOff,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
-import { EQUIPMENT_LIST, EquipmentDef } from '../components/workout/equipmentData';
+import { EquipmentDef } from '../components/workout/equipmentData';
 import { logAdminAction } from './adminService';
 import AdminPracticeEditModal from './AdminPracticeEditModal';
 import AdminPracticeCreateModal from './AdminPracticeCreateModal';
@@ -24,14 +25,8 @@ interface AdminPracticeTabProps {
 
 export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPracticeTabProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [practices, setPractices] = useState<EquipmentDef[]>(() => {
-    const saved = localStorage.getItem('practices-enabled-status');
-    const enabledMap = saved ? JSON.parse(saved) : {};
-    return EQUIPMENT_LIST.map(p => ({
-      ...p,
-      enabled: enabledMap[p.id] ?? (p.enabled ?? true) // Default to true if not set
-    }));
-  });
+  const [practices, setPractices] = useState<EquipmentDef[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingPractice, setEditingPractice] = useState<EquipmentDef | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -41,6 +36,42 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     setTimeout(() => setFeedback(null), 3000);
   };
 
+  // 1. Lấy danh sách bài tập động từ Backend khi component mount
+  const fetchPractices = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/practices'); // Lấy toàn bộ (bao gồm cả đang bật/tắt)
+      const data = await res.json();
+      
+      if (data.success) {
+        // Map lại cấu trúc trường dữ liệu từ DB (snake_case -> camelCase nếu cần)
+        const formatted = data.data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          shortName: item.shortName || item.short_name,
+          tag: item.tag,
+          badgeColor: item.badgeColor || item.badge_color,
+          bgLight: item.bgLight || item.bg_light,
+          description: item.description,
+          enabled: item.enabled,
+          ...(item.configJson || item.config_json || {}) // Trải phẳng cấu hình param1, param2, defaultPhases...
+        }));
+        setPractices(formatted);
+      } else {
+        showToast('Không thể tải danh sách bài tập từ server!', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching practices:', error);
+      showToast('Lỗi kết nối đến server khi tải bài tập!', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPractices();
+  }, []);
+
   const filteredPractices = useMemo(() => {
     return practices.filter(p => {
       const label = p.name || '';
@@ -48,48 +79,113 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     });
   }, [practices, searchTerm]);
 
-  const togglePractice = (id: string) => {
-    setPractices(prev => {
-      const updated = prev.map(p => 
-        p.id === id ? { ...p, enabled: !p.enabled } : p
-      );
-      // Persist enabled status
-      const enabledMap = updated.reduce((acc, p) => ({ ...acc, [p.id]: p.enabled }), {});
-      localStorage.setItem('practices-enabled-status', JSON.stringify(enabledMap));
-      return updated;
-    });
-    
-    // Log and refresh
+  // 2. Bật / Tắt trạng thái bài tập gọi API PUT
+  const togglePractice = async (id: string) => {
     const practice = practices.find(p => p.id === id);
-    logAdminAction(adminEmail, 'Cập nhật trạng thái bài tập', `Đã ${practice?.enabled ? 'tắt' : 'bật'} bài tập: ${id}`, 'INFO');
-    showToast('Cập nhật trạng thái thành công!');
-    onRefreshStats();
+    if (!practice) return;
+
+    const nextEnabledStatus = !practice.enabled;
+
+    try {
+      const res = await fetch(`/api/practices/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: nextEnabledStatus })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPractices(prev => 
+          prev.map(p => p.id === id ? { ...p, enabled: nextEnabledStatus } : p)
+        );
+        logAdminAction(adminEmail, 'Cập nhật trạng thái bài tập', `Đã ${nextEnabledStatus ? 'bật' : 'tắt'} bài tập: ${id}`, 'INFO');
+        showToast('Cập nhật trạng thái thành công!');
+        onRefreshStats();
+      } else {
+        showToast(data.message || 'Cập nhật thất bại!', 'error');
+      }
+    } catch (error) {
+      console.error('Error toggling practice:', error);
+      showToast('Lỗi kết nối khi cập nhật trạng thái!', 'error');
+    }
   };
 
-  const handleSavePractice = (updated: EquipmentDef) => {
-    setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
-    setEditingPractice(null);
-    showToast('Đã lưu cấu hình bài tập!');
+  // 3. Lưu cấu hình chỉnh sửa bài tập gọi API PUT
+  const handleSavePractice = async (updated: EquipmentDef) => {
+    try {
+      // Tách cấu hình chung và phần configJson (param1, param2, defaultPhases...)
+      const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = updated;
+
+      const res = await fetch(`/api/practices/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          shortName,
+          tag,
+          badgeColor,
+          bgLight,
+          description,
+          enabled,
+          configJson: configRest // Gom các cấu hình phụ vào JSON
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
+        setEditingPractice(null);
+        showToast('Đã lưu cấu hình bài tập lên database!');
+        fetchPractices(); // Reload lại dữ liệu mới nhất
+      } else {
+        showToast(data.message || 'Lưu cấu hình thất bại!', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving practice:', error);
+      showToast('Lỗi server khi lưu cấu hình!', 'error');
+    }
   };
 
-  const handleCreatePractice = (newPractice: EquipmentDef) => {
-    setPractices(prev => [...prev, newPractice]);
-    setIsCreateModalOpen(false);
-    
-    // Also enable it in localStorage
-    const saved = localStorage.getItem('practices-enabled-status');
-    const enabledMap = saved ? JSON.parse(saved) : {};
-    enabledMap[newPractice.id] = true;
-    localStorage.setItem('practices-enabled-status', JSON.stringify(enabledMap));
-    
-    showToast('Đã thêm bài tập mới!');
-    onRefreshStats();
+  // 4. Thêm bài tập mới gọi API POST
+  const handleCreatePractice = async (newPractice: EquipmentDef) => {
+    try {
+      const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = newPractice;
+
+      const res = await fetch('/api/practices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          name,
+          shortName,
+          tag,
+          badgeColor,
+          bgLight,
+          description,
+          enabled: enabled ?? true,
+          configJson: configRest
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setIsCreateModalOpen(false);
+        showToast('Đã thêm bài tập mới thành công!');
+        fetchPractices(); // Reload lại danh sách từ DB
+        onRefreshStats();
+      } else {
+        showToast(data.message || 'Thêm bài tập thất bại!', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating practice:', error);
+      showToast('Lỗi kết nối khi thêm mới bài tập!', 'error');
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-900">Quản Lý Bài Tập / Thiết Bị</h2>
+        <h2 className="text-xl font-bold text-slate-900">Quản Lý Bài Tập / Thiết Bị (Database)</h2>
         <button onClick={() => setIsCreateModalOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-sm transition-colors">
           <Plus size={16} /> Thêm Bài Tập Mới
         </button>
@@ -107,37 +203,51 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-slate-500">
-            <tr>
-              <th className="px-6 py-4 font-semibold">Tên Bài Tập</th>
-              <th className="px-6 py-4 font-semibold">Trạng Thái</th>
-              <th className="px-6 py-4 font-semibold">Thao Tác</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filteredPractices.map((practice) => (
-              <tr key={practice.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 font-medium text-slate-900">{practice.name}</td>
-                <td className="px-6 py-4">
-                  <button 
-                    onClick={() => togglePractice(practice.id)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
-                      practice.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                    }`}
-                  >
-                    {practice.enabled ? <Power size={12} /> : <PowerOff size={12} />}
-                    {practice.enabled ? 'Đang bật' : 'Đang tắt'}
-                  </button>
-                </td>
-                <td className="px-6 py-4 flex gap-2">
-                  <button onClick={() => setEditingPractice(practice)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"><Edit2 size={16} /></button>
-                  <button className="p-2 hover:bg-rose-50 rounded-lg text-rose-500 transition-colors"><Trash2 size={16} /></button>
-                </td>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
+            <Loader2 className="animate-spin" size={24} />
+            <p className="text-sm">Đang đồng bộ dữ liệu từ Database...</p>
+          </div>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-500">
+              <tr>
+                <th className="px-6 py-4 font-semibold">Tên Bài Tập</th>
+                <th className="px-6 py-4 font-semibold">Mã ID</th>
+                <th className="px-6 py-4 font-semibold">Trạng Thái</th>
+                <th className="px-6 py-4 font-semibold">Thao Tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredPractices.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center py-8 text-slate-400">Không tìm thấy bài tập nào.</td>
+                </tr>
+              ) : (
+                filteredPractices.map((practice) => (
+                  <tr key={practice.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-medium text-slate-900">{practice.name}</td>
+                    <td className="px-6 py-4 text-xs font-mono text-slate-500">{practice.id}</td>
+                    <td className="px-6 py-4">
+                      <button 
+                        onClick={() => togglePractice(practice.id)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors ${
+                          practice.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        {practice.enabled ? <Power size={12} /> : <PowerOff size={12} />}
+                        {practice.enabled ? 'Đang bật' : 'Đang tắt'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 flex gap-2">
+                      <button onClick={() => setEditingPractice(practice)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors" title="Chỉnh sửa"><Edit2 size={16} /></button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
       
       {editingPractice && (
@@ -158,7 +268,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
       )}
 
       {feedback && (
-        <div className={`fixed bottom-6 right-6 px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 font-bold text-sm animate-in fade-in slide-in-from-bottom-5 ${feedback.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>
+        <div className={`fixed bottom-6 right-6 px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 font-bold text-sm animate-in fade-in slide-in-from-bottom-5 z-50 ${feedback.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`}>
           {feedback.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
           {feedback.text}
         </div>

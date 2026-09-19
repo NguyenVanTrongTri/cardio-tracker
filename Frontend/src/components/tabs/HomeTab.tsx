@@ -355,6 +355,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
             setNotes(draftToRestore.notes || '');
             setWeightKg(Number(draftToRestore.weightKg));
             setWaistCm(Number(draftToRestore.waistCm));
+
+            localStorage.removeItem('workout_draft');
             setShowDraftModal(false);
           }}
         />

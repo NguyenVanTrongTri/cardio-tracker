@@ -279,7 +279,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       }
 
       // 👉 Trỏ trực tiếp tới domain backend trên Vercel
-      const response = await fetch('https://backendcardio.vercel.app/api/workouts', {
+      const response = await fetch('https://cardio-tracker-2uf7.vercel.app/api/workouts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

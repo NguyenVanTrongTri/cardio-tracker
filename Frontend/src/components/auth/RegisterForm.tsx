@@ -33,7 +33,7 @@ export default function RegisterForm({
   setErrorMsg(null);
   setLoading(true);
   try {
-      const response = await fetch('https://backendcardio.vercel.app/api/auth/register', {
+      const response = await fetch('https://cardio-tracker-2uf7.vercel.app/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

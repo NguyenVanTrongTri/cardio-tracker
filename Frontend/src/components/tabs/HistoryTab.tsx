@@ -54,7 +54,7 @@ export default function HistoryTab() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('https://backendcardio.vercel.app/api/workouts', {
+      const response = await fetch('https://cardio-tracker-2uf7.vercel.app/api/workouts', {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -106,7 +106,7 @@ export default function HistoryTab() {
     if (!deleteCandidateId) return;
     setIsDeleting(true);
     try {
-      const response = await fetch(`https://backendcardio.vercel.app/api/workouts/${deleteCandidateId}`, {
+      const response = await fetch(`https://cardio-tracker-2uf7.vercel.app/api/workouts/${deleteCandidateId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
@@ -130,7 +130,7 @@ export default function HistoryTab() {
     if (!editingWorkout) return;
 
     try {
-      const response = await fetch(`https://backendcardio.vercel.app/api/workouts/${editingWorkout.id}`, {
+      const response = await fetch(`https://cardio-tracker-2uf7.vercel.app/api/workouts/${editingWorkout.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

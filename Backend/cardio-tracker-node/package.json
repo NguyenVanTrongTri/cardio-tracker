@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "build": "node node_modules/server.js",
+    "build": "cardio-tracker-node/server.js",
     "start": "node server.js"
   },
   "keywords": [],

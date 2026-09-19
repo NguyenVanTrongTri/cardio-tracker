@@ -41,6 +41,7 @@ export default function LoginForm({
     try {
       const response = await fetch('https://backendcardio.vercel.app/api/auth/login', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });

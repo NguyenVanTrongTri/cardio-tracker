@@ -10,7 +10,10 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Vui lòng nhập đầy đủ email và mật khẩu' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Vui lòng nhập đầy đủ email và mật khẩu' 
+      });
     }
 
     const user = await prisma.user.findUnique({
@@ -20,7 +23,6 @@ const login = async (req, res) => {
     // So sánh mật khẩu bằng bcryptjs
     const isPasswordValid = user ? await bcrypt.compare(password, user.passwordHash) : false;
 
-    // ✅ Sửa thành dùng biến isPasswordValid
     if (!user || !isPasswordValid) {
       return res.status(401).json({ 
         success: false, 
@@ -28,16 +30,25 @@ const login = async (req, res) => {
       });
     }
 
+    // Tạo JWT token
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
 
+    // Cấu hình HttpOnly Cookie để bảo mật token tuyệt đối (chống XSS)
+    res.cookie('token', token, {
+      httpOnly: true, // Ngăn chặn hoàn toàn JavaScript phía client đọc cookie
+      secure: process.env.NODE_ENV === 'production', // Bắt buộc chạy HTTPS trên production (Vercel)
+      sameSite: 'none', // Bắt buộc là 'none' khi Frontend và Backend nằm ở 2 tên miền Vercel khác nhau
+      maxAge: 24 * 60 * 60 * 1000 // Hạn sử dụng: 1 ngày (tính bằng mili-giây)
+    });
+
+    // Trả về response thành công (Đã loại bỏ token khỏi body để tăng bảo mật, loại bỏ id bị lặp)
     res.json({
       success: true,
       message: 'Đăng nhập thành công!',
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -51,6 +62,8 @@ const login = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+module.exports = { login };
 
 const register = async (req, res) => {
   try {

@@ -14,7 +14,7 @@ const workoutRoutes = require('./src/routes/workoutRoutes');
 console.log("Check workoutRoutes:", typeof workoutRoutes);
 const seedRoutes = require('./src/routes/seedRoutes');
 const practiceRoutes = require('./src/routes/practiceRoutes');
-
+const cookieParser = require('cookie-parser');
 // Cấu hình CORS chuẩn
 app.use(cors({
   origin: [
@@ -41,7 +41,7 @@ app.get('/', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
+app.use(cookieParser());
 // Mount các API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

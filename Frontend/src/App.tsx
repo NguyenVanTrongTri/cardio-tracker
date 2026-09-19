@@ -169,7 +169,7 @@ export default function App() {
   // ❌ XÓA BỎ absoluteTimer vì nó gây tràn số (integer overflow) với token dài ngày!
 
   // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
-  const IDLE_TIMEOUT_MS = 5* 1000;
+  const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
   let idleTimer: NodeJS.Timeout;
 
   const handleUserActivity = () => {

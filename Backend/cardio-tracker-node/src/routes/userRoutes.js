@@ -4,7 +4,6 @@ const { getUsers } = require('../controllers/userController');
 const { verifyToken, verifyAdmin } = require('../middlewares/authMiddleware');
 
 // GET /api/users
-router.get('/', verifyAdmin, getUsers);
-router.get('/me', verifyToken, getMyProfile);
+router.get('/', getUsers);
 
 module.exports = router;

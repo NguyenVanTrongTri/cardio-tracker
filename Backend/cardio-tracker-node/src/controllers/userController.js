@@ -30,32 +30,7 @@ const getUsers = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-const getMyProfile = async (req, res) => {
-  try {
-    // req.user.id đã được giải mã sẵn từ token bên trong HttpOnly Cookie bởi middleware verifyToken
-    const userId = req.user.id; 
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        fullName: true,
-        role: true,
-        gender: true,
-        // TUYỆT ĐỐI KHÔNG chọn passwordHash trả về đây
-      }
-    });
-
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'Không tìm thấy người dùng' });
-    }
-
-    res.json({ success: true, user });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-};
 module.exports = {
-  getUsers,getMyProfile
+  getUsers,
 };

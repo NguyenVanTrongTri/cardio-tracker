@@ -65,6 +65,13 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
         }));
         setPractices(formatted);
         showToast('Thành công!', 'success');
+        console.log('Tổng số từ API:', data.data.length); 
+
+// 2. Sau khi đã map định dạng dữ liệu (trong fetchPractices)
+      console.log('Tổng số sau khi format:', formatted.length);
+
+      // 3. Trước khi render bảng (bên trong component)
+      console.log('Tổng số sau khi lọc (filteredPractices):', filteredPractices.length);
       } else {
         showToast('Không thể tải danh sách bài tập từ server!', 'error');
       }

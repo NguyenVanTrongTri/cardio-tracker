@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
- "scripts": {
-    "build": "npx prisma generate",
+  "scripts": {
+    "build": "node node_modules/server.js generate",
     "start": "node server.js"
   },
   "keywords": [],

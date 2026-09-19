@@ -48,6 +48,7 @@ import PostWorkoutAssessment from './HomeTab/PostWorkoutAssessment';
 import BodyMetricsSection from './HomeTab/BodyMetricsSection';
 import DraftRestoreModal from './HomeTab/DraftRestoreModal';
 import { useWorkoutForm } from '../../hooks/useWorkoutForm';
+import { getCurrentUser } from '../../services/auth';
 
 interface HomeTabProps {
   key?: string;
@@ -149,32 +150,42 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         weightKg,
         waistCm
       });
-      console.log('Workout auto-saved');
+      
+      // Save user-scoped draft
+      const currentUser = getCurrentUser();
+      const draftKey = currentUser ? `workout_draft_${currentUser.id}` : 'workout_draft';
+      localStorage.setItem(draftKey, JSON.stringify({
+        workoutStartTime,
+        meals,
+        equipmentType,
+        phases: phasesWithCumulative,
+        pauseDuration,
+        fatigueLevel,
+        waterConsumedMl,
+        notes,
+        weightKg,
+        waistCm
+      }));
+      console.log('Workout auto-saved and draft saved');
     }, 1500);
 
     return () => clearTimeout(timer);
   }, [meals, workoutStartTime, equipmentType, phasesWithCumulative, pauseDuration, fatigueLevel, waterConsumedMl, notes, weightKg, waistCm]);
 
   useEffect(() => {
-  const workouts = getStoredWorkouts();
-  const lastWorkout = workouts[0];
-  
-    if (lastWorkout) {
-      const draftDate = lastWorkout.workoutStartTime.split('T')[0];
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Nếu bản nháp khác ngày hôm nay -> Hiện Modal hỏi
-      if (draftDate !== today) {
-        setDraftToRestore(lastWorkout);
+    const currentUser = getCurrentUser();
+    const draftKey = currentUser ? `workout_draft_${currentUser.id}` : 'workout_draft';
+    const draftRaw = localStorage.getItem(draftKey);
+    
+    if (draftRaw) {
+      try {
+        const draft = JSON.parse(draftRaw);
+        setDraftToRestore(draft);
         setShowDraftModal(true);
-      } else {
-        // Nếu là hôm nay thì khôi phục thẳng hoặc để người dùng tiếp tục
-        setMeals(lastWorkout.meals);
-        // ... bạn có thể khôi phục các state khác ở đây nếu muốn
+      } catch (e) {
+        console.error('Failed to parse draft', e);
       }
     }
-    // setRecentWorkouts(workouts);
-    // setProfile(getStoredProfile());
   }, []);
 
   // Handle Equipment Switch: updates equipment and resets phases
@@ -304,7 +315,11 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       if (!response.ok) {
         throw new Error(data.message || `Lỗi server HTTP ${response.status}`);
       }
-      localStorage.removeItem('workout_draft');
+      
+      // Remove user-scoped draft
+      const currentUser = getCurrentUser();
+      const draftKey = currentUser ? `workout_draft_${currentUser.id}` : 'workout_draft';
+      localStorage.removeItem(draftKey);
 
       // Thông báo thành công
       onAddNotification?.(
@@ -342,7 +357,9 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         <DraftRestoreModal
           draft={draftToRestore}
           onDiscard={() => {
-            localStorage.removeItem('workout_draft');
+            const currentUser = getCurrentUser();
+            const draftKey = currentUser ? `workout_draft_${currentUser.id}` : 'workout_draft';
+            localStorage.removeItem(draftKey);
             setShowDraftModal(false);
           }}
           onRestore={() => {
@@ -355,8 +372,6 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
             setNotes(draftToRestore.notes || '');
             setWeightKg(Number(draftToRestore.weightKg));
             setWaistCm(Number(draftToRestore.waistCm));
-
-            localStorage.removeItem('workout_draft');
             setShowDraftModal(false);
           }}
         />
@@ -430,7 +445,10 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           setPauseDuration={setPauseDuration}
         />
 
+
+
         <LiveWorkoutMetrics liveTotals={liveTotals} equipmentDef={equipmentDef} />
+
         <PostWorkoutAssessment
           fatigueLevel={fatigueLevel}
           setFatigueLevel={setFatigueLevel}

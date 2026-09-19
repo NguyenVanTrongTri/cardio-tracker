@@ -51,7 +51,7 @@ const getWorkouts = async (req, res) => {
       metricMap.set(dateKey, m);
     });
 
-    // Map dữ liệu trả về cho client kèm theo các chỉ số cơ thể trong ngày
+    // Map dữ liệu trả về cho client (CHỈ TRẢ VỀ CÁC TRƯỜNG CẦN THIẾT - BẢO MẬT DỮ LIỆU)
     const enrichedWorkouts = workouts.map((workout) => {
       const totalCalories = parseFloat(workout.calories) || 0;
       const activeMinutes = Number(workout.activeTime) || 0;
@@ -64,10 +64,25 @@ const getWorkouts = async (req, res) => {
       const bodyMetric = metricMap.get(dateKey);
 
       return {
-        ...workout,
+        // Chỉ định rõ ràng từng trường được phép lộ ra bên ngoài
+        id: workout.id,
+        workoutStartTime: workout.workoutStartTime,
+        activeTime: workout.activeTime,
+        calories: workout.calories,
+        totalDistanceKm: workout.totalDistanceKm,
+        equipmentType: workout.equipmentType,
+        fatigueLevel: workout.fatigueLevel,
+        waterConsumedMl: workout.waterConsumedMl,
+        notes: workout.notes,
+        workoutPhases: workout.workoutPhases, // Nếu cần thiết hiển thị các phase
+        
+        // Các chỉ số tính toán & đo lường
         efficiencyIndex: calPerMinute,
-        weightKg: bodyMetric?.weightKg || null, // Đính kèm cân nặng
-        waistCm: bodyMetric?.waistCm || null,   // Đính kèm vòng eo
+        weightKg: bodyMetric?.weightKg || null, 
+        waistCm: bodyMetric?.waistCm || null,  
+        
+        // 🔒 Các thông tin nhạy cảm hệ thống nội bộ sẽ bị bỏ hoàn toàn ở đây, 
+        // không bị rò rỉ ra tab Network nữa.
       };
     });
 

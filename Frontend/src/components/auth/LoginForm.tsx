@@ -34,17 +34,17 @@ export default function LoginForm({
     setSuccessMsg('Đã điền thông tin tài khoản Quản Trị Viên (Admin). Bấm ĐĂNG NHẬP để tiếp tục!');
   };
 
-  const handleLogin = async (e: FormEvent) => {
+ const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setLoading(true);
 
-    
     try {
       const response = await fetch(API_ENDPOINTS.AUTH_LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // 🍪 BẮT BUỘC PHẢI CÓ ĐỂ NHẬN VÀ LƯU COOKIE TỪ BACKEND
       });
 
       const rawText = await response.text();

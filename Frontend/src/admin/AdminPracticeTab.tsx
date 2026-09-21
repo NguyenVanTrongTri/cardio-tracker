@@ -102,7 +102,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     try {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('cardio_session_v2')}` },
         body: JSON.stringify({ enabled: nextEnabledStatus })
       });
       const data = await res.json();

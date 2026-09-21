@@ -437,7 +437,6 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           notes={notes}
           setNotes={setNotes}
         />
-
         {/* Primary Action Button */}
         <button
           type="submit"

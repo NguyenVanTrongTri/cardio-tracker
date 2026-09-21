@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const { PrismaClient } = require('@prisma/client');
@@ -25,6 +26,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Root test route
 app.get('/', async (req, res) => {

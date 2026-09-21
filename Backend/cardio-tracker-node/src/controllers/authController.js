@@ -36,10 +36,16 @@ const login = async (req, res) => {
     );
     console.log("DEBUG_LOG: Đang trả về response từ dòng này...");
 
+    res.cookie('token', token, {
+      httpOnly: true, // Bảo mật chống XSS
+      secure: process.env.NODE_ENV === 'production', // True nếu chạy trên HTTPS (production trên Vercel)
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' nếu FE và BE khác domain (Vercel + Render/v.v), 'lax' nếu chạy localhost
+      maxAge: 24 * 60 * 60 * 1000 // 1 ngày
+    });
+
     res.json({
       success: true,
       message: 'Đăng nhập thành công!',
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -57,12 +63,10 @@ const register = async (req, res) => {
   try {
     const { fullName, email, password, heightCm, gender, birthYear } = req.body;
 
-    // Validate cơ bản
     if (!email || !password || !fullName) {
       return res.status(400).json({ success: false, error: 'Vui lòng điền đầy đủ thông tin bắt buộc!' });
     }
 
-    // Kiểm tra email đã tồn tại trong database chưa
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -70,10 +74,10 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ success: false, error: 'Email này đã được đăng ký tài khoản khác!' });
     }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Tạo user mới (đồng bộ trường passwordHash giống hệt lúc login)
     const newUser = await prisma.user.create({
       data: {
         id: `usr-${crypto.randomUUID()}`,
@@ -82,21 +86,28 @@ const register = async (req, res) => {
         fullName,
         heightCm: heightCm ? String(heightCm) : null,
         gender: gender || 'MALE',
-        role: 'USER', // Mặc định đăng ký mới là USER
+        role: 'USER',
       },
     });
 
-    // Cấp luôn Token đăng nhập tự động
     const token = jwt.sign(
       { id: newUser.id, email: newUser.email, role: newUser.role },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
 
+    // Cấu hình HttpOnly Cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 1 ngày
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Đăng ký tài khoản thành công!',
-      token,
       user: {
         id: newUser.id,
         email: newUser.email,
@@ -110,7 +121,6 @@ const register = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -141,20 +151,43 @@ const resetPassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Cập nhật mật khẩu mới cho user
-    await prisma.user.update({
+    // Cập nhật mật khẩu mới và lấy thông tin user để cấp token tự động (nếu cần)
+    const updatedUser = await prisma.user.update({
       where: { email },
       data: { passwordHash: hashedPassword },
     });
 
-    // Xóa token sau khi dùng xong (Đã sửa userEmail thành email)
+    // Xóa token sau khi dùng xong
     await prisma.password_reset_tokens.deleteMany({
       where: { email: email },
     });
 
+    // (Tùy chọn) Cấp luôn token đăng nhập tự động sau khi reset thành công
+    const token = jwt.sign(
+      { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    // Cấu hình HttpOnly Cookie giống như login/register
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 1 ngày
+    });
+
     return res.json({
       success: true,
-      message: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.',
+      message: 'Đặt lại mật khẩu thành công!',
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        fullName: updatedUser.fullName,
+        role: updatedUser.role,
+        gender: updatedUser.gender,
+      }
     });
   } catch (error) {
     console.error("Reset password error:", error);
@@ -197,10 +230,15 @@ const forgotPassword = async (req, res) => {
 };
 const changePassword = async (req, res) => {
   try {
-    // Nhận vào email (hoặc lấy từ JWT middleware), mật khẩu cũ và mật khẩu mới
-    const { email, oldPassword, newPassword } = req.body;
+    // 🔒 Lấy email trực tiếp từ token đã được decode ở middleware (bảo mật hơn lấy từ req.body)
+    const email = req.user && req.user.email;
+    const { oldPassword, newPassword } = req.body;
 
-    if (!email || !oldPassword || !newPassword) {
+    if (!email) {
+      return res.status(401).json({ success: false, error: 'Chưa xác thực người dùng!' });
+    }
+
+    if (!oldPassword || !newPassword) {
       return res.status(400).json({ success: false, error: 'Vui lòng cung cấp đầy đủ thông tin!' });
     }
 

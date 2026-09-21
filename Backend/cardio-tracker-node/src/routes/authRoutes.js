@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { login, register, forgotPassword, resetPassword, changePassword } = require('../controllers/authController');
+
+// Import các controller (đã có đủ login, register, logout, forgotPassword, resetPassword, changePassword)
+const { login, register, logout, forgotPassword, resetPassword, changePassword } = require('../controllers/authController');
+
 const { loginLimiter } = require('../middlewares/rateLimiter');
+const { verifyToken } = require('../middlewares/authMiddleware'); // 1. Import middleware xác thực cookie
 
 router.post('/login', loginLimiter, login);
 router.post('/register', register);
+router.post('/logout', logout); // 2. Thêm route đăng xuất để xóa cookie
+
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
-router.post('/change-password', changePassword);
+
+// 3. Đổi mật khẩu bắt buộc phải đi qua verifyToken để đọc được cookie xác thực
+router.post('/change-password', verifyToken, changePassword);
 
 router.get('/test', (req, res) => {
   res.json({ success: true, message: "Auth route is working!" });

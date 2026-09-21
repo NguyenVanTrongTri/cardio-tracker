@@ -4,15 +4,13 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'cardio_tracker_super_secret_key_2026';
 
 const verifyToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  
-  // Format token chuẩn: "Bearer <token>"
-  const token = authHeader && authHeader.split(' ')[1];
+  // 🍪 Lấy token từ HttpOnly Cookie (nhờ middleware cookie-parser)
+  const token = req.cookies && req.cookies.token;
 
   if (!token) {
     return res.status(401).json({ 
       success: false, 
-      error: 'Truy cập bị từ chối! Không tìm thấy Token xác thực.' 
+      error: 'Truy cập bị từ chối! Không tìm thấy Token xác thực trong Cookie.' 
     });
   }
 
@@ -30,7 +28,7 @@ const verifyToken = (req, res, next) => {
   });
 };
 
-// Middleware kiểm tra quyền Admin (để chống đội pentest lấy tài khoản user thường mò vào khu vực quản trị)
+// Middleware kiểm tra quyền Admin (vẫn giữ nguyên logic)
 const verifyAdmin = (req, res, next) => {
   verifyToken(req, res, () => {
     if (req.user && req.user.role === 'ADMIN') {

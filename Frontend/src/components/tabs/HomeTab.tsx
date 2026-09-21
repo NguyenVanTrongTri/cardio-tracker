@@ -91,10 +91,38 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     return saved ? JSON.parse(saved) : {};
   });
 
-  const enabledEquipmentList = useMemo(() => {
-    return EQUIPMENT_LIST.filter(item => enabledMap[item.id] !== false);
-  }, [enabledMap]);
+  const [enabledEquipmentList, setEnabledEquipmentList] = useState<EquipmentDef[]>([]);
 
+  useEffect(() => {
+    const fetchPractices = async () => {
+      try {
+        const res = await fetch('https://cardio-tracker-iota.vercel.app/api/practices?onlyEnabled=true');
+        const result = await res.json();
+        
+        if (result.success && Array.isArray(result.data)) {
+          // Chuẩn hóa lại các trường dữ liệu cho khớp với EquipmentDef ở frontend
+          const formatted = result.data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            shortName: item.shortName || item.short_name,
+            tag: item.tag,
+            badgeColor: item.badgeColor || item.badge_color,
+            bgLight: item.bgLight || item.bg_light,
+            description: item.description,
+            enabled: item.enabled,
+            // Trộn thêm các thông số cấu hình mặc định nếu có trong configJson
+            ...(item.configJson || item.config_json || {})
+          }));
+
+          setEnabledEquipmentList(formatted);
+        }
+      } catch (error) {
+        console.error("Lỗi lấy danh sách bài tập từ DB:", error);
+      }
+    };
+    
+    fetchPractices();
+  }, []);
   useEffect(() => {
     if (enabledEquipmentList.length > 0 && enabledMap[equipmentType] === false) {
       handleSelectEquipment(enabledEquipmentList[0].id as EquipmentType);

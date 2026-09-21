@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
 import { UserAccount } from '../../types';
+import { API_ENDPOINTS } from '../../services/apiConfig';
 
 interface LoginFormProps {
   onSuccess: (user: UserAccount) => void;
@@ -40,7 +41,7 @@ export default function LoginForm({
 
     
     try {
-      const response = await fetch('https://cardio-tracker-2uf7.vercel.app/api/auth/login', {
+      const response = await fetch(API_ENDPOINTS.AUTH_LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

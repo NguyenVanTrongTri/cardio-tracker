@@ -274,4 +274,4 @@ const changePassword = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-module.exports = { login,logout, register, forgotPassword, resetPassword, changePassword };
+module.exports = { login, register, forgotPassword, resetPassword, changePassword };

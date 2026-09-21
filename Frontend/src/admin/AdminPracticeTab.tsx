@@ -102,7 +102,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     try {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ enabled: nextEnabledStatus })
       });
       const data = await res.json();
@@ -130,7 +130,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
 
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({
           name,
           shortName,
@@ -165,7 +165,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
 
       const res = await fetch(API_BASE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({
           id,
           name,

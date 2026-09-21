@@ -31,8 +31,9 @@ export default function ChangePasswordModal({
     setErrorMsg(null);
     setSuccessMsg(null);
 
+    // Kiểm tra xem người dùng đã đăng nhập chưa
     const currentUser = getCurrentUser();
-    if (!currentUser || !currentUser.email) {
+    if (!currentUser) {
       setErrorMsg('Vui lòng đăng nhập để đổi mật khẩu.');
       return;
     }
@@ -54,8 +55,8 @@ export default function ChangePasswordModal({
 
     setLoading(true);
     try {
-      // Gọi API động lên Backend Vercel
-      const res = await changePasswordApi(currentUser.email, currentPassword, newPassword);
+      // 🔒 CHỈ TRUYỀN MẬT KHẨU CŨ VÀ MỚI (Email đã được Backend lấy ngầm từ HttpOnly Cookie)
+      const res = await changePasswordApi(currentPassword, newPassword);
       
       if (res.success) {
         setSuccessMsg('Đổi mật khẩu thành công trên hệ thống!');
@@ -69,7 +70,7 @@ export default function ChangePasswordModal({
         }, 1500);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
+      setErrorMsg(err.response?.data?.error || err.message || 'Đổi mật khẩu thất bại. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }

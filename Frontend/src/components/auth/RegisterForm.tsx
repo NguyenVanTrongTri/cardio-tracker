@@ -29,55 +29,57 @@ export default function RegisterForm({
   const [gender, setGender] = useState<'MALE' | 'FEMALE'>('MALE');
   const [birthYear, setBirthYear] = useState(1996);
 
-  const handleRegister = async (e: FormEvent) => {
+ const handleRegister = async (e: FormEvent) => {
   e.preventDefault();
   setErrorMsg(null);
   setLoading(true);
+  
   try {
-      const response = await fetch(API_ENDPOINTS.AUTH_REGISTER, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName: fullName,
-          email: email,
-          password: password,
-          heightCm: Number(height),
-          gender: gender,
-          birthYear: Number(birthYear),
-        }),
-      });
+    const response = await fetch(API_ENDPOINTS.AUTH_REGISTER, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // 🍪 BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ NHẬN COOKIE TỪ BACKEND TRẢ VỀ
+      credentials: 'include', 
+      body: JSON.stringify({
+        fullName: fullName,
+        email: email,
+        password: password,
+        heightCm: Number(height),
+        gender: gender,
+        birthYear: Number(birthYear),
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok && data.success) {
-        setSuccessMsg('Đăng ký tài khoản thành công! Đã tự động đăng nhập.');
+    if (response.ok && data.success) {
+      setSuccessMsg('Đăng ký tài khoản thành công! Đã tự động đăng nhập.');
 
-        // Lưu token và thông tin user vào localStorage nếu backend có trả về token
-        if (data.token) {
-          const session = {
-            user: data.user,
-            token: data.token,
-            expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-          };
-          // Dùng đúng key lưu session mà hệ thống đang dùng chung (thay string tùy ý bằng hằng số app nếu có)
-          localStorage.setItem('cardio_user_session', JSON.stringify(session));
-          localStorage.removeItem('cardio_explicit_logout');
-        }
-
-        setTimeout(() => {
-          onSuccess(data.user);
-        }, 800);
-      } else {
-        setErrorMsg(data.error || 'Đăng ký thất bại');
+      // ❌ ĐÃ XÓA BỎ: Không còn lưu 'token' vào localStorage nữa vì token đã nằm trong HttpOnly Cookie.
+      // Bạn vẫn có thể lưu thông tin user (không chứa token) nếu muốn hiển thị giao diện nhanh:
+      if (data.user) {
+        const session = {
+          user: data.user,
+          expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        };
+        localStorage.setItem('cardio_user_session', JSON.stringify(session));
+        localStorage.removeItem('cardio_explicit_logout');
       }
-    } catch (error) {
-      setErrorMsg('Không thể kết nối đến máy chủ!');
-    } finally {
-      setLoading(false);
+
+      setTimeout(() => {
+        onSuccess(data.user);
+      }, 800);
+    } else {
+      setErrorMsg(data.error || 'Đăng ký thất bại');
     }
-  };
+  } catch (error) {
+    setErrorMsg('Không thể kết nối đến máy chủ!');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <form onSubmit={handleRegister} className="space-y-3">

@@ -98,11 +98,27 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     if (!practice) return;
 
     const nextEnabledStatus = !practice.enabled;
-
+    const sessionRaw = localStorage.getItem('cardio_session_v2');
+    
     try {
+      
+    const sessionRaw = localStorage.getItem('cardio_session_v2');
+      let token = '';
+      if (sessionRaw) {
+        try {
+          const session = JSON.parse(sessionRaw);
+          token = session.token;
+        } catch (e) {
+          console.error('Lỗi đọc session', e);
+        }
+      }
+
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` // Truyền đúng token vào đây
+        },
         body: JSON.stringify({ enabled: nextEnabledStatus })
       });
       const data = await res.json();

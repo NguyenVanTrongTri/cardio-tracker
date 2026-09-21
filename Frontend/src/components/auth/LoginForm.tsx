@@ -57,6 +57,9 @@ export default function LoginForm({
       
       if (response.ok && data.success && data.user) {
         setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         if (rememberMe) {
           const sessionData = {
             user: data.user,

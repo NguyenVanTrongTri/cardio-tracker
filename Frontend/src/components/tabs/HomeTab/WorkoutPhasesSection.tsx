@@ -64,33 +64,40 @@ const WorkoutPhasesSection: React.FC<WorkoutPhasesSectionProps> = ({
 }) => {
   const [enabledEquipmentList, setEnabledEquipmentList] = useState<any[]>([]);
   useEffect(() => {
-    const fetchPractices = async () => {
-      try {
-        const res = await fetch(`${API_ENDPOINTS.PRACTICES}?onlyEnabled=true`);
-        const result = await res.json();
-        
-        if (result.success && Array.isArray(result.data)) {
-          const formatted = result.data.map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            shortName: item.shortName || item.short_name,
-            tag: item.tag,
-            badgeColor: item.badgeColor || item.badge_color,
-            bgLight: item.bgLight || item.bg_light,
-            description: item.description,
-            enabled: item.enabled,
-            ...(item.configJson || item.config_json || {})
-          }));
+  const fetchPractices = async () => {
+    try {
+      const res = await fetch(`${API_ENDPOINTS.PRACTICES}?onlyEnabled=true`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // 🍪 BẮT BUỘC PHẢI CÓ ĐỂ GỬI COOKIE LÊN SERVER
+      });
+      
+      const result = await res.json();
+      
+      if (result.success && Array.isArray(result.data)) {
+        const formatted = result.data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          shortName: item.shortName || item.short_name,
+          tag: item.tag,
+          badgeColor: item.badgeColor || item.badge_color,
+          bgLight: item.bgLight || item.bg_light,
+          description: item.description,
+          enabled: item.enabled,
+          ...(item.configJson || item.config_json || {})
+        }));
 
-          setEnabledEquipmentList(formatted);
-        }
-      } catch (error) {
-        console.error("Lỗi lấy danh sách bài tập từ DB:", error);
+        setEnabledEquipmentList(formatted);
       }
-    };
-    
-    fetchPractices();
-  }, []);
+    } catch (error) {
+      console.error("Lỗi lấy danh sách bài tập từ DB:", error);
+    }
+  };
+  
+  fetchPractices();
+}, []);
   return (
     <div className="space-y-3">
       {/* Header with Workout Modality Button */}

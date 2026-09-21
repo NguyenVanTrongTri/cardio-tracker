@@ -55,14 +55,19 @@ export default function HistoryTab() {
     setIsLoading(true);
     try {
       const response = await fetch(API_ENDPOINTS.WORKOUTS, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${getAuthToken()}`,
+          'Content-Type': 'application/json',
+          // ❌ ĐÃ XÓA BỎ: Không cần Authorization Bearer token nữa vì đã dùng HttpOnly Cookie
         },
+        // 🍪 BẮT BUỘC: Cho phép trình duyệt đính kèm Cookie chứa token lên Backend
+        credentials: 'include', 
       });
+
       if (response.ok) {
         const data = await response.json();
         
-        // 🛠️ CẬP NHẬT: Ánh xạ chuẩn các trường dữ liệu từ backend sang state của frontend
+        // 🛠️ Ánh xạ chuẩn các trường dữ liệu từ backend sang state của frontend
         const formattedData = (data.data || []).map((w: any) => ({
           ...w,
           phases: w.workoutPhases || [],

@@ -5,9 +5,17 @@ const crypto = require('crypto'); // Dùng cho crypto.randomUUID() nếu cần s
 // 1. Hàm lấy danh sách cấu hình bài tập từ bảng practices
 const getPractices = async (req, res) => {
   try {
-    // Lấy toàn bộ bài tập (hoặc chỉ lấy các bài đang bật nếu gọi từ client thông thường)
+    // 🔒 Lấy userId từ middleware verifyToken (nếu cần giới hạn bài tập theo user)
+    // Hoặc nếu bảng Practice là dữ liệu chung công khai, bạn có thể bỏ qua bước check userId này.
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để thực hiện thao tác này!' 
+      });
+    }
+
     const { onlyEnabled } = req.query;
-    
     const whereCondition = onlyEnabled === 'true' ? { enabled: true } : {};
 
     const practices = await prisma.practice.findMany({
@@ -32,6 +40,15 @@ const getPractices = async (req, res) => {
 // 2. Hàm thêm mới cấu hình bài tập (Dành cho Admin)
 const createPractice = async (req, res) => {
   try {
+    // 🔒 Nếu muốn bảo mật, kiểm tra xem user đã đăng nhập chưa
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để thực hiện thao tác này!' 
+      });
+    }
+
     const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, configJson } = req.body;
 
     if (!id || !name || !shortName) {
@@ -41,7 +58,6 @@ const createPractice = async (req, res) => {
       });
     }
 
-    // Kiểm tra xem ID bài tập đã tồn tại hay chưa
     const existingPractice = await prisma.practice.findUnique({
       where: { id }
     });
@@ -53,7 +69,6 @@ const createPractice = async (req, res) => {
       });
     }
 
-    // Tạo mới bài tập trong database
     const newPractice = await prisma.practice.create({
       data: {
         id,
@@ -86,10 +101,18 @@ const createPractice = async (req, res) => {
 // 3. Hàm cập nhật cấu hình hoặc trạng thái bài tập (Dành cho Admin)
 const updatePractice = async (req, res) => {
   try {
+    // 🔒 Kiểm tra xác thực qua Cookie (nếu muốn bảo mật)
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để thực hiện thao tác này!' 
+      });
+    }
+
     const { id } = req.params;
     const { enabled, name, shortName, tag, badgeColor, bgLight, description, configJson } = req.body;
 
-    // Kiểm tra xem bài tập có tồn tại không
     const existingPractice = await prisma.practice.findUnique({
       where: { id }
     });
@@ -101,7 +124,6 @@ const updatePractice = async (req, res) => {
       });
     }
 
-    // Tiến hành cập nhật
     const updatedPractice = await prisma.practice.update({
       where: { id },
       data: {

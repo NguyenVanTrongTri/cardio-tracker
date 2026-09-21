@@ -5,10 +5,10 @@ const crypto = require('crypto'); // Dùng cho crypto.randomUUID()
 // 1. Hàm lấy danh sách buổi tập
 const getWorkouts = async (req, res) => {
   try {
-    // Lấy userId trực tiếp từ middleware verifyToken đã giải mã
+    // 🔒 Lấy userId trực tiếp từ middleware verifyToken (đã giải mã từ HttpOnly Cookie)
     const userId = req.user?.id;
     
-    // Kiểm tra an toàn (dù đã có middleware chặn, giữ lại để code cực kỳ an toàn)
+    // Kiểm tra an toàn bảo mật
     if (!userId) {
       return res.status(401).json({ 
         success: false, 
@@ -16,7 +16,7 @@ const getWorkouts = async (req, res) => {
       });
     }
     
-    // Chỉ lấy dữ liệu của đúng user sở hữu token
+    // Chỉ lấy dữ liệu đúng của user sở hữu token
     const workouts = await prisma.workout.findMany({
       where: { userId }, 
       take: 10,
@@ -64,7 +64,6 @@ const getWorkouts = async (req, res) => {
       const bodyMetric = metricMap.get(dateKey);
 
       return {
-        // Chỉ định rõ ràng từng trường được phép lộ ra bên ngoài
         id: workout.id,
         workoutStartTime: workout.workoutStartTime,
         activeTime: workout.activeTime,
@@ -74,15 +73,12 @@ const getWorkouts = async (req, res) => {
         fatigueLevel: workout.fatigueLevel,
         waterConsumedMl: workout.waterConsumedMl,
         notes: workout.notes,
-        workoutPhases: workout.workoutPhases, // Nếu cần thiết hiển thị các phase
+        workoutPhases: workout.workoutPhases,
         
-        // Các chỉ số tính toán & đo lường
+        // Các chỉ số tính toán & đo lường bổ sung
         efficiencyIndex: calPerMinute,
         weightKg: bodyMetric?.weightKg || null, 
         waistCm: bodyMetric?.waistCm || null,  
-        
-        // 🔒 Các thông tin nhạy cảm hệ thống nội bộ sẽ bị bỏ hoàn toàn ở đây, 
-        // không bị rò rỉ ra tab Network nữa.
       };
     });
 
@@ -92,13 +88,14 @@ const getWorkouts = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-// 2. Hàm tạo buổi tập mới (Đã hoàn thiện)
+//2. Hàm tạo buổi tập mới (Đã hoàn thiện)
 const createWorkout = async (req, res) => {
   console.log('ID nhận được từ Client:', req.body.id);
   try {
+    // 🔒 Lấy userId an toàn từ HttpOnly Cookie thông qua middleware verifyToken
     const userId = req.user?.id;
     if (!userId) {
-      return res.status(401).json({ message: 'Bạn cần đăng nhập để lưu buổi tập!' });
+      return res.status(401).json({ success: false, message: 'Bạn cần đăng nhập để lưu buổi tập!' });
     }
 
     const {
@@ -109,7 +106,7 @@ const createWorkout = async (req, res) => {
     } = req.body;
 
     if (!id || !equipmentType || !phases || !Array.isArray(phases)) {
-      return res.status(400).json({ message: "Thiếu ID, thiết bị hoặc giai đoạn tập!" });
+      return res.status(400).json({ success: false, message: "Thiếu ID, thiết bị hoặc giai đoạn tập!" });
     }
 
     const workoutDateObj = workoutStartTime ? new Date(workoutStartTime) : new Date();
@@ -162,7 +159,7 @@ const createWorkout = async (req, res) => {
             weightKg: weightKg !== undefined && weightKg !== null ? String(weightKg) : null,
             waistCm: waistCm !== undefined && waistCm !== null ? String(waistCm) : null,
           }
-        }); // 👈 Đã bỏ cấu hình timeout ở đây vì hàm upsert không nhận tham số này
+        });
       }
 
       // 2. Xử lý Meals theo ngày
@@ -235,7 +232,6 @@ const createWorkout = async (req, res) => {
         include: { workoutPhases: true },
       });
 
-      // Lấy dữ liệu trả về trong cùng transaction
       const savedMeals = await tx.meal.findMany({
         where: { userId, mealDate: metricDateOnly },
         include: { foodItems: true }
@@ -247,11 +243,12 @@ const createWorkout = async (req, res) => {
 
       return { workout, savedMeals, savedBodyMetric };
     }, {
-      maxWait: 10000, // 👈 Đặt cấu hình timeout ở ĐÂY (đúng cú pháp của Prisma)
-      timeout: 20000  // 👈 Cho phép transaction chạy tối đa 20 giây
+      maxWait: 10000, 
+      timeout: 20000  
     });
 
     return res.status(200).json({ 
+      success: true,
       message: 'Lưu buổi tập và thông số ngày thành công!', 
       workout: result.workout,
       meals: result.savedMeals,
@@ -260,19 +257,21 @@ const createWorkout = async (req, res) => {
 
   } catch (error) {
     console.error('Error creating workout (Transaction failed):', error);
-    return res.status(500).json({ message: 'Lỗi server khi lưu buổi tập', error: error.message });
+    return res.status(500).json({ success: false, message: 'Lỗi server khi lưu buổi tập', error: error.message });
   }
 };
+// 3. Hàm xóa buổi tập (Đã bảo mật quyền sở hữu & xử lý cascade phases)
 const deleteWorkout = async (req, res) => {
   try {
     const { id } = req.params;
+    // 🔒 Lấy userId an toàn từ HttpOnly Cookie thông qua middleware verifyToken
     const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Bạn cần đăng nhập!' });
     }
 
-    // Kiểm tra xem workout có thuộc về user này không trước khi xóa để bảo mật
+    // Kiểm tra xem workout có tồn tại và thực sự thuộc về user này không
     const existingWorkout = await prisma.workout.findFirst({
       where: { id: id, userId: userId }
     });

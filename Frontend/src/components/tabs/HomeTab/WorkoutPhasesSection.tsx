@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Activity, Flame, SlidersHorizontal, CheckCircle2, Zap, Wind } from 'lucide-react';
 import { EquipmentType, WorkoutPhase } from '../../../types';
 import { EquipmentDef } from '../../workout/equipmentData';
 import { renderParam1Field, renderParam2Field, renderDurationField, renderDistanceField } from './PhaseControls';
 import { getEquipmentIcon } from './utils';
+import { API_ENDPOINTS } from '@/src/services/apiConfig';
 
 interface WorkoutPhasesSectionProps {
   equipmentType: EquipmentType;
@@ -37,7 +38,6 @@ interface WorkoutPhasesSectionProps {
 const WorkoutPhasesSection: React.FC<WorkoutPhasesSectionProps> = ({
   equipmentType,
   equipmentDef,
-  enabledEquipmentList,
   phase1,
   setPhase1,
   phase2,
@@ -62,6 +62,35 @@ const WorkoutPhasesSection: React.FC<WorkoutPhasesSectionProps> = ({
   applyEquipmentDefaults,
   liveTotals,
 }) => {
+  const [enabledEquipmentList, setEnabledEquipmentList] = useState<any[]>([]);
+  useEffect(() => {
+    const fetchPractices = async () => {
+      try {
+        const res = await fetch(`${API_ENDPOINTS.PRACTICES}?onlyEnabled=true`);
+        const result = await res.json();
+        
+        if (result.success && Array.isArray(result.data)) {
+          const formatted = result.data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            shortName: item.shortName || item.short_name,
+            tag: item.tag,
+            badgeColor: item.badgeColor || item.badge_color,
+            bgLight: item.bgLight || item.bg_light,
+            description: item.description,
+            enabled: item.enabled,
+            ...(item.configJson || item.config_json || {})
+          }));
+
+          setEnabledEquipmentList(formatted);
+        }
+      } catch (error) {
+        console.error("Lỗi lấy danh sách bài tập từ DB:", error);
+      }
+    };
+    
+    fetchPractices();
+  }, []);
   return (
     <div className="space-y-3">
       {/* Header with Workout Modality Button */}

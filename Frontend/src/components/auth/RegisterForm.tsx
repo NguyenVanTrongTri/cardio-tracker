@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { register } from '../../services/auth';
 import { UserAccount } from '../../types';
+import { API_ENDPOINTS } from '../../services/apiConfig';
 
 interface RegisterFormProps {
   onSuccess: (user: UserAccount) => void;
@@ -33,7 +34,7 @@ export default function RegisterForm({
   setErrorMsg(null);
   setLoading(true);
   try {
-      const response = await fetch('https://cardio-tracker-2uf7.vercel.app/api/auth/register', {
+      const response = await fetch(API_ENDPOINTS.AUTH_REGISTER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -17,13 +17,13 @@ import { EquipmentDef } from '../components/workout/equipmentData';
 import { logAdminAction } from './adminService';
 import AdminPracticeEditModal from './AdminPracticeEditModal';
 import AdminPracticeCreateModal from './AdminPracticeCreateModal';
-
+import { API_ENDPOINTS } from '../services/apiConfig';
 interface AdminPracticeTabProps {
   adminEmail: string;
   onRefreshStats: () => void;
 }
 
-const API_BASE_URL = 'https://cardio-tracker-2uf7.vercel.app/api/practices';
+const API_BASE_URL = API_ENDPOINTS.PRACTICES;
 
 export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPracticeTabProps) {
   const [searchTerm, setSearchTerm] = useState('');

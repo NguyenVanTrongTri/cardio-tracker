@@ -3,7 +3,7 @@ import { X, Lock, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { getCurrentUser } from '../../services/auth';
 // Import hàm gọi API động (Trí điều chỉnh lại đường dẫn import cho đúng với vị trí file service thực tế nhé)
 import { changePasswordApi } from '../../services/auth/forgotPasswordService'; 
-
+import { API_ENDPOINTS } from '../../services/apiConfig';
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;

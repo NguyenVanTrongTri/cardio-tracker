@@ -8,4 +8,5 @@ export const API_ENDPOINTS = {
   AUTH_LOGIN: `${API_BASE_URL}/auth/login`,
   WORKOUTS: `${API_BASE_URL}/workouts`,
   USERS: `${API_BASE_URL}/users`,
+  AUTH_REGISTER: `${API_BASE_URL}/auth/register`
 };

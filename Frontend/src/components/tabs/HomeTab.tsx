@@ -49,6 +49,7 @@ import BodyMetricsSection from './HomeTab/BodyMetricsSection';
 import DraftRestoreModal from './HomeTab/DraftRestoreModal';
 import { useWorkoutForm } from '../../hooks/useWorkoutForm';
 import { getCurrentUser } from '../../services/auth';
+import { API_ENDPOINTS } from '../../services/apiConfig';
 
 interface HomeTabProps {
   key?: string;
@@ -96,7 +97,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   useEffect(() => {
     const fetchPractices = async () => {
       try {
-        const res = await fetch('https://cardio-tracker-iota.vercel.app/api/practices?onlyEnabled=true');
+        const res = await fetch(`${API_ENDPOINTS.PRACTICES}?onlyEnabled=true`);
         const result = await res.json();
         
         if (result.success && Array.isArray(result.data)) {
@@ -307,7 +308,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       }
 
       // 👉 Trỏ trực tiếp tới domain backend trên Vercel
-      const response = await fetch('https://cardio-tracker-2uf7.vercel.app/api/workouts', {
+      const response = await fetch(API_ENDPOINTS.WORKOUTS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

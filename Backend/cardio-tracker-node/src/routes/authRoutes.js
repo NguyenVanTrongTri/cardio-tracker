@@ -9,7 +9,6 @@ const { verifyToken } = require('../middlewares/authMiddleware'); // 1. Import m
 
 router.post('/login', loginLimiter, login);
 router.post('/register', register);
-router.post('/logout', logout); // 2. Thêm route đăng xuất để xóa cookie
 
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);

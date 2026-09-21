@@ -235,7 +235,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
             <Loader2 className="animate-spin" size={24} />
-            <p className="text-sm">Đang đồng bộ dữ liệu từ Database...</p>
+            <p className="text-sm">Đang tải...!</p>
           </div>
         ) : (
           <table className="w-full text-left text-sm">

@@ -39,7 +39,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
   };
 
   // 1. Lấy danh sách bài tập động từ Backend (Domain đầy đủ)
- const fetchPractices = async () => {
+  const fetchPractices = async () => {
   try {
     setLoading(true);
     const res = await fetch(API_BASE_URL, {
@@ -83,7 +83,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
   } finally {
     setLoading(false);
   }
-};
+  };
 
   useEffect(() => {
     fetchPractices();

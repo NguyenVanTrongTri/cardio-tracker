@@ -10,8 +10,10 @@ const {
 
 const { verifyToken } = require('../middlewares/authMiddleware'); 
 
-router.get('/', getPractices); 
+// 🔒 Thêm verifyToken vào đây để đồng bộ với cơ chế HttpOnly Cookie
+router.get('/', verifyToken, getPractices); 
 router.post('/', verifyToken, createPractice);       
 router.put('/:id', verifyToken, updatePractice);  
+router.delete('/:id', verifyToken, deletePractice); // Thêm luôn nếu có xóa
 
 module.exports = router;

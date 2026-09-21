@@ -1,13 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const { getWorkouts, createWorkout, deleteWorkout } = require('../controllers/workoutController');
 
-const {  getPractices, createPractice, updatePractice,deletePractice } = require('../controllers/practiceController');
-
+// Middleware xác thực token
 const { verifyToken } = require('../middlewares/authMiddleware'); 
 
-// 🔒 Thêm verifyToken vào đây để đồng bộ với cơ chế HttpOnly Cookie
-router.get('/', verifyToken, getPractices); 
-router.post('/', verifyToken, createPractice);       
-router.put('/:id', verifyToken, updatePractice);  
+// 1. Route lấy danh sách buổi tập
+router.get('/', verifyToken, getWorkouts);
+
+// 2. Route tạo buổi tập mới
+router.post('/', verifyToken, createWorkout);
+
+// 3. Route xóa buổi tập (Đã sửa lại không bị lặp chữ /api/workouts)
+router.delete('/:id', verifyToken, deleteWorkout);
 
 module.exports = router;

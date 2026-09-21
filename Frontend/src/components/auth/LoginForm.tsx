@@ -39,12 +39,11 @@ export default function LoginForm({
     setErrorMsg(null);
     setLoading(true);
 
+    
     try {
       const response = await fetch(API_ENDPOINTS.AUTH_LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // 🍪 BẮT BUỘC PHẢI CÓ DÒNG NÀY ĐỂ NHẬN VÀ GỬI COOKIE GIỮA 2 DOMAIN/PORT KHÁC NHAU
-        credentials: 'include', 
         body: JSON.stringify({ email, password }),
       });
 
@@ -58,19 +57,19 @@ export default function LoginForm({
       
       if (response.ok && data.success && data.user) {
         setSuccessMsg(`Chào mừng bạn trở lại, ${data.user.fullName}!`);
-        
-        // ❌ ĐÃ XÓA BỎ: Không còn lưu 'token' vào localStorage nữa vì token nằm trong HttpOnly Cookie bảo mật.
-        
-        // Bạn vẫn có thể lưu thông tin user (không chứa token) nếu cần hiển thị giao diện
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
         if (rememberMe) {
           const sessionData = {
             user: data.user,
+            token: data.token,
             expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
           };
+          
           localStorage.setItem('cardio_session_v2', JSON.stringify(sessionData));
           localStorage.setItem('cardio_user', JSON.stringify(data.user));
         }
-
         setTimeout(() => {
           onSuccess(data.user as UserAccount);
         }, 700);

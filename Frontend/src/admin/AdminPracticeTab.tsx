@@ -98,15 +98,11 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     if (!practice) return;
 
     const nextEnabledStatus = !practice.enabled;
-    const token = localStorage.getItem('token'); // 👈 Lấy chính xác chuỗi token đã lưu
 
     try {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ enabled: nextEnabledStatus })
       });
       const data = await res.json();
@@ -120,6 +116,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
         onRefreshStats();
       } else {
         showToast(data.message || 'Cập nhật thất bại!', 'error');
+        console.log(localStorage);
       }
     } catch (error) {
       console.error('Error toggling practice:', error);

@@ -116,6 +116,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
         onRefreshStats();
       } else {
         showToast(data.message || 'Cập nhật thất bại!', 'error');
+        console.log(localStorage);
       }
     } catch (error) {
       console.error('Error toggling practice:', error);

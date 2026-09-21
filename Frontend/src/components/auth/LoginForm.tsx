@@ -38,6 +38,7 @@ export default function LoginForm({
     setErrorMsg(null);
     setLoading(true);
 
+    
     try {
       const response = await fetch('https://cardio-tracker-2uf7.vercel.app/api/auth/login', {
         method: 'POST',

@@ -227,9 +227,10 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   }, [phasesWithCumulative, equipmentType, meals]);
   // Real-time Pre-workout alert\
   
-  const handleSaveWorkout = async (e: FormEvent) => {
+  const handleSaveWorkout = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('handleSaveWorkout called, isDirty:', isDirty);
+    
     if (!isDirty) {
       onAddNotification?.('Thông báo', 'Dữ liệu không có thay đổi mới để lưu!');
       return;
@@ -255,29 +256,15 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     });
 
     try {
-      // 👉 Lấy token chuẩn từ session v2 đã được lưu lúc đăng nhập
-      let token = '';
-      const sessionData = localStorage.getItem('cardio_session_v2');
-      if (sessionData) {
-        try {
-          const parsed = JSON.parse(sessionData);
-          token = parsed.token;
-        } catch (e) {
-          console.error('Lỗi đọc session token:', e);
-        }
-      }
-      // Fallback dự phòng nếu có nơi nào lưu lẻ key 'token'
-      if (!token) {
-        token = localStorage.getItem('token') || '';
-      }
-
-      // 👉 Trỏ trực tiếp tới domain backend trên Vercel
+      // 🚀 GỌI API THEO CHUẨN COOKIE (Không cần Authorization Bearer token nữa)
       const response = await fetch(API_ENDPOINTS.WORKOUTS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
+          // ❌ Đã xóa bỏ header Authorization vì BE dùng HttpOnly Cookie
         },
+        // 🍪 BẮT BUỘC: Cho phép trình duyệt tự động đính kèm HttpOnly Cookie lên Backend
+        credentials: 'include', 
         body: JSON.stringify({
           id: workoutId,
           equipmentType,
@@ -296,7 +283,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
         }),
       });
 
-      // 👉 Bắt response cẩn thận giống phong cách trang Login
+      // Bắt response cẩn thận
       const rawText = await response.text();
       let data;
       try {
@@ -306,10 +293,10 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       }
 
       if (!response.ok) {
-        throw new Error(data.message || `Lỗi server HTTP ${response.status}`);
+        throw new Error(data.message || data.error || `Lỗi server HTTP ${response.status}`);
       }
       
-      // Remove user-scoped draft
+      // Xóa bản nháp liên quan đến user hiện tại
       const currentUser = getCurrentUser();
       const draftKey = currentUser ? `workout_draft_${currentUser.id}` : 'workout_draft';
       localStorage.removeItem(draftKey);

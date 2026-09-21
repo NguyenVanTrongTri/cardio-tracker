@@ -39,42 +39,51 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
   };
 
   // 1. Lấy danh sách bài tập động từ Backend (Domain đầy đủ)
-  const fetchPractices = async () => {
+ const fetchPractices = async () => {
+  try {
+    setLoading(true);
+    const res = await fetch(API_BASE_URL, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // 🍪 BẮT BUỘC: Thêm dòng này để trình duyệt tự đính kèm HttpOnly Cookie lên Backend
+      credentials: 'include', 
+    });
+    
+    const rawText = await res.text();
+    let data;
     try {
-      setLoading(true);
-      const res = await fetch(API_BASE_URL);
-      const rawText = await res.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        data = { success: false, error: rawText };
-      }
-      
-      if (data.success) {
-        const formatted = data.data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          shortName: item.shortName || item.short_name,
-          tag: item.tag,
-          badgeColor: item.badgeColor || item.badge_color,
-          bgLight: item.bgLight || item.bg_light,
-          description: item.description,
-          enabled: item.enabled,
-          ...(item.configJson || item.config_json || {})
-        }));
-        setPractices(formatted);
-        showToast('Thành công!', 'success');
-      } else {
-        showToast('Không thể tải danh sách bài tập từ server!', 'error');
-      }
-    } catch (error) {
-      console.error('Error fetching practices:', error);
-      showToast('Lỗi kết nối đến server khi tải bài tập!', 'error');
-    } finally {
-      setLoading(false);
+      data = JSON.parse(rawText);
+    } catch {
+      data = { success: false, error: rawText };
     }
-  };
+    
+    if (data.success) {
+      const formatted = data.data.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        shortName: item.shortName || item.short_name,
+        tag: item.tag,
+        badgeColor: item.badgeColor || item.badge_color,
+        bgLight: item.bgLight || item.bg_light,
+        description: item.description,
+        enabled: item.enabled,
+        ...(item.configJson || item.config_json || {})
+      }));
+      setPractices(formatted);
+      // Lưu ý: Nếu không muốn mỗi lần load danh sách bài tập đều hiện toast thông báo thành công thì có thể bỏ dòng showToast bên dưới đi cho đỡ phiền người dùng
+      // showToast('Thành công!', 'success');
+    } else {
+      showToast('Không thể tải danh sách bài tập từ server!', 'error');
+    }
+  } catch (error) {
+    console.error('Error fetching practices:', error);
+    showToast('Lỗi kết nối đến server khi tải bài tập!', 'error');
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchPractices();

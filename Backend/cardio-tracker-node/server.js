@@ -12,7 +12,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const workoutRoutes = require('./src/routes/workoutRoutes');
 const seedRoutes = require('./src/routes/seedRoutes');
-
+const practiceRoutes = require('./src/routes/src/routes/practiceRoutes');
 // Cấu hình CORS chuẩn
 app.use(cors({
   origin: [
@@ -45,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/seed', seedRoutes);
+app.use('/api/practices', practiceRoutes);
 
 // Chỉ listen khi chạy dev local (tránh conflict serverless của Vercel)
 if (process.env.NODE_ENV !== 'production') {

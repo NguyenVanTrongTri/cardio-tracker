@@ -37,7 +37,6 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 3000);
   };
-
   // 1. Lấy danh sách bài tập động từ Backend (Domain đầy đủ)
  const fetchPractices = async () => {
   try {

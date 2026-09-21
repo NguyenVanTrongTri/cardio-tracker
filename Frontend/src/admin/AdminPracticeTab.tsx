@@ -23,7 +23,7 @@ interface AdminPracticeTabProps {
   onRefreshStats: () => void;
 }
 
-const API_BASE_URL = 'https://backendcardio.vercel.app/api/practices';
+const API_BASE_URL = 'https://cardio-tracker-2uf7.vercel.app/api/practices';
 
 export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPracticeTabProps) {
   const [searchTerm, setSearchTerm] = useState('');

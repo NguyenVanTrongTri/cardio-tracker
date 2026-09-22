@@ -51,6 +51,7 @@ export default function HistoryTab() {
   // Edit modal state
   const [editingWorkout, setEditingWorkout] = useState<WorkoutRecord | null>(null);
   const [isPhasesExpanded, setIsPhasesExpanded] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -136,6 +137,7 @@ export default function HistoryTab() {
   const handleUpdateWorkout = async (e: FormEvent) => {
     e.preventDefault();
     if (!editingWorkout) return;
+    setIsUpdating(true);
 
     try {
       const response = await fetch(`${API_ENDPOINTS.WORKOUTS}/${editingWorkout.id}`, {
@@ -163,6 +165,8 @@ export default function HistoryTab() {
       }
     } catch (error) {
       console.error('Lỗi kết nối API:', error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -734,9 +738,10 @@ export default function HistoryTab() {
                 </button>
                 <button
                   type="submit"
+                  disabled={isUpdating}
                   className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors shadow-xs"
                 >
-                  Lưu cập nhật
+                  {isUpdating ? 'Đang Cập nhật...' : 'Lưu cập nhật'}
                 </button>
               </div>
             </form>

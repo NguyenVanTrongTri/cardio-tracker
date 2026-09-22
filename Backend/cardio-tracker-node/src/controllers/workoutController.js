@@ -317,21 +317,24 @@ const updateWorkout = async (req, res) => {
       });
 
       // Nếu có gửi danh sách phases lên, cập nhật lại các phases liên quan
-      if (workoutPhases && Array.isArray(workoutPhases)) {
-        for (const phase of workoutPhases) {
-          if (phase.id) {
-            await tx.workoutPhase.update({
-              where: { id: phase.id },
-              data: {
-                durationMinutes: Number(phase.durationMinutes),
-                speedKmh: Number(phase.speedKmh),
-                inclineDegree: Number(phase.inclineDegree),
-                distanceKm: Number(phase.distanceKm),
-              }
-            });
-          }
+      // Nếu có gửi danh sách phases lên, cập nhật lại các phases liên quan (chạy song song bằng Promise.all)
+        if (workoutPhases && Array.isArray(workoutPhases)) {
+          const updatePromises = workoutPhases
+            .filter(phase => phase.id) // Lọc ra những phase có id hợp lệ
+            .map(phase => 
+              tx.workoutPhase.update({
+                where: { id: phase.id },
+                data: {
+                  durationMinutes: Number(phase.durationMinutes),
+                  speedKmh: Number(phase.speedKmh),
+                  inclineDegree: Number(phase.inclineDegree),
+                  distanceKm: Number(phase.distanceKm),
+                }
+              })
+            );
+
+          await Promise.all(updatePromises);
         }
-      }
 
       // 3. Đồng bộ cập nhật chỉ số cơ thể (BodyMetric) nếu người dùng có nhập cân nặng hoặc vòng eo theo ngày tập
       if (weightKg !== null || waistCm !== null) {

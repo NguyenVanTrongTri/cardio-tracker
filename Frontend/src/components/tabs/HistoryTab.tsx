@@ -517,9 +517,6 @@ export default function HistoryTab() {
               <h3 className="text-base font-bold text-slate-900">
                 Chỉnh Sửa Buổi Tập
               </h3>
-              <span className="text-xs text-slate-500 font-mono">
-                {editingWorkout.workoutStartTime ? editingWorkout.workoutStartTime.replace('T', ' ').substring(0, 16) : ''}
-              </span>
             </div>
             <button
               onClick={() => setEditingWorkout(null)}

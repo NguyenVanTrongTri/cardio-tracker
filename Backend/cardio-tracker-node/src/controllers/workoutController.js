@@ -367,6 +367,9 @@ const updateWorkout = async (req, res) => {
       }
 
       return workout;
+    }, {
+      maxWait: 10000, // Chờ lấy connection tối đa 10 giây
+      timeout: 10000, // Thời gian chạy transaction tối đa 10 giây
     });
 
     return res.json({ 
@@ -379,7 +382,8 @@ const updateWorkout = async (req, res) => {
     console.error('Error updating workout:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
-};
+}
+;
 // 3. Hàm xóa buổi tập (Đã bảo mật quyền sở hữu & xử lý cascade phases)
 const deleteWorkout = async (req, res) => {
   try {

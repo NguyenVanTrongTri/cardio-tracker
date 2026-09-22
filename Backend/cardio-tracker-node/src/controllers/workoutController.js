@@ -354,6 +354,7 @@ const updateWorkout = async (req, res) => {
             waistCm: waistCm !== undefined ? Number(waistCm) : undefined,
           },
           create: {
+            id: crypto.randomUUID(), // 👈 Đã thêm ID tự sinh cho nhánh tạo mới BodyMetric, giải quyết dứt điểm lỗi thiếu ID
             userId,
             metricDate: metricDateUTC,
             weightKg: weightKg ? Number(weightKg) : 0,

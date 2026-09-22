@@ -626,7 +626,7 @@ export default function HistoryTab() {
               <div className="space-y-3">
                 <label className="block text-slate-600 font-bold">Chi tiết các giai đoạn</label>
                 {editingWorkout.phases.map((phase, index) => (
-                  <div key={index} className="grid grid-cols-2 gap-2 bg-slate-100 p-2 rounded-xl border border-slate-200">
+                    <div key={index} className="grid grid-cols-2 gap-2 bg-slate-100 p-2 rounded-xl border border-slate-200">
                     <div className="col-span-2 text-xs font-bold text-slate-700">Giai đoạn {phase.phaseNumber}: {phase.name}</div>
                     <div>
                       <label className="block text-slate-500 text-[10px]">Thời gian (p)</label>
@@ -669,7 +669,7 @@ export default function HistoryTab() {
                         className="w-full bg-white border border-slate-200 rounded p-1"
                       />
                     </div>
-                    <div className="col-span-2">
+                    <div>
                       <label className="block text-slate-500 text-[10px]">Quãng đường (km)</label>
                       <input
                         type="number"

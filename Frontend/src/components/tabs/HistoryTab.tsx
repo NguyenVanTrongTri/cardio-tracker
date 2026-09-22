@@ -542,7 +542,7 @@ export default function HistoryTab() {
                 />
               </div>
 
-              {/* 2. Các chỉ số chính */}
+              {/* 2. Các chỉ số chính (Đã bổ sung Cân nặng và Vòng eo) */}
               <div className="grid grid-cols-2 gap-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-200/60">
                 <div>
                   <label className="block text-slate-600 font-bold mb-1">Thời gian (phút)</label>
@@ -576,6 +576,32 @@ export default function HistoryTab() {
                       setEditingWorkout({ ...editingWorkout, totalDistanceKm: Number(e.target.value) })
                     }
                     className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-sky-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">Cân nặng (kg)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editingWorkout.weight || ''}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, weight: Number(e.target.value) })
+                    }
+                    placeholder="VD: 72"
+                    className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-emerald-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-600 font-bold mb-1">Vòng eo (cm)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={editingWorkout.waist || ''}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, waist: Number(e.target.value) })
+                    }
+                    placeholder="VD: 80"
+                    className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-purple-600"
                   />
                 </div>
               </div>

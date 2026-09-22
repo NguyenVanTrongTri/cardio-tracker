@@ -583,9 +583,9 @@ export default function HistoryTab() {
                   <input
                     type="number"
                     step="0.1"
-                    value={editingWorkout.weight || ''}
+                    value={editingWorkout.weightKg || ''}
                     onChange={(e) =>
-                      setEditingWorkout({ ...editingWorkout, weight: Number(e.target.value) })
+                      setEditingWorkout({ ...editingWorkout, weightKg: Number(e.target.value) })
                     }
                     placeholder="VD: 72"
                     className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-emerald-600"
@@ -596,9 +596,9 @@ export default function HistoryTab() {
                   <input
                     type="number"
                     step="0.5"
-                    value={editingWorkout.waist || ''}
+                    value={editingWorkout.waistCm || ''}
                     onChange={(e) =>
-                      setEditingWorkout({ ...editingWorkout, waist: Number(e.target.value) })
+                      setEditingWorkout({ ...editingWorkout, waistCm: Number(e.target.value) })
                     }
                     placeholder="VD: 80"
                     className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-purple-600"

@@ -605,7 +605,6 @@ export default function HistoryTab() {
                   />
                 </div>
               </div>
-
               {/* 3. Chi tiết các giai đoạn */}
               <div className="space-y-2">
                 <button

@@ -142,15 +142,16 @@ export default function HistoryTab() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getAuthToken()}`,
         },
         credentials: 'include',
-        // Đảm bảo gửi đúng cấu trúc backend mong đợi
+        
+        // 🛠️ Xử lý gọn gàng không bị lỗi type của TypeScript
         body: JSON.stringify({
             ...editingWorkout,
-            weightKg: Number(editingWorkout.weightKg),
-            waistCm: Number(editingWorkout.waistCm),
-            waterConsumedMl: Number(editingWorkout.waterConsumedMl),
+            weightKg: editingWorkout.weightKg ? Number(editingWorkout.weightKg) : null,
+            waistCm: editingWorkout.waistCm ? Number(editingWorkout.waistCm) : null,
+            waterConsumedMl: Number(editingWorkout.waterConsumedMl || 0),
+            workoutPhases: editingWorkout.phases || [],
         }),
       });
 

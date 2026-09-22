@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getWorkouts, createWorkout, deleteWorkout } = require('../controllers/workoutController');
+const { getWorkouts, createWorkout,updateWorkout,deleteWorkout } = require('../controllers/workoutController');
 
 // Middleware xác thực token
 const { verifyToken } = require('../middlewares/authMiddleware'); 
@@ -13,5 +13,7 @@ router.post('/', verifyToken, createWorkout);
 
 // 3. Route xóa buổi tập (Đã sửa lại không bị lặp chữ /api/workouts)
 router.delete('/:id', verifyToken, deleteWorkout);
+
+router.put('/:id', verifyToken, updateWorkout);
 
 module.exports = router;

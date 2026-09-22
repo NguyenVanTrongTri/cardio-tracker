@@ -260,6 +260,122 @@ const createWorkout = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Lỗi server khi lưu buổi tập', error: error.message });
   }
 };
+const updateWorkout = async (req, res) => {
+  try {
+    // 🔒 Lấy userId từ middleware xác thực (HttpOnly Cookie)
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để thực hiện thao tác này!' 
+      });
+    }
+
+    const { id } = req.params; // ID của buổi tập cần sửa
+    const {
+      workoutStartTime,
+      activeTime,
+      calories,
+      totalDistanceKm,
+      fatigueLevel,
+      waterConsumedMl,
+      notes,
+      weightKg,
+      waistCm,
+      workoutPhases
+    } = req.body;
+
+    // 1. Kiểm tra xem buổi tập có tồn tại và thuộc về user này không
+    const existingWorkout = await prisma.workout.findFirst({
+      where: { id, userId }
+    });
+
+    if (!existingWorkout) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy buổi tập hoặc bạn không có quyền chỉnh sửa!' 
+      });
+    }
+
+    // 2. Thực hiện cập nhật dữ liệu bảng Workout bằng Transaction để đảm bảo tính toàn vẹn
+    const updatedWorkout = await prisma.$transaction(async (tx) => {
+      // Cập nhật thông tin chính của buổi tập
+      const workout = await tx.workout.update({
+        where: { id },
+        data: {
+          workoutStartTime: workoutStartTime ? new Date(workoutStartTime) : undefined,
+          activeTime: activeTime !== undefined ? Number(activeTime) : undefined,
+          calories: calories !== undefined ? String(calories) : undefined,
+          totalDistanceKm: totalDistanceKm !== undefined ? Number(totalDistanceKm) : undefined,
+          fatigueLevel: fatigueLevel !== undefined ? Number(fatigueLevel) : undefined,
+          waterConsumedMl: waterConsumedMl !== undefined ? Number(waterConsumedMl) : undefined,
+          notes: notes !== undefined ? notes : undefined,
+        },
+        include: {
+          workoutPhases: true,
+        }
+      });
+
+      // Nếu có gửi danh sách phases lên, cập nhật lại các phases liên quan
+      if (workoutPhases && Array.isArray(workoutPhases)) {
+        for (const phase of workoutPhases) {
+          if (phase.id) {
+            await tx.workoutPhase.update({
+              where: { id: phase.id },
+              data: {
+                durationMinutes: Number(phase.durationMinutes),
+                speedKmh: Number(phase.speedKmh),
+                inclineDegree: Number(phase.inclineDegree),
+                distanceKm: Number(phase.distanceKm),
+              }
+            });
+          }
+        }
+      }
+
+      // 3. Đồng bộ cập nhật chỉ số cơ thể (BodyMetric) nếu người dùng có nhập cân nặng hoặc vòng eo theo ngày tập
+      if (weightKg !== null || waistCm !== null) {
+        const workoutDateObj = new Date(workout.workoutStartTime);
+        const metricDateUTC = new Date(Date.UTC(
+          workoutDateObj.getFullYear(),
+          workoutDateObj.getMonth(),
+          workoutDateObj.getDate()
+        ));
+
+        await tx.bodyMetric.upsert({
+          where: {
+            userId_metricDate: {
+              userId,
+              metricDate: metricDateUTC
+            }
+          },
+          update: {
+            weightKg: weightKg !== undefined ? Number(weightKg) : undefined,
+            waistCm: waistCm !== undefined ? Number(waistCm) : undefined,
+          },
+          create: {
+            userId,
+            metricDate: metricDateUTC,
+            weightKg: weightKg ? Number(weightKg) : 0,
+            waistCm: waistCm ? Number(waistCm) : 0,
+          }
+        });
+      }
+
+      return workout;
+    });
+
+    return res.json({ 
+      success: true, 
+      message: 'Cập nhật buổi tập thành công!', 
+      data: updatedWorkout 
+    });
+
+  } catch (error) {
+    console.error('Error updating workout:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
 // 3. Hàm xóa buổi tập (Đã bảo mật quyền sở hữu & xử lý cascade phases)
 const deleteWorkout = async (req, res) => {
   try {
@@ -296,4 +412,4 @@ const deleteWorkout = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-module.exports = { getWorkouts, createWorkout , deleteWorkout };
+module.exports = { getWorkouts, createWorkout , updateWorkout, deleteWorkout };

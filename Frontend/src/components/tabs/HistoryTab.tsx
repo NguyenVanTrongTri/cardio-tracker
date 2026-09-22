@@ -655,6 +655,34 @@ export default function HistoryTab() {
                   className="w-full bg-white border border-slate-200 rounded p-1"
                 />
               </div>
+              <div>
+                <label className="block text-slate-500 text-[10px]">Độ dốc (°)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={phase.inclineDegree}
+                  onChange={(e) => {
+                    const newPhases = [...editingWorkout.phases];
+                    newPhases[index].inclineDegree = Number(e.target.value);
+                    setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded p-1"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-slate-500 text-[10px]">Quãng đường (km)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={phase.distanceKm || 0}
+                  onChange={(e) => {
+                    const newPhases = [...editingWorkout.phases];
+                    newPhases[index].distanceKm = Number(e.target.value);
+                    setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded p-1"
+                />
+              </div>
             </div>
           ))}
         </div>

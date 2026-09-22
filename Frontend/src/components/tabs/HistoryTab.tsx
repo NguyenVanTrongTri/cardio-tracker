@@ -622,13 +622,50 @@ export default function HistoryTab() {
           </div>
         </div>
 
-        {/* 4. Mức độ mệt mỏi */}
+        {/* 4. Chi tiết các giai đoạn */}
+        <div className="space-y-3">
+          <label className="block text-slate-600 font-bold">Chi tiết các giai đoạn</label>
+          {editingWorkout.phases.map((phase, index) => (
+            <div key={index} className="grid grid-cols-2 gap-2 bg-slate-100 p-2 rounded-xl border border-slate-200">
+              <div className="col-span-2 text-xs font-bold text-slate-700">Giai đoạn {phase.phaseNumber}: {phase.name}</div>
+              <div>
+                <label className="block text-slate-500 text-[10px]">Thời gian (p)</label>
+                <input
+                  type="number"
+                  value={phase.durationMinutes}
+                  onChange={(e) => {
+                    const newPhases = [...editingWorkout.phases];
+                    newPhases[index].durationMinutes = Number(e.target.value);
+                    setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded p-1"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-500 text-[10px]">Tốc độ (km/h)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={phase.speedKmh}
+                  onChange={(e) => {
+                    const newPhases = [...editingWorkout.phases];
+                    newPhases[index].speedKmh = Number(e.target.value);
+                    setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded p-1"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 5. Mức độ mệt mỏi */}
         <div>
           <label className="block text-slate-600 font-bold mb-1">Mức độ mệt mỏi (1 - 5)</label>
           <select
             value={editingWorkout.fatigueLevel || 3}
             onChange={(e) =>
-              setEditingWorkout({ ...editingWorkout, fatigueLevel: Number(e.target.value) })
+              setEditingWorkout({ ...editingWorkout, fatigueLevel: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 })
             }
             className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold"
           >

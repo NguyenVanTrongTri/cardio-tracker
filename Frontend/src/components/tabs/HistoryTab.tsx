@@ -567,6 +567,18 @@ export default function HistoryTab() {
                     className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-orange-600"
                   />
                 </div>
+                <div className="col-span-2">
+                    <label className="block text-slate-600 font-bold mb-1">Quãng đường (km)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editingWorkout.totalDistanceKm || 0}
+                      onChange={(e) =>
+                        setEditingWorkout({ ...editingWorkout, totalDistanceKm: Number(e.target.value) })
+                      }
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-sky-600"
+                    />
+                  </div>
               </div>
 
               {/* 4. Chi tiết các giai đoạn (Collapsible) */}
@@ -643,6 +655,36 @@ export default function HistoryTab() {
                     ))}
                   </div>
                 )}
+              </div>
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Mức độ mệt mỏi (1 - 5)</label>
+                <select
+                  value={editingWorkout.fatigueLevel || 3}
+                  onChange={(e) =>
+                    setEditingWorkout({ ...editingWorkout, fatigueLevel: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 })
+                  }
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold"
+                >
+                  <option value={1}>1 - Rất nhẹ nhàng</option>
+                  <option value={2}>2 - Thoải mái</option>
+                  <option value={3}>3 - Vừa phải</option>
+                  <option value={4}>4 - Khá mệt</option>
+                  <option value={5}>5 - Kiệt sức / Quá tải</option>
+                </select>
+              </div>
+
+              {/* 5. Ghi chú cá nhân */}
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Ghi chú cá nhân</label>
+                <textarea
+                  rows={2}
+                  value={editingWorkout.notes || ''}
+                  onChange={(e) =>
+                    setEditingWorkout({ ...editingWorkout, notes: e.target.value })
+                  }
+                  placeholder="Nhập ghi chú cho buổi tập..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 resize-none"
+                />
               </div>
 
               {/* Actions */}

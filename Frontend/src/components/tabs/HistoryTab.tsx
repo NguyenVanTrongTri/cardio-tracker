@@ -50,6 +50,7 @@ export default function HistoryTab() {
 
   // Edit modal state
   const [editingWorkout, setEditingWorkout] = useState<WorkoutRecord | null>(null);
+  const [isPhasesExpanded, setIsPhasesExpanded] = useState(false);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -529,23 +530,23 @@ export default function HistoryTab() {
 
             <form onSubmit={handleUpdateWorkout} className="space-y-4 text-xs">
               
-              {/* 1. Thời gian bắt đầu (Cho phép đổi ngày giờ nếu cần) */}
+              {/* 1. Thời gian bắt đầu */}
               <div>
-                <label className="block text-slate-600 font-bold mb-1">Thời gian bắt đầu (Ngày & Giờ)</label>
+                <label className="block text-slate-600 font-bold mb-1">Thời gian bắt đầu</label>
                 <input
                   type="datetime-local"
                   value={editingWorkout.workoutStartTime ? editingWorkout.workoutStartTime.substring(0, 16) : ''}
                   onChange={(e) =>
                     setEditingWorkout({ ...editingWorkout, workoutStartTime: e.target.value })
                   }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-800 font-mono"
                 />
               </div>
 
-              {/* 2. Các chỉ số chính (Primary Metrics) */}
+              {/* 2. Các chỉ số chính */}
               <div className="grid grid-cols-2 gap-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-200/60">
                 <div>
-                  <label className="block text-slate-600 font-bold mb-1">Thời gian tập (phút)</label>
+                  <label className="block text-slate-600 font-bold mb-1">Thời gian (phút)</label>
                   <input
                     type="number"
                     value={editingWorkout.activeTime || 0}
@@ -556,7 +557,7 @@ export default function HistoryTab() {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-600 font-bold mb-1">Calo tiêu hao (kcal)</label>
+                  <label className="block text-slate-600 font-bold mb-1">Calo (kcal)</label>
                   <input
                     type="number"
                     value={editingWorkout.calories || 0}
@@ -566,171 +567,96 @@ export default function HistoryTab() {
                     className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-orange-600"
                   />
                 </div>
-                {editingWorkout.totalDistanceKm !== undefined && editingWorkout.totalDistanceKm !== null && (
-                  <div className="col-span-2">
-                    <label className="block text-slate-600 font-bold mb-1">Quãng đường (km)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editingWorkout.totalDistanceKm || 0}
-                      onChange={(e) =>
-                        setEditingWorkout({ ...editingWorkout, totalDistanceKm: Number(e.target.value) })
-                      }
-                      className="w-full bg-white border border-slate-200 rounded-xl p-2 text-slate-800 font-bold font-mono text-sky-600"
-                    />
+              </div>
+
+              {/* 4. Chi tiết các giai đoạn (Collapsible) */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPhasesExpanded(!isPhasesExpanded)}
+                  className="w-full flex items-center justify-between bg-slate-100 p-3 rounded-xl text-slate-700 font-bold text-xs"
+                >
+                  <span>Chi tiết các giai đoạn</span>
+                  {isPhasesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                {isPhasesExpanded && (
+                  <div className="max-h-60 overflow-y-auto pr-2 space-y-3 border border-slate-100 rounded-2xl p-2">
+                    {editingWorkout.phases.map((phase, index) => (
+                      <div key={index} className="grid grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-slate-200">
+                        <div className="col-span-2 text-xs font-bold text-slate-700 border-b pb-1 mb-1">Giai đoạn {phase.phaseNumber}: {phase.name}</div>
+                        <div>
+                          <label className="block text-slate-500 text-[10px]">Thời gian (p)</label>
+                          <input
+                            type="number"
+                            value={phase.durationMinutes}
+                            onChange={(e) => {
+                              const newPhases = [...editingWorkout.phases];
+                              newPhases[index].durationMinutes = Number(e.target.value);
+                              setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded p-1"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-500 text-[10px]">Tốc độ (km/h)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={phase.speedKmh}
+                            onChange={(e) => {
+                              const newPhases = [...editingWorkout.phases];
+                              newPhases[index].speedKmh = Number(e.target.value);
+                              setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded p-1"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-500 text-[10px]">Độ dốc (°)</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={phase.inclineDegree}
+                            onChange={(e) => {
+                              const newPhases = [...editingWorkout.phases];
+                              newPhases[index].inclineDegree = Number(e.target.value);
+                              setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded p-1"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-500 text-[10px]">Quãng đường (km)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={phase.distanceKm || 0}
+                            onChange={(e) => {
+                              const newPhases = [...editingWorkout.phases];
+                              newPhases[index].distanceKm = Number(e.target.value);
+                              setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                            }}
+                            className="w-full bg-slate-50 border border-slate-200 rounded p-1"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* 3. Thông tin bổ sung (Secondary Info: Thể chất & Nước uống) */}
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="block text-slate-500 font-semibold mb-1">Cân nặng (kg)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={editingWorkout.weightKg || ''}
-                    onChange={(e) =>
-                      setEditingWorkout({ ...editingWorkout, weightKg: Number(e.target.value) })
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-800 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-500 font-semibold mb-1">Vòng eo (cm)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={editingWorkout.waistCm || ''}
-                    onChange={(e) =>
-                      setEditingWorkout({ ...editingWorkout, waistCm: Number(e.target.value) })
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-800 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-500 font-semibold mb-1">Nước (ml)</label>
-                  <input
-                    type="number"
-                    step="50"
-                    value={editingWorkout.waterConsumedMl || ''}
-                    onChange={(e) =>
-                      setEditingWorkout({ ...editingWorkout, waterConsumedMl: Number(e.target.value) })
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-800 font-bold"
-                  />
-                </div>
-              </div>
-
-              {/* 4. Chi tiết các giai đoạn */}
-              <div className="space-y-3">
-                <label className="block text-slate-600 font-bold">Chi tiết các giai đoạn</label>
-                {editingWorkout.phases.map((phase, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-2 bg-slate-100 p-2 rounded-xl border border-slate-200">
-                    <div className="col-span-2 text-xs font-bold text-slate-700">Giai đoạn {phase.phaseNumber}: {phase.name}</div>
-                    <div>
-                      <label className="block text-slate-500 text-[10px]">Thời gian (p)</label>
-                      <input
-                        type="number"
-                        value={phase.durationMinutes}
-                        onChange={(e) => {
-                          const newPhases = [...editingWorkout.phases];
-                          newPhases[index].durationMinutes = Number(e.target.value);
-                          setEditingWorkout({ ...editingWorkout, phases: newPhases });
-                        }}
-                        className="w-full bg-white border border-slate-200 rounded p-1"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-500 text-[10px]">Tốc độ (km/h)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={phase.speedKmh}
-                        onChange={(e) => {
-                          const newPhases = [...editingWorkout.phases];
-                          newPhases[index].speedKmh = Number(e.target.value);
-                          setEditingWorkout({ ...editingWorkout, phases: newPhases });
-                        }}
-                        className="w-full bg-white border border-slate-200 rounded p-1"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-500 text-[10px]">Độ dốc (°)</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={phase.inclineDegree}
-                        onChange={(e) => {
-                          const newPhases = [...editingWorkout.phases];
-                          newPhases[index].inclineDegree = Number(e.target.value);
-                          setEditingWorkout({ ...editingWorkout, phases: newPhases });
-                        }}
-                        className="w-full bg-white border border-slate-200 rounded p-1"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-500 text-[10px]">Quãng đường (km)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={phase.distanceKm || 0}
-                        onChange={(e) => {
-                          const newPhases = [...editingWorkout.phases];
-                          newPhases[index].distanceKm = Number(e.target.value);
-                          setEditingWorkout({ ...editingWorkout, phases: newPhases });
-                        }}
-                        className="w-full bg-white border border-slate-200 rounded p-1"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 5. Mức độ mệt mỏi */}
-              <div>
-                <label className="block text-slate-600 font-bold mb-1">Mức độ mệt mỏi (1 - 5)</label>
-                <select
-                  value={editingWorkout.fatigueLevel || 3}
-                  onChange={(e) =>
-                    setEditingWorkout({ ...editingWorkout, fatigueLevel: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 })
-                  }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold"
-                >
-                  <option value={1}>1 - Rất nhẹ nhàng</option>
-                  <option value={2}>2 - Thoải mái</option>
-                  <option value={3}>3 - Vừa phải</option>
-                  <option value={4}>4 - Khá mệt</option>
-                  <option value={5}>5 - Kiệt sức / Quá tải</option>
-                </select>
-              </div>
-
-              {/* 5. Ghi chú cá nhân */}
-              <div>
-                <label className="block text-slate-600 font-bold mb-1">Ghi chú cá nhân</label>
-                <textarea
-                  rows={2}
-                  value={editingWorkout.notes || ''}
-                  onChange={(e) =>
-                    setEditingWorkout({ ...editingWorkout, notes: e.target.value })
-                  }
-                  placeholder="Nhập ghi chú cho buổi tập..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 resize-none"
-                />
-              </div>
-
-              {/* Actions Button */}
-              <div className="pt-3 flex gap-2">
+              {/* Actions */}
+              <div className="pt-2 flex gap-2">
                 <button
                   type="button"
                   onClick={() => setEditingWorkout(null)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors"
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors shadow-xs"
+                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors shadow-xs"
                 >
                   Lưu cập nhật
                 </button>

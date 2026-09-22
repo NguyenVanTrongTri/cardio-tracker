@@ -525,7 +525,6 @@ export default function HistoryTab() {
               ✕
             </button>
           </div>
-
           <form onSubmit={handleUpdateWorkout} className="space-y-4 text-xs">
             
             {/* 1. Thời gian bắt đầu */}
@@ -591,68 +590,76 @@ export default function HistoryTab() {
               </button>
               {isPhasesExpanded && (
                 <div className="space-y-3 border border-slate-100 rounded-2xl p-2">
-                  {editingWorkout.phases.map((phase, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-slate-200">
-                      <div className="col-span-2 text-xs font-bold text-slate-700 border-b pb-1 mb-1">
-                        Giai đoạn {phase.phaseNumber}: {phase.name}
-                      </div>
-                      <div>
-                        <label className="block text-slate-500 text-[10px]">Thời gian (p)</label>
-                        <input
-                          type="number"
-                          value={phase.durationMinutes}
-                          onChange={(e) => {
-                            const newPhases = [...editingWorkout.phases];
-                            newPhases[index].durationMinutes = Number(e.target.value);
-                            setEditingWorkout({ ...editingWorkout, phases: newPhases });
-                          }}
-                          className="w-full bg-slate-50 border border-slate-200 rounded p-1"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-500 text-[10px]">Tốc độ (km/h)</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={phase.speedKmh}
-                          onChange={(e) => {
-                            const newPhases = [...editingWorkout.phases];
-                            newPhases[index].speedKmh = Number(e.target.value);
-                            setEditingWorkout({ ...editingWorkout, phases: newPhases });
-                          }}
-                          className="w-full bg-slate-50 border border-slate-200 rounded p-1"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-500 text-[10px]">Độ dốc (°)</label>
-                        <input
-                          type="number"
-                          step="0.5"
-                          value={phase.inclineDegree}
-                          onChange={(e) => {
-                            const newPhases = [...editingWorkout.phases];
-                            newPhases[index].inclineDegree = Number(e.target.value);
-                            setEditingWorkout({ ...editingWorkout, phases: newPhases });
-                          }}
-                          className="w-full bg-slate-50 border border-slate-200 rounded p-1"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-500 text-[10px]">Quãng đường (km)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={phase.distanceKm || 0}
-                          onChange={(e) => {
-                            const newPhases = [...editingWorkout.phases];
-                            newPhases[index].distanceKm = Number(e.target.value);
-                            setEditingWorkout({ ...editingWorkout, phases: newPhases });
-                          }}
-                          className="w-full bg-slate-50 border border-slate-200 rounded p-1"
-                        />
-                      </div>
-                    </div>
-                  ))}
+                  {editingWorkout.phases
+                    .slice() // Tạo bản sao để tránh làm thay đổi trực tiếp mảng gốc trước khi lưu
+                    .sort((a, b) => a.phaseNumber - b.phaseNumber) // Sắp xếp theo số thứ tự giai đoạn
+                    .map((phase, index) => {
+                      // Tìm đúng vị trí index thực tế của phase trong mảng gốc để khi onChange cập nhật không bị nhầm phần tử
+                      const realIndex = editingWorkout.phases.findIndex(p => p.phaseNumber === phase.phaseNumber);
+
+                      return (
+                        <div key={phase.phaseNumber} className="grid grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-slate-200">
+                          <div className="col-span-2 text-xs font-bold text-slate-700 border-b pb-1 mb-1">
+                            Giai đoạn {phase.phaseNumber}: {phase.name}
+                          </div>
+                          <div>
+                            <label className="block text-slate-500 text-[10px]">Thời gian (p)</label>
+                            <input
+                              type="number"
+                              value={phase.durationMinutes}
+                              onChange={(e) => {
+                                const newPhases = [...editingWorkout.phases];
+                                newPhases[realIndex].durationMinutes = Number(e.target.value);
+                                setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                              }}
+                              className="w-full bg-slate-50 border border-slate-200 rounded p-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-500 text-[10px]">Tốc độ (km/h)</label>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={phase.speedKmh}
+                              onChange={(e) => {
+                                const newPhases = [...editingWorkout.phases];
+                                newPhases[realIndex].speedKmh = Number(e.target.value);
+                                setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                              }}
+                              className="w-full bg-slate-50 border border-slate-200 rounded p-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-500 text-[10px]">Độ dốc (°)</label>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={phase.inclineDegree}
+                              onChange={(e) => {
+                                const newPhases = [...editingWorkout.phases];
+                                newPhases[realIndex].inclineDegree = Number(e.target.value);
+                                setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                              }}
+                              className="w-full bg-slate-50 border border-slate-200 rounded p-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-500 text-[10px]">Quãng đường (km)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={phase.distanceKm || 0}
+                              onChange={(e) => {
+                                const newPhases = [...editingWorkout.phases];
+                                newPhases[realIndex].distanceKm = Number(e.target.value);
+                                setEditingWorkout({ ...editingWorkout, phases: newPhases });
+                              }}
+                              className="w-full bg-slate-50 border border-slate-200 rounded p-1"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

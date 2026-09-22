@@ -108,15 +108,17 @@ export default function HistoryTab() {
   }, [workouts, filter]);
 
   const confirmDelete = async () => {
-    if (!deleteCandidateId) return;
-    setIsDeleting(true);
+  if (!deleteCandidateId) return;
+  setIsDeleting(true);
     try {
       const response = await fetch(`${API_ENDPOINTS.WORKOUTS}/${deleteCandidateId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${getAuthToken()}`,
+          'Content-Type': 'application/json',
         },
+        credentials: 'include', // 🍪 BẮT BUỘC: Gửi kèm HttpOnly Cookie lên server để xác thực quyền xóa
       });
+      
       if (response.ok) {
         setWorkouts(workouts.filter(w => w.id !== deleteCandidateId));
         setDeleteCandidateId(null);
@@ -141,6 +143,7 @@ export default function HistoryTab() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getAuthToken()}`,
         },
+        credentials: 'include',
         // Đảm bảo gửi đúng cấu trúc backend mong đợi
         body: JSON.stringify({
             ...editingWorkout,

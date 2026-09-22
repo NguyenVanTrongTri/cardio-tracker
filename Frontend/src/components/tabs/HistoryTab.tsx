@@ -522,29 +522,96 @@ export default function HistoryTab() {
             </div>
 
             <form onSubmit={handleUpdateWorkout} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-500 font-semibold mb-1">Ghi chú</label>
-                <input
-                  type="text"
-                  value={editingWorkout.notes}
-                  onChange={(e) =>
-                    setEditingWorkout({ ...editingWorkout, notes: e.target.value })
-                  }
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Ngày tập</label>
+                  <input
+                    type="datetime-local"
+                    value={editingWorkout.workoutStartTime.slice(0, 16)}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, workoutStartTime: e.target.value })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Loại thiết bị</label>
+                  <select
+                    value={editingWorkout.equipmentType}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, equipmentType: e.target.value as EquipmentType })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold"
+                  >
+                    <option value="TREADMILL">Máy chạy bộ</option>
+                    <option value="STATIONARY_BIKE">Xe đạp tại chỗ</option>
+                    <option value="ROWING_MACHINE">Máy chèo thuyền</option>
+                    <option value="STAIR_CLIMBER">Máy leo thang</option>
+                    <option value="OUTDOOR_RUN">Chạy ngoài trời</option>
+                  </select>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-4 gap-2">
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Thời gian (p)</label>
+                  <input
+                    type="number"
+                    value={editingWorkout.activeTime}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, activeTime: Number(e.target.value) })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Khoảng cách (km)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editingWorkout.totalDistanceKm || ''}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, totalDistanceKm: Number(e.target.value) })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Tiêu hao (kcal)</label>
+                  <input
+                    type="number"
+                    value={editingWorkout.calories}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, calories: Number(e.target.value) })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Mật độ (cal/p)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editingWorkout.efficiencyIndex}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, efficiencyIndex: Number(e.target.value) })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-slate-500 font-semibold mb-1">Cân nặng (kg)</label>
                   <input
                     type="number"
                     step="0.1"
-                    value={editingWorkout.weightKg}
+                    value={editingWorkout.weightKg || ''}
                     onChange={(e) =>
                       setEditingWorkout({ ...editingWorkout, weightKg: Number(e.target.value) })
                     }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
                   />
                 </div>
                 <div>
@@ -552,25 +619,48 @@ export default function HistoryTab() {
                   <input
                     type="number"
                     step="0.5"
-                    value={editingWorkout.waistCm}
+                    value={editingWorkout.waistCm || ''}
                     onChange={(e) =>
                       setEditingWorkout({ ...editingWorkout, waistCm: Number(e.target.value) })
                     }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Nước uống (ml)</label>
+                  <input
+                    type="number"
+                    step="50"
+                    value={editingWorkout.waterConsumedMl || ''}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, waterConsumedMl: Number(e.target.value) })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-500 font-semibold mb-1">
-                  Nước uống (ml)
-                </label>
+                <label className="block text-slate-500 font-semibold mb-1">Mức mệt mỏi (/5)</label>
                 <input
-                  type="number"
-                  step="50"
-                  value={editingWorkout.waterConsumedMl}
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={editingWorkout.fatigueLevel}
                   onChange={(e) =>
-                    setEditingWorkout({ ...editingWorkout, waterConsumedMl: Number(e.target.value) })
+                    setEditingWorkout({ ...editingWorkout, fatigueLevel: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 })
+                  }
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-500 font-semibold mb-1">Ghi chú</label>
+                <input
+                  type="text"
+                  value={editingWorkout.notes || ''}
+                  onChange={(e) =>
+                    setEditingWorkout({ ...editingWorkout, notes: e.target.value })
                   }
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
                 />

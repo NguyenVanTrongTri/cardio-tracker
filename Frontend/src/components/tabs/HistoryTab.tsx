@@ -522,7 +522,75 @@ export default function HistoryTab() {
             </div>
 
             <form onSubmit={handleUpdateWorkout} className="space-y-3.5 text-xs">
-              
+              <div>
+                <label className="block text-slate-500 font-semibold mb-1">Ghi chú</label>
+                <input
+                  type="text"
+                  value={editingWorkout.notes}
+                  onChange={(e) =>
+                    setEditingWorkout({ ...editingWorkout, notes: e.target.value })
+                  }
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Cân nặng (kg)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={editingWorkout.weightKg}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, weightKg: Number(e.target.value) })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-semibold mb-1">Vòng eo (cm)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={editingWorkout.waistCm}
+                    onChange={(e) =>
+                      setEditingWorkout({ ...editingWorkout, waistCm: Number(e.target.value) })
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800 font-bold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-500 font-semibold mb-1">
+                  Nước uống (ml)
+                </label>
+                <input
+                  type="number"
+                  step="50"
+                  value={editingWorkout.waterConsumedMl}
+                  onChange={(e) =>
+                    setEditingWorkout({ ...editingWorkout, waterConsumedMl: Number(e.target.value) })
+                  }
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingWorkout(null)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors shadow-xs"
+                >
+                  Lưu cập nhật
+                </button>
+              </div>
             </form>
           </div>
         </div>

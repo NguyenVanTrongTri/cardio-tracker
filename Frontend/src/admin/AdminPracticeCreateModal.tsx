@@ -31,6 +31,7 @@ const createInitialFormData = (): EquipmentDef => ({
 
 export default function AdminPracticeCreateModal({ isOpen, onClose, onSave }: AdminPracticeCreateModalProps) {
   const [formData, setFormData] = useState<EquipmentDef>(createInitialFormData);
+  const [isSaving, setIsSaving] = useState(false);
 
   // FIX LỖI 1 & 2: Reset Form và tạo ID mới tinh mỗi lần mở Modal
   useEffect(() => {
@@ -217,8 +218,12 @@ export default function AdminPracticeCreateModal({ isOpen, onClose, onSave }: Ad
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-6 border-t">
             <button onClick={onClose} className="px-6 py-2 rounded-xl bg-slate-100 font-bold hover:bg-slate-200 transition-colors">Hủy</button>
-            <button onClick={handleSave} className="px-6 py-2 rounded-xl bg-emerald-600 text-white font-bold flex items-center gap-2 hover:bg-emerald-700 transition-colors">
-              <Save size={18} /> Thêm mới
+            <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="px-6 py-2 rounded-xl bg-emerald-600 text-white font-bold flex items-center gap-2 hover:bg-emerald-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <Save size={18} /> {isSaving ? 'Đang thêm...' : 'Thêm mới'}
             </button>
           </div>
         </div>

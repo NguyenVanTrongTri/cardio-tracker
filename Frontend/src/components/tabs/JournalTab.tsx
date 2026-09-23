@@ -26,6 +26,8 @@ import {
   deleteDailyJournal
 } from '../../services/storage';
 import { getStoredFoodDatabase, FoodItem } from '../../data/foodData';
+import { API_ENDPOINTS } from '../../services/apiConfig';
+
 
 const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối', 'Bữa Phụ'];
 
@@ -51,17 +53,40 @@ export default function JournalTab() {
   // Confirmation modal for delete
   const [deleteTarget, setDeleteTarget] = useState<{ date: string; mealId?: string; type: 'meal' | 'day' } | null>(null);
 
-  const loadData = () => {
-    const list = getStoredMealJournals();
-    setJournals(list);
-    setFoodDb(getStoredFoodDatabase());
-    // Mặc định mở rộng tất cả các ngày
-    const initExpanded: Record<string, boolean> = {};
-    list.forEach((j) => {
-      initExpanded[j.date] = true;
+  const loadData = async () => {
+  try {
+    // Gọi API lấy dữ liệu meals từ backend
+    const res = await fetch(`${API_ENDPOINTS.MEALS}`, {
+      method: 'GET',
+      credentials: 'include', // 👈 BẮT BUỘC: Gửi kèm HttpOnly Cookie để xác thực
     });
-    setExpandedDates(initExpanded);
-  };
+    const result = await res.json();
+
+    if (result.success) {
+      const list = result.data;
+      setJournals(list);
+      
+      // Nếu danh sách foodDb vẫn lấy từ local hoặc có API riêng thì bạn giữ lại dòng này
+      // setFoodDb(getStoredFoodDatabase());
+
+      // Mặc định mở rộng tất cả các ngày dựa trên mealDate trả về từ database
+      const initExpanded: Record<string, boolean> = {};
+      list.forEach((j: any) => {
+        // Cắt chuỗi lấy định dạng YYYY-MM-DD từ ISO date string của Prisma
+        const dateKey = j.mealDate ? j.mealDate.split('T')[0] : j.date;
+        if (dateKey) {
+          initExpanded[dateKey] = true;
+        }
+      });
+      setExpandedDates(initExpanded);
+    } else {
+      showToast(result.message || 'Không thể tải nhật ký dinh dưỡng!', 'error');
+    }
+  } catch (error) {
+    console.error('Error loading meals from server:', error);
+    showToast('Lỗi kết nối khi tải nhật ký dinh dưỡng!', 'error');
+  }
+};
 
   useEffect(() => {
     loadData();
@@ -662,3 +687,7 @@ export default function JournalTab() {
     </div>
   );
 }
+function showToast(arg0: any, arg1: string) {
+  throw new Error('Function not implemented.');
+}
+

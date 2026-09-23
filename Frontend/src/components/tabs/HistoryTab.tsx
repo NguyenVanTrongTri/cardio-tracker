@@ -215,6 +215,31 @@ export default function HistoryTab() {
     }
     return `Dốc ${p.inclineDegree}° • ${p.speedKmh} km/h`;
   };
+  const formatDatetoday = (dateString: string) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    const today = new Date();
+
+    // Kiểm tra xem có phải cùng ngày, tháng, năm với hiện tại không
+    const isToday = 
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+
+    if (isToday) {
+      return 'Hôm nay'; 
+      // Hoặc nếu bạn muốn hiển thị cả giờ hôm nay: return 'Hôm nay, ' + date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Nếu không phải hôm nay thì trả về định dạng cũ của bạn
+    // Ví dụ dùng toLocaleDateString hoặc hàm format sẵn có của bạn:
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
 
   return (
     <div className="max-w-xl mx-auto px-4 pt-4 pb-28 space-y-4">
@@ -292,7 +317,9 @@ export default function HistoryTab() {
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                      {formatDate(w.workoutStartTime)}
+                      {new Date(w.workoutStartTime).toDateString() === new Date().toDateString() 
+                        ? 'Hôm nay' 
+                        : formatDatetoday(w.workoutStartTime)}
                     </span>
                     <h3 className="text-base font-black text-slate-900 flex items-center gap-2 mt-0.5">
                       {getEquipmentIcon(w.equipmentType)}

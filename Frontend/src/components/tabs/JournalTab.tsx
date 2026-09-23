@@ -405,6 +405,7 @@ export default function JournalTab() {
                         + Ghi bữa ăn ngay
                       </button>
                     </div>
+                  
                   ) : (
                     journal.meals.map((meal) => (
                       <div

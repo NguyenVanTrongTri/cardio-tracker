@@ -210,7 +210,10 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
 
       const res = await fetch(API_BASE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 
+          'Content-Type': 'application/json' 
+        },
+        credentials: 'include', // 👈 Dùng HttpOnly Cookie để gửi kèm phiên đăng nhập tự động
         body: JSON.stringify({
           id,
           name,

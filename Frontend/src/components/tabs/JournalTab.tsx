@@ -406,7 +406,9 @@ export default function JournalTab() {
                         </button>
                       </div>
                     ) : (
-                      journal.meals.map((meal) => (
+                      journal.meals
+                        .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+                        .map((meal) => (
                         <div
                           key={meal.id}
                           className="bg-slate-50/70 p-3 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors"

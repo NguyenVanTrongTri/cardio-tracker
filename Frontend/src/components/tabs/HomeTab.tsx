@@ -438,13 +438,13 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           setNotes={setNotes}
         />
         {/* Primary Action Button */}
-        <button
+          <button
           type="submit"
-          disabled={isSaving}
-          className={`w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-base py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/30 hover:shadow-xl active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+          disabled={isSaving || !isDirty}
+          className={`w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-base py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/30 hover:shadow-xl active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer ${(isSaving || !isDirty) ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           <Flame size={20} className="fill-white" />
-          <span>{isSaving ? 'ĐANG LƯU...!' : `LƯU BUỔI TẬP (${equipmentDef.shortName.toUpperCase()})`}</span>
+          <span>{isSaving ? 'ĐANG LƯU...!' : !isDirty ? 'KHÔNG CÓ THAY ĐỔI' : `LƯU BUỔI TẬP (${equipmentDef.shortName.toUpperCase()})`}</span>
         </button>
       </form>
 

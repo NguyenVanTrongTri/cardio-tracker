@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Activity,
   TrendingUp,
@@ -84,7 +84,7 @@ export default function App() {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     try {
       logout();
       setShowUserMenu(false);
@@ -93,7 +93,7 @@ export default function App() {
     } catch (error) {
       console.error('Lỗi khi thực hiện đăng xuất:', error);
     }
-  };
+  }, []);
 
   // Click Outside cho User Menu
   useEffect(() => {
@@ -137,64 +137,64 @@ export default function App() {
 
   // Auto-logout logic (kết hợp cả Token Expiry và Idle Timeout)
   useEffect(() => {
-  if (!currentUser) return;
+    if (!currentUser) return;
 
-  const raw = localStorage.getItem('cardio_session_v2');
-  if (!raw) return;
+    const raw = localStorage.getItem('cardio_session_v2');
+    if (!raw) return;
   
-  let session: AuthSession;
-  try {
-    session = JSON.parse(raw);
-  } catch {
-    return;
-  }
+    let session: AuthSession;
+    try {
+      session = JSON.parse(raw);
+    } catch {
+      return;
+    }
 
-  if (!session.expiresAt) return;
+    if (!session.expiresAt) return;
 
   // 1. Chuẩn hóa thời gian hết hạn (token expiry)
-  let expiryTime = Number(session.expiresAt);
-  if (expiryTime < 10000000000) {
-    expiryTime *= 1000;
-  }
+    let expiryTime = Number(session.expiresAt);
+    if (expiryTime < 10000000000) {
+      expiryTime *= 1000;
+    }
 
-  const timeLeft = expiryTime - Date.now();
+    const timeLeft = expiryTime - Date.now();
 
   // 🛑 KIỂM TRA AN TOÀN: Nếu hết hạn ngay từ đầu thì logout luôn
-  if (timeLeft <= 0) {
-    console.warn("Token đã hết hạn từ trước.");
-    handleLogout();
-    return;
-  }
+    if (timeLeft <= 0) {
+      console.warn("Token đã hết hạn từ trước.");
+      handleLogout();
+      return;
+    }
 
   // ❌ XÓA BỎ absoluteTimer vì nó gây tràn số (integer overflow) với token dài ngày!
 
-  // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
-  const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
-  let idleTimer: NodeJS.Timeout;
+    // 2. Xử lý thời gian không hoạt động (Idle Timeout - 15 phút)
+    const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+    let idleTimer: NodeJS.Timeout;
 
-  const handleUserActivity = () => {
-    if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-      console.warn("-> Bị logout do: Quá thời gian không hoạt động (Idle Timeout)");
-      handleLogout();
-    }, IDLE_TIMEOUT_MS);
-  };
+    const handleUserActivity = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        console.warn("-> Bị logout do: Quá thời gian không hoạt động (Idle Timeout)");
+        handleLogout();
+      }, IDLE_TIMEOUT_MS);
+    };
 
-  const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
-  
-  activityEvents.forEach((event) => {
-    window.addEventListener(event, handleUserActivity);
-  });
-
-  handleUserActivity();
-
-  // Dọn dẹp khi component unmount hoặc khi user thay đổi
-  return () => {
-    if (idleTimer) clearTimeout(idleTimer);
+    const activityEvents = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    
     activityEvents.forEach((event) => {
-      window.removeEventListener(event, handleUserActivity);
+      window.addEventListener(event, handleUserActivity);
     });
-  };
+
+    handleUserActivity();
+
+    // Dọn dẹp khi component unmount hoặc khi user thay đổi
+    return () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
   }, [currentUser, handleLogout]);
 
   const handleWorkoutSaved = () => {

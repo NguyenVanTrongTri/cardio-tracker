@@ -101,86 +101,74 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
 
   // 2. Bật / Tắt trạng thái bài tập gọi API PUT (Domain đầy đủ)
   const togglePractice = async (id: string) => {
-    const practice = practices.find(p => p.id === id);
-    if (!practice) return;
+  const practice = practices.find(p => p.id === id);
+  if (!practice) return;
 
-    const nextEnabledStatus = !practice.enabled;
-    const sessionRaw = localStorage.getItem('cardio_session_v2');
+  const nextEnabledStatus = !practice.enabled;
+  
+  try {
+    const res = await fetch(`${API_BASE_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json', 
+      },
+      credentials: 'include', // 👈 Dùng HttpOnly Cookie thay vì Authorization Header cũ
+      body: JSON.stringify({ enabled: nextEnabledStatus })
+    });
     
-    try {
-      
-    const sessionRaw = localStorage.getItem('cardio_session_v2');
-      let token = '';
-      if (sessionRaw) {
-        try {
-          const session = JSON.parse(sessionRaw);
-          token = session.token;
-        } catch (e) {
-          console.error('Lỗi đọc session', e);
-        }
-      }
+    const data = await res.json();
 
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` // Truyền đúng token vào đây
-        },
-        body: JSON.stringify({ enabled: nextEnabledStatus })
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        setPractices(prev => 
-          prev.map(p => p.id === id ? { ...p, enabled: nextEnabledStatus } : p)
-        );
-        logAdminAction(adminEmail, 'Cập nhật trạng thái bài tập', `Đã ${nextEnabledStatus ? 'bật' : 'tắt'} bài tập: ${id}`, 'INFO');
-        showToast('Cập nhật trạng thái thành công!');
-        onRefreshStats();
-      } else {
-        showToast(data.message || 'Cập nhật thất bại!', 'error');
-        console.log(localStorage);
-      }
-    } catch (error) {
-      console.error('Error toggling practice:', error);
-      showToast('Lỗi kết nối khi cập nhật trạng thái!', 'error');
+    if (data.success) {
+      setPractices(prev => 
+        prev.map(p => p.id === id ? { ...p, enabled: nextEnabledStatus } : p)
+      );
+      logAdminAction(adminEmail, 'Cập nhật trạng thái bài tập', `Đã ${nextEnabledStatus ? 'bật' : 'tắt'} bài tập: ${id}`, 'INFO');
+      showToast('Cập nhật trạng thái thành công!');
+      onRefreshStats();
+    } else {
+      showToast(data.message || 'Cập nhật thất bại!', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error toggling practice:', error);
+    showToast('Lỗi kết nối khi cập nhật trạng thái!', 'error');
+  }
+};
 
   // 3. Lưu cấu hình chỉnh sửa bài tập gọi API PUT (Domain đầy đủ)
   const handleSavePractice = async (updated: EquipmentDef) => {
-    try {
-      const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = updated;
+      try {
+        const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = updated;
 
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({
-          name,
-          shortName,
-          tag,
-          badgeColor,
-          bgLight,
-          description,
-          enabled,
-          configJson: configRest
-        })
-      });
-      const data = await res.json();
+        const res = await fetch(`${API_BASE_URL}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name,
+            shortName,
+            tag,
+            badgeColor,
+            bgLight,
+            description,
+            enabled,
+            configJson: configRest
+          })
+        });
+        const data = await res.json();
 
-      if (data.success) {
-        setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
-        setEditingPractice(null);
-        showToast('Đã lưu cấu hình bài tập lên database!');
-        fetchPractices();
-      } else {
-        showToast(data.message || 'Lưu cấu hình thất bại!', 'error');
+        if (data.success) {
+          setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
+          setEditingPractice(null);
+          showToast('Đã lưu cấu hình bài tập lên database!');
+          fetchPractices();
+        } else {
+          showToast(data.message || 'Lưu cấu hình thất bại!', 'error');
+        }
+      } catch (error) {
+        console.error('Error saving practice:', error);
+        showToast('Lỗi server khi lưu cấu hình!', 'error');
       }
-    } catch (error) {
-      console.error('Error saving practice:', error);
-      showToast('Lỗi server khi lưu cấu hình!', 'error');
-    }
-  };
+    };
 
   // 4. Thêm bài tập mới gọi API POST (Domain đầy đủ)
   const handleCreatePractice = async (newPractice: EquipmentDef) => {
@@ -189,7 +177,8 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
 
       const res = await fetch(API_BASE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           id,
           name,

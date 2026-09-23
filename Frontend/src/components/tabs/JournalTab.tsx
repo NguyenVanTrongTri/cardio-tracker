@@ -71,20 +71,41 @@ export default function JournalTab() {
     const result = await res.json();
 
     if (result.success) {
-      const list = result.data;
+      const rawMeals = result.data;
+
+      // Group meals by date
+      const grouped = rawMeals.reduce((acc: Record<string, DailyMealJournal>, meal: any) => {
+        const date = meal.mealDate.split('T')[0];
+        if (!acc[date]) {
+          acc[date] = {
+            id: date,
+            date: date,
+            meals: [],
+            totalCalories: 0,
+            workoutCaloriesBurned: 0 // Placeholder as API doesn't provide this
+          };
+        }
+        
+        const mealObj: Meal = {
+          id: meal.id,
+          category: meal.category,
+          time: meal.mealTime,
+          foodItems: meal.foodItems,
+          totalCalories: meal.totalCalories
+        };
+
+        acc[date].meals.push(mealObj);
+        acc[date].totalCalories += meal.totalCalories;
+        return acc;
+      }, {});
+
+      const list = Object.values(grouped);
       setJournals(list);
       
-      // Nếu danh sách foodDb vẫn lấy từ local hoặc có API riêng thì bạn giữ lại dòng này
-      // setFoodDb(getStoredFoodDatabase());
-
-      // Mặc định mở rộng tất cả các ngày dựa trên mealDate trả về từ database
+      // Mặc định mở rộng tất cả các ngày
       const initExpanded: Record<string, boolean> = {};
-      list.forEach((j: any) => {
-        // Cắt chuỗi lấy định dạng YYYY-MM-DD từ ISO date string của Prisma
-        const dateKey = j.mealDate ? j.mealDate.split('T')[0] : j.date;
-        if (dateKey) {
-          initExpanded[dateKey] = true;
-        }
+      list.forEach((j) => {
+        initExpanded[j.date] = true;
       });
       setExpandedDates(initExpanded);
     } else {

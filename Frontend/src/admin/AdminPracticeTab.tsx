@@ -205,42 +205,49 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
 
   // 4. Thêm bài tập mới gọi API POST (Domain đầy đủ)
   const handleCreatePractice = async (newPractice: EquipmentDef) => {
-    try {
-      const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = newPractice;
+  try {
+    const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = newPractice;
 
-      const res = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json' 
-        },
-        credentials: 'include', // 👈 Dùng HttpOnly Cookie để gửi kèm phiên đăng nhập tự động
-        body: JSON.stringify({
-          id,
-          name,
-          shortName,
-          tag,
-          badgeColor,
-          bgLight,
-          description,
-          enabled: enabled ?? true,
-          configJson: configRest
-        })
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        setIsCreateModalOpen(false);
-        showToast('Đã thêm bài tập mới thành công!');
-        fetchPractices();
-        onRefreshStats();
-      } else {
-        showToast(data.message || 'Thêm bài tập thất bại!', 'error');
-      }
-    } catch (error) {
-      console.error('Error creating practice:', error);
-      showToast('Lỗi kết nối khi thêm mới bài tập!', 'error');
+    // Validate nhanh ở phía client để báo lỗi trực quan cho user
+    if (!id || !name || !shortName) {
+      showToast('Vui lòng điền đầy đủ ID, Tên và Tên viết tắt!', 'error');
+      return;
     }
-  };
+
+    const res = await fetch(API_BASE_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json' 
+      },
+      credentials: 'include', // 👈 Bắt buộc phải có để gửi kèm HttpOnly Cookie lên server
+      body: JSON.stringify({
+        id,
+        name,
+        shortName, // Đảm bảo đúng định dạng chuẩn BE yêu cầu
+        tag,
+        badgeColor,
+        bgLight,
+        description,
+        enabled: enabled ?? true,
+        configJson: configRest
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      setIsCreateModalOpen(false);
+      showToast('Đã thêm bài tập mới thành công!');
+      fetchPractices();
+      onRefreshStats();
+    } else {
+      showToast(data.message || 'Thêm bài tập thất bại!', 'error');
+    }
+  } catch (error) {
+    console.error('Error creating practice:', error);
+    showToast('Lỗi kết nối khi thêm mới bài tập!', 'error');
+  }
+};
 
   return (
     <div className="space-y-6">

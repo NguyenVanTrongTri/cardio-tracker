@@ -40,7 +40,7 @@ const getPractices = async (req, res) => {
 // 2. Hàm thêm mới cấu hình bài tập (Dành cho Admin)
 const createPractice = async (req, res) => {
   try {
-    // 🔒 Nếu muốn bảo mật, kiểm tra xem user đã đăng nhập chưa
+    // 🔒 Kiểm tra xác thực thông qua HttpOnly Cookie
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ 
@@ -49,15 +49,35 @@ const createPractice = async (req, res) => {
       });
     }
 
-    const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, configJson } = req.body;
+    // Hỗ trợ bắt linh hoạt cả camelCase và snake_case để tránh lỗi truyền sai tên trường
+    const { 
+      id, 
+      name, 
+      shortName, 
+      short_name,
+      tag, 
+      badgeColor, 
+      badge_color,
+      bgLight, 
+      bg_light,
+      description, 
+      enabled, 
+      configJson,
+      config_json,
+      ...rest 
+    } = req.body;
 
-    if (!id || !name || !shortName) {
+    const finalShortName = shortName || short_name;
+
+    // Kiểm tra dữ liệu bắt buộc
+    if (!id || !name || !finalShortName) {
       return res.status(400).json({ 
         success: false, 
         message: 'Thiếu các thông tin bắt buộc (id, name, shortName)!' 
       });
     }
 
+    // Kiểm tra trùng lặp ID
     const existingPractice = await prisma.practice.findUnique({
       where: { id }
     });
@@ -69,17 +89,18 @@ const createPractice = async (req, res) => {
       });
     }
 
+    // Tạo mới bản ghi trong Database
     const newPractice = await prisma.practice.create({
       data: {
         id,
         name,
-        shortName,
+        shortName: finalShortName,
         tag: tag || null,
-        badgeColor: badgeColor || null,
-        bgLight: bgLight || null,
+        badgeColor: badgeColor || badge_color || null,
+        bgLight: bgLight || bg_light || null,
         description: description || null,
         enabled: enabled !== undefined ? enabled : true,
-        configJson: configJson || null,
+        configJson: configJson || config_json || rest || null,
       },
     });
 

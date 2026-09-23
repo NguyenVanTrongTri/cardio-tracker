@@ -123,32 +123,21 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
 
   // 2. Bật / Tắt trạng thái bài tập gọi API PUT (Domain đầy đủ)
   const togglePractice = async (id: string) => {
-    const practice = practices.find(p => p.id === id);
-    if (!practice) return;
+  const practice = practices.find(p => p.id === id);
+  if (!practice) return;
 
-    const nextEnabledStatus = !practice.enabled;
-    
+  const nextEnabledStatus = !practice.enabled;
+  
     try {
-      
-    const sessionRaw = localStorage.getItem('cardio_session_v2');
-      let token = '';
-      if (sessionRaw) {
-        try {
-          const session = JSON.parse(sessionRaw);
-          token = session.token;
-        } catch (e) {
-          console.error('Lỗi đọc session', e);
-        }
-      }
-
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` // Truyền đúng token vào đây
         },
+        credentials: 'include', // 👈 Dùng HttpOnly Cookie thay vì Authorization Header cũ
         body: JSON.stringify({ enabled: nextEnabledStatus })
       });
+      
       const data = await res.json();
 
       if (data.success) {
@@ -160,7 +149,6 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
         onRefreshStats();
       } else {
         showToast(data.message || 'Cập nhật thất bại!', 'error');
-        console.log(localStorage);
       }
     } catch (error) {
       console.error('Error toggling practice:', error);

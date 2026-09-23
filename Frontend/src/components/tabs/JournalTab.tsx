@@ -394,85 +394,84 @@ export default function JournalTab() {
 
                 {/* Collapsible Meals Detail */}
                {isExpanded && (
-                <div className="p-3.5 space-y-3">
-                  {(!journal.meals || journal.meals.length === 0) ? (
-                    <div className="text-center py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                      <p className="text-xs text-slate-400">Ngày này chưa có bữa ăn nào được ghi.</p>
-                      <button
-                        onClick={() => handleOpenAddModal(journal.date)}
-                        className="mt-1 text-xs font-bold text-emerald-600 hover:underline cursor-pointer"
-                      >
-                        + Ghi bữa ăn ngay
-                      </button>
-                    </div>
-                  
-                  ) : (
-                    journal.meals.map((meal) => (
-                      <div
-                        key={meal.id}
-                        className="bg-slate-50/70 p-3 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors"
-                      >
-                        {/* Meal Header */}
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-slate-800">
-                              {meal.category}
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                              {meal.time || '--:--'}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-mono font-black text-orange-600">
-                              {meal.totalCalories} kcal
-                            </span>
-                            <button
-                              onClick={() => handleOpenEditModal(journal.date, meal)}
-                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                              title="Sửa bữa ăn"
-                            >
-                              <Edit3 size={13} />
-                            </button>
-                            <button
-                              onClick={() => setDeleteTarget({ date: journal.date, mealId: meal.id, type: 'meal' })}
-                              className="p-1 text-slate-400 hover:text-rose-500 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                              title="Xóa bữa ăn"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Food Items List */}
-                        {meal.foodItems && Array.isArray(meal.foodItems) && meal.foodItems.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                            {meal.foodItems.map((item) => (
-                              <div
-                                key={item.id}
-                                className="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-xl border border-slate-200/70 text-xs"
-                              >
-                                <div className="flex items-center gap-1.5 truncate">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                  <span className="font-medium text-slate-700 truncate">
-                                    {item.foodName}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 font-mono shrink-0">
-                                  <span className="text-slate-400 text-[11px]">{item.grams}g</span>
-                                  <span className="font-bold text-slate-800">{item.calories} cal</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-[11px] text-slate-400 italic">Chưa có chi tiết món ăn</p>
-                        )}
+                  <div className="p-3.5 space-y-3">
+                    {(!journal.meals || journal.meals.length === 0) ? (
+                      <div className="text-center py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <p className="text-xs text-slate-400">Ngày này chưa có bữa ăn nào được ghi.</p>
+                        <button
+                          onClick={() => handleOpenAddModal(journal.date)}
+                          className="mt-1 text-xs font-bold text-emerald-600 hover:underline cursor-pointer"
+                        >
+                          + Ghi bữa ăn ngay
+                        </button>
                       </div>
-                    ))
-                  )}
-                </div>
-              )}
+                    ) : (
+                      journal.meals.map((meal) => (
+                        <div
+                          key={meal.id}
+                          className="bg-slate-50/70 p-3 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors"
+                        >
+                          {/* Meal Header */}
+                          <div className="flex justify-between items-center mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-slate-800">
+                                {meal.category}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                                {meal.time || '--:--'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-mono font-black text-orange-600">
+                                {meal.totalCalories} kcal
+                              </span>
+                              <button
+                                onClick={() => handleOpenEditModal(journal.date, meal)}
+                                className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                                title="Sửa bữa ăn"
+                              >
+                                <Edit3 size={13} />
+                              </button>
+                              <button
+                                onClick={() => setDeleteTarget({ date: journal.date, mealId: meal.id, type: 'meal' })}
+                                className="p-1 text-slate-400 hover:text-rose-500 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                                title="Xóa bữa ăn"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Food Items List */}
+                          {meal.foodItems && Array.isArray(meal.foodItems) && meal.foodItems.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                              {meal.foodItems.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-xl border border-slate-200/70 text-xs"
+                                >
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                    <span className="font-medium text-slate-700 truncate">
+                                      {item.foodName}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 font-mono shrink-0">
+                                    <span className="text-slate-400 text-[11px]">{item.grams}g</span>
+                                    <span className="font-bold text-slate-800">{item.calories} cal</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-slate-400 italic">Chưa có chi tiết món ăn</p>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             );
           })

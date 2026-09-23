@@ -5,7 +5,7 @@ const {
   getPractices, 
   createPractice, 
   updatePractice,
-  deletePractice 
+  deletePractices
 } = require('../controllers/practiceController');
 
 const { verifyToken } = require('../middlewares/authMiddleware'); 

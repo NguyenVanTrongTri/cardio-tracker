@@ -115,13 +115,17 @@ export default function JournalTab() {
 
   // Macro Summary
   const stats = useMemo(() => {
-    if (journals.length === 0) return { avgIn: 0, totalDays: 0, avgBurn: 0, avgNet: 0 };
+    if (!journals || journals.length === 0) return { avgIn: 0, totalDays: 0, avgBurn: 0, avgNet: 0 };
     const totalDays = journals.length;
-    const totalCalIn = journals.reduce((sum, j) => sum + j.totalCalories, 0);
+    
+    // Safely calculate totals
+    const totalCalIn = journals.reduce((sum, j) => sum + (j.totalCalories || 0), 0);
     const totalCalBurn = journals.reduce((sum, j) => sum + (j.workoutCaloriesBurned || 0), 0);
+    
     const avgIn = Math.round(totalCalIn / totalDays);
     const avgBurn = Math.round(totalCalBurn / totalDays);
     const avgNet = avgIn - avgBurn;
+    
     return { avgIn, totalDays, avgBurn, avgNet };
   }, [journals]);
 

@@ -14,5 +14,6 @@ const { verifyToken } = require('../middlewares/authMiddleware');
 router.get('/', verifyToken, getPractices); 
 router.post('/', verifyToken, createPractice);       
 router.put('/:id', verifyToken, updatePractice);  
+router.delete('/:id', verifyToken, deletePractices);  
 
 module.exports = router;

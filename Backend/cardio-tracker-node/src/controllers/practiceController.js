@@ -173,9 +173,53 @@ const updatePractice = async (req, res) => {
     });
   }
 };
+// 4. Hàm xóa bài tập (Dành cho Admin)
+const deletePractices = async (req, res) => {
+  try {
+    // 🔒 Bổ sung kiểm tra xác thực để đồng bộ với các hàm create/get
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để thực hiện thao tác này!' 
+      });
+    }
 
+    const { id } = req.params;
+
+    // Kiểm tra xem bài tập có tồn tại không trước khi xóa
+    const existingPractice = await prisma.practice.findUnique({
+      where: { id }
+    });
+
+    if (!existingPractice) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy bài tập với ID này!' 
+      });
+    }
+
+    // Thực hiện xóa
+    await prisma.practice.delete({
+      where: { id }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Xóa bài tập thành công!',
+    });
+  } catch (error) {
+    console.error('Error deleting practice:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xóa bài tập',
+      error: error.message,
+    });
+  }
+};
 module.exports = { 
   getPractices,
   createPractice,
-  updatePractice
+  updatePractice,
+  deletePractices
 };

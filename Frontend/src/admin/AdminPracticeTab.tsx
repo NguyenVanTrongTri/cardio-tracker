@@ -44,6 +44,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     try {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
+        credentials: 'include', // 👈 Bắt buộc phải có để gửi HttpOnly Cookie lên server
       });
       const data = await res.json();
 

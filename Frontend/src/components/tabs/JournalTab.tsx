@@ -94,7 +94,7 @@ export default function JournalTab() {
     console.error('Error loading meals from server:', error);
     showToast('Lỗi kết nối khi tải nhật ký dinh dưỡng!', 'error');
   }
-};
+  };
 
   useEffect(() => {
     loadData();

@@ -444,7 +444,7 @@ export default function JournalTab() {
                           </div>
 
                           {/* Food Items List */}
-                          {meal.foodItems && meal.foodItems.length > 0 ? (
+                          {meal.foodItems && Array.isArray(meal.foodItems) && meal.foodItems.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                               {meal.foodItems.map((item) => (
                                 <div

@@ -170,7 +170,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
       if (data.success) {
         setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
         setEditingPractice(null);
-        showToast('Đã lưu cấu hình bài tập lên database!');
+        showToast('Đã lưu cấu hình bài tập thành công!');
         fetchPractices();
       } else {
         showToast(data.message || 'Lưu cấu hình thất bại!', 'error');

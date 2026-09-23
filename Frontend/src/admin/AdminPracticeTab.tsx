@@ -44,7 +44,6 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     try {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
-        credentials: 'include', // 👈 Bắt buộc phải có để gửi HttpOnly Cookie lên server
       });
       const data = await res.json();
 
@@ -171,7 +170,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
       if (data.success) {
         setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
         setEditingPractice(null);
-        showToast('Đã lưu cấu hình bài tập thành công!');
+        showToast('Đã lưu cấu hình bài tập !');
         fetchPractices();
       } else {
         showToast(data.message || 'Lưu cấu hình thất bại!', 'error');

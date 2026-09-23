@@ -53,6 +53,14 @@ export default function JournalTab() {
   // Confirmation modal for delete
   const [deleteTarget, setDeleteTarget] = useState<{ date: string; mealId?: string; type: 'meal' | 'day' } | null>(null);
 
+  // Toast Feedback
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setFeedback({ type, text });
+    setTimeout(() => setFeedback(null), 3000);
+  };
+
   const loadData = async () => {
   try {
     // Gọi API lấy dữ liệu meals từ backend
@@ -687,7 +695,5 @@ export default function JournalTab() {
     </div>
   );
 }
-function showToast(arg0: any, arg1: string) {
-  throw new Error('Function not implemented.');
-}
+
 

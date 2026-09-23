@@ -32,57 +32,73 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingPractice, setEditingPractice] = useState<EquipmentDef | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [practiceToDelete, setPracticeToDelete] = useState<EquipmentDef | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 3000);
   };
+
+  // 1.5 Xóa bài tập gọi API DELETE
+  const handleDeletePractice = async (id: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPractices(prev => prev.filter(p => p.id !== id));
+        setPracticeToDelete(null);
+        showToast('Đã xóa bài tập thành công!');
+        onRefreshStats();
+      } else {
+        showToast(data.message || 'Xóa bài tập thất bại!', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting practice:', error);
+      showToast('Lỗi kết nối khi xóa bài tập!', 'error');
+    }
+  };
+
   // 1. Lấy danh sách bài tập động từ Backend (Domain đầy đủ)
   const fetchPractices = async () => {
-  try {
-    setLoading(true);
-    const res = await fetch(API_BASE_URL, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // 🍪 BẮT BUỘC: Thêm dòng này để trình duyệt tự đính kèm HttpOnly Cookie lên Backend
-      credentials: 'include', 
-    });
-    
-    const rawText = await res.text();
-    let data;
     try {
-      data = JSON.parse(rawText);
-    } catch {
-      data = { success: false, error: rawText };
+      setLoading(true);
+      const res = await fetch(API_BASE_URL);
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = { success: false, error: rawText };
+      }
+      
+      if (data.success) {
+        const formatted = data.data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          shortName: item.shortName || item.short_name,
+          tag: item.tag,
+          badgeColor: item.badgeColor || item.badge_color,
+          bgLight: item.bgLight || item.bg_light,
+          description: item.description,
+          enabled: item.enabled,
+          ...(item.configJson || item.config_json || {})
+        }));
+        setPractices(formatted);
+        showToast('Thành công!', 'success');
+      } else {
+        showToast('Không thể tải danh sách bài tập từ server!', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching practices:', error);
+      showToast('Lỗi kết nối đến server khi tải bài tập!', 'error');
+    } finally {
+      setLoading(false);
     }
-    
-    if (data.success) {
-      const formatted = data.data.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        shortName: item.shortName || item.short_name,
-        tag: item.tag,
-        badgeColor: item.badgeColor || item.badge_color,
-        bgLight: item.bgLight || item.bg_light,
-        description: item.description,
-        enabled: item.enabled,
-        ...(item.configJson || item.config_json || {})
-      }));
-      setPractices(formatted);
-      // Lưu ý: Nếu không muốn mỗi lần load danh sách bài tập đều hiện toast thông báo thành công thì có thể bỏ dòng showToast bên dưới đi cho đỡ phiền người dùng
-      // showToast('Thành công!', 'success');
-    } else {
-      showToast('Không thể tải danh sách bài tập từ server!', 'error');
-    }
-  } catch (error) {
-    console.error('Error fetching practices:', error);
-    showToast('Lỗi kết nối đến server khi tải bài tập!', 'error');
-  } finally {
-    setLoading(false);
-  }
   };
+
   useEffect(() => {
     fetchPractices();
   }, []);
@@ -101,74 +117,69 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
 
   // 2. Bật / Tắt trạng thái bài tập gọi API PUT (Domain đầy đủ)
   const togglePractice = async (id: string) => {
-  const practice = practices.find(p => p.id === id);
-  if (!practice) return;
+    const practice = practices.find(p => p.id === id);
+    if (!practice) return;
 
-  const nextEnabledStatus = !practice.enabled;
-  
-  try {
-    const res = await fetch(`${API_BASE_URL}/${id}`, {
-      method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json', 
-      },
-      credentials: 'include', // 👈 Dùng HttpOnly Cookie thay vì Authorization Header cũ
-      body: JSON.stringify({ enabled: nextEnabledStatus })
-    });
-    
-    const data = await res.json();
+    const nextEnabledStatus = !practice.enabled;
 
-    if (data.success) {
-      setPractices(prev => 
-        prev.map(p => p.id === id ? { ...p, enabled: nextEnabledStatus } : p)
-      );
-      logAdminAction(adminEmail, 'Cập nhật trạng thái bài tập', `Đã ${nextEnabledStatus ? 'bật' : 'tắt'} bài tập: ${id}`, 'INFO');
-      showToast('Cập nhật trạng thái thành công!');
-      onRefreshStats();
-    } else {
-      showToast(data.message || 'Cập nhật thất bại!', 'error');
+    try {
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: nextEnabledStatus })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPractices(prev => 
+          prev.map(p => p.id === id ? { ...p, enabled: nextEnabledStatus } : p)
+        );
+        logAdminAction(adminEmail, 'Cập nhật trạng thái bài tập', `Đã ${nextEnabledStatus ? 'bật' : 'tắt'} bài tập: ${id}`, 'INFO');
+        showToast('Cập nhật trạng thái thành công!');
+        onRefreshStats();
+      } else {
+        showToast(data.message || 'Cập nhật thất bại!', 'error');
+      }
+    } catch (error) {
+      console.error('Error toggling practice:', error);
+      showToast('Lỗi kết nối khi cập nhật trạng thái!', 'error');
     }
-  } catch (error) {
-    console.error('Error toggling practice:', error);
-    showToast('Lỗi kết nối khi cập nhật trạng thái!', 'error');
-  }
-};
+  };
 
   // 3. Lưu cấu hình chỉnh sửa bài tập gọi API PUT (Domain đầy đủ)
   const handleSavePractice = async (updated: EquipmentDef) => {
-      try {
-        const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = updated;
+    try {
+      const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = updated;
 
-        const res = await fetch(`${API_BASE_URL}/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            name,
-            shortName,
-            tag,
-            badgeColor,
-            bgLight,
-            description,
-            enabled,
-            configJson: configRest
-          })
-        });
-        const data = await res.json();
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          shortName,
+          tag,
+          badgeColor,
+          bgLight,
+          description,
+          enabled,
+          configJson: configRest
+        })
+      });
+      const data = await res.json();
 
-        if (data.success) {
-          setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
-          setEditingPractice(null);
-          showToast('Đã lưu cấu hình bài tập lên database!');
-          fetchPractices();
-        } else {
-          showToast(data.message || 'Lưu cấu hình thất bại!', 'error');
-        }
-      } catch (error) {
-        console.error('Error saving practice:', error);
-        showToast('Lỗi server khi lưu cấu hình!', 'error');
+      if (data.success) {
+        setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
+        setEditingPractice(null);
+        showToast('Đã lưu cấu hình bài tập lên database!');
+        fetchPractices();
+      } else {
+        showToast(data.message || 'Lưu cấu hình thất bại!', 'error');
       }
-    };
+    } catch (error) {
+      console.error('Error saving practice:', error);
+      showToast('Lỗi server khi lưu cấu hình!', 'error');
+    }
+  };
 
   // 4. Thêm bài tập mới gọi API POST (Domain đầy đủ)
   const handleCreatePractice = async (newPractice: EquipmentDef) => {
@@ -178,7 +189,6 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
       const res = await fetch(API_BASE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           id,
           name,
@@ -231,7 +241,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
             <Loader2 className="animate-spin" size={24} />
-            <p className="text-sm">Đang tải...!</p>
+            <p className="text-sm">Đang đồng bộ dữ liệu từ Database...</p>
           </div>
         ) : (
           <table className="w-full text-left text-sm">
@@ -266,6 +276,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
                     </td>
                     <td className="px-6 py-4 flex gap-2">
                       <button onClick={() => setEditingPractice(practice)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors" title="Chỉnh sửa"><Edit2 size={16} /></button>
+                      <button onClick={() => setPracticeToDelete(practice)} className="p-2 hover:bg-rose-100 rounded-lg text-rose-500 transition-colors" title="Xóa"><Trash2 size={16} /></button>
                     </td>
                   </tr>
                 ))
@@ -274,6 +285,20 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
           </table>
         )}
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {practiceToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-900">Xác nhận xóa</h3>
+            <p className="text-sm text-slate-600">Bạn có chắc chắn muốn xóa bài tập <span className="font-bold">{practiceToDelete.name}</span>? Thao tác này không thể hoàn tác.</p>
+            <div className="flex justify-end gap-3 pt-4">
+              <button onClick={() => setPracticeToDelete(null)} className="px-4 py-2 rounded-xl bg-slate-100 font-bold hover:bg-slate-200 transition-colors">Hủy</button>
+              <button onClick={() => handleDeletePractice(practiceToDelete.id)} className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition-colors">Xóa</button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {editingPractice && (
         <AdminPracticeEditModal 

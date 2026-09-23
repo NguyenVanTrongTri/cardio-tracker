@@ -393,7 +393,7 @@ export default function JournalTab() {
                 </div>
 
                 {/* Collapsible Meals Detail */}
-                {isExpanded && (
+               {isExpanded && (
                   <div className="p-3.5 space-y-3">
                     {(!journal.meals || journal.meals.length === 0) ? (
                       <div className="text-center py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">

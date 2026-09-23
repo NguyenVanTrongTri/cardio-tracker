@@ -11,11 +11,22 @@ interface AdminPracticeEditModalProps {
 
 export default function AdminPracticeEditModal({ practice, isOpen, onClose, onSave }: AdminPracticeEditModalProps) {
   const [formData, setFormData] = useState<EquipmentDef>(practice);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Đồng bộ formData khi props practice thay đổi
   useEffect(() => {
     setFormData(practice);
   }, [practice, isOpen]);
+
+  // Handle Save
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -229,8 +240,12 @@ export default function AdminPracticeEditModal({ practice, isOpen, onClose, onSa
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-6 border-t">
             <button onClick={onClose} className="px-6 py-2 rounded-xl bg-slate-100 font-bold hover:bg-slate-200 transition-colors">Hủy</button>
-            <button onClick={() => onSave(formData)} className="px-6 py-2 rounded-xl bg-emerald-600 text-white font-bold flex items-center gap-2 hover:bg-emerald-700 transition-colors">
-              <Save size={18} /> Lưu cấu hình
+            <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="px-6 py-2 rounded-xl bg-emerald-600 text-white font-bold flex items-center gap-2 hover:bg-emerald-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <Save size={18} /> {isSaving ? 'Đang lưu...' : 'Lưu cấu hình'}
             </button>
           </div>
         </div>

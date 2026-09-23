@@ -79,12 +79,17 @@ export default function AdminPracticeCreateModal({ isOpen, onClose, onSave }: Ad
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       alert('Vui lòng nhập tên bài tập!');
       return;
     }
-    onSave(formData);
+    setIsSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (

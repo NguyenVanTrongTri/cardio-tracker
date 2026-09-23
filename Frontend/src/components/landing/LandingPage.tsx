@@ -65,15 +65,6 @@ export default function LandingPage({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={handleQuickAdminLogin}
-            className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-xs font-bold text-emerald-400 border border-emerald-500/30 transition-all flex items-center gap-1.5 cursor-pointer"
-            title="Đăng nhập trực tiếp bằng tài khoản Quản trị viên"
-          >
-            <ShieldCheck size={14} />
-            <span className="hidden sm:inline">Admin Portal</span>
-          </button>
-
-          <button
             onClick={onOpenLogin}
             className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold text-white border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
           >

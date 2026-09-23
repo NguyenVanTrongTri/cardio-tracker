@@ -39,30 +39,6 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 3000);
   };
-  const handleDeletePractice = async (id: string) => {
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'DELETE',
-        credentials: 'include', // 👈 Bắt buộc phải có để gửi HttpOnly Cookie lên server
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        setPractices(prev => prev.filter(p => p.id !== id));
-        setPracticeToDelete(null);
-        showToast('Đã xóa bài tập thành công!');
-        onRefreshStats();
-      } else {
-        showToast(data.message || 'Xóa bài tập thất bại!', 'error');
-      }
-    } catch (error) {
-      console.error('Error deleting practice:', error);
-      showToast('Lỗi kết nối khi xóa bài tập!', 'error');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
   // 1. Lấy danh sách bài tập động từ Backend (Domain đầy đủ)
   const fetchPractices = async () => {
   try {
@@ -158,43 +134,44 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
       console.error('Error toggling practice:', error);
       showToast('Lỗi kết nối khi cập nhật trạng thái!', 'error');
     }
-  };
-
+    };
   // 3. Lưu cấu hình chỉnh sửa bài tập gọi API PUT (Domain đầy đủ)
   const handleSavePractice = async (updated: EquipmentDef) => {
-    try {
-      const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = updated;
+  try {
+    const { id, name, shortName, tag, badgeColor, bgLight, description, enabled, ...configRest } = updated;
 
-      const res = await fetch(`${API_BASE_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({
-          name,
-          shortName,
-          tag,
-          badgeColor,
-          bgLight,
-          description,
-          enabled,
-          configJson: configRest
-        })
-      });
-      const data = await res.json();
+    const res = await fetch(`${API_BASE_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json' 
+      },
+      credentials: 'include', // 👈 BẮT BUỘC: Gửi kèm HttpOnly Cookie để backend xác thực
+      body: JSON.stringify({
+        name,
+        shortName,
+        tag,
+        badgeColor,
+        bgLight,
+        description,
+        enabled,
+        configJson: configRest
+      })
+    });
+    const data = await res.json();
 
-      if (data.success) {
-        setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
-        setEditingPractice(null);
-        showToast('Đã lưu cấu hình bài tập lên database!');
-        fetchPractices();
-      } else {
-        showToast(data.message || 'Lưu cấu hình thất bại!', 'error');
-      }
-    } catch (error) {
-      console.error('Error saving practice:', error);
-      showToast('Lỗi server khi lưu cấu hình!', 'error');
+    if (data.success) {
+      setPractices(prev => prev.map(p => p.id === updated.id ? updated : p));
+      setEditingPractice(null);
+      showToast('Đã lưu cấu hình bài tập lên database!');
+      fetchPractices();
+    } else {
+      showToast(data.message || 'Lưu cấu hình thất bại!', 'error');
     }
-  };
-
+  } catch (error) {
+    console.error('Error saving practice:', error);
+    showToast('Lỗi server khi lưu cấu hình!', 'error');
+  }
+};
   // 4. Thêm bài tập mới gọi API POST (Domain đầy đủ)
   const handleCreatePractice = async (newPractice: EquipmentDef) => {
   try {
@@ -239,7 +216,32 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     console.error('Error creating practice:', error);
     showToast('Lỗi kết nối khi thêm mới bài tập!', 'error');
   }
-};
+  };
+  // 5. Xóa bài tập gọi API DELETE (Domain đầy đủ)
+  const handleDeletePractice = async (id: string) => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/${id}`, {
+        method: 'DELETE',
+        credentials: 'include', // 👈 Bắt buộc phải có để gửi HttpOnly Cookie lên server
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setPractices(prev => prev.filter(p => p.id !== id));
+        setPracticeToDelete(null);
+        showToast('Đã xóa bài tập thành công!');
+        onRefreshStats();
+      } else {
+        showToast(data.message || 'Xóa bài tập thất bại!', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting practice:', error);
+      showToast('Lỗi kết nối khi xóa bài tập!', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">

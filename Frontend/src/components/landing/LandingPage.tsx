@@ -189,14 +189,6 @@ export default function LandingPage({
             <span>ĐĂNG NHẬP VÀO TÀI KHOẢN</span>
             <ArrowRight size={16} />
           </button>
-
-          <button
-            onClick={handleQuickAdminLogin}
-            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold text-xs rounded-2xl border border-emerald-500/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <ShieldCheck size={16} />
-            <span>VÀO CỔNG QUẢN TRỊ VIÊN (ADMIN)</span>
-          </button>
         </div>
       </div>
 

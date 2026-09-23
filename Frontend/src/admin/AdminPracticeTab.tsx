@@ -335,7 +335,7 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
           practice={editingPractice} 
           isOpen={!!editingPractice}
           onClose={() => setEditingPractice(null)}
-          onSave={handleSavePractice}
+          handleSavePractice={handleSavePractice}
         />
       )}
       

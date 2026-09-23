@@ -6,10 +6,10 @@ interface AdminPracticeEditModalProps {
   practice: EquipmentDef;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updated: EquipmentDef) => void;
+  handleSavePractice: (updated: EquipmentDef) => void;
 }
 
-export default function AdminPracticeEditModal({ practice, isOpen, onClose, onSave }: AdminPracticeEditModalProps) {
+export default function AdminPracticeEditModal({ practice, isOpen, onClose, handleSavePractice }: AdminPracticeEditModalProps) {
   const [formData, setFormData] = useState<EquipmentDef>(practice);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -22,7 +22,7 @@ export default function AdminPracticeEditModal({ practice, isOpen, onClose, onSa
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await onSave(formData);
+      await handleSavePractice(formData);
     } finally {
       setIsSaving(false);
     }

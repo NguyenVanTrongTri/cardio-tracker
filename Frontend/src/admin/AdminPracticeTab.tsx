@@ -33,12 +33,14 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
   const [editingPractice, setEditingPractice] = useState<EquipmentDef | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [practiceToDelete, setPracticeToDelete] = useState<EquipmentDef | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 3000);
   };
   const handleDeletePractice = async (id: string) => {
+    setIsDeleting(true);
     try {
       const res = await fetch(`${API_BASE_URL}/${id}`, {
         method: 'DELETE',
@@ -57,6 +59,8 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
     } catch (error) {
       console.error('Error deleting practice:', error);
       showToast('Lỗi kết nối khi xóa bài tập!', 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
   // 1. Lấy danh sách bài tập động từ Backend (Domain đầy đủ)
@@ -314,7 +318,13 @@ export default function AdminPracticeTab({ adminEmail, onRefreshStats }: AdminPr
             <p className="text-sm text-slate-600">Bạn có chắc chắn muốn xóa bài tập <span className="font-bold">{practiceToDelete.name}</span>? Thao tác này không thể hoàn tác.</p>
             <div className="flex justify-end gap-3 pt-4">
               <button onClick={() => setPracticeToDelete(null)} className="px-4 py-2 rounded-xl bg-slate-100 font-bold hover:bg-slate-200 transition-colors">Hủy</button>
-              <button onClick={() => handleDeletePractice(practiceToDelete.id)} className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition-colors">Xóa</button>
+              <button 
+                onClick={() => handleDeletePractice(practiceToDelete.id)} 
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xóa'}
+              </button>
             </div>
           </div>
         </div>

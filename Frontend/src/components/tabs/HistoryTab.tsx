@@ -173,11 +173,26 @@ export default function HistoryTab() {
   const formatDate = (isoStr: string) => {
     try {
       const date = new Date(isoStr);
+      const hour = String(date.getUTCHours()).padStart(2, '0');
+      const minute = String(date.getUTCMinutes()).padStart(2, '0');
+
+      // Lấy ngày hiện tại ở dạng YYYY-MM-DD để so sánh
+      const today = new Date();
+      
+      const isToday = 
+        date.getUTCFullYear() === today.getUTCFullYear() &&
+        date.getUTCMonth() === today.getUTCMonth() &&
+        date.getUTCDate() === today.getUTCDate();
+
+      // Nếu là hôm nay thì hiển thị "Hôm nay"
+      if (isToday) {
+        return `${hour}:${minute} Hôm nay`;
+      }
+
+      // Nếu không phải hôm nay thì hiển thị đầy đủ thứ, ngày/tháng/năm
       const day = String(date.getUTCDate()).padStart(2, '0');
       const month = String(date.getUTCMonth() + 1).padStart(2, '0');
       const year = date.getUTCFullYear();
-      const hour = String(date.getUTCHours()).padStart(2, '0');
-      const minute = String(date.getUTCMinutes()).padStart(2, '0');
       const weekdayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
       const weekday = weekdayNames[date.getUTCDay()];
 

@@ -322,7 +322,7 @@ export default function JournalTab() {
 
       {/* Daily Journals List */}
       <div className="space-y-3.5">
-        {filteredJournals.length === 0 ? (
+        {(!filteredJournals || filteredJournals.length === 0) ? (
           <div className="bg-white p-8 rounded-3xl border border-slate-200 text-center space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center mx-auto">
               <Apple size={24} />
@@ -395,7 +395,7 @@ export default function JournalTab() {
                 {/* Collapsible Meals Detail */}
                 {isExpanded && (
                   <div className="p-3.5 space-y-3">
-                    {journal.meals.length === 0 ? (
+                    {(!journal.meals || journal.meals.length === 0) ? (
                       <div className="text-center py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                         <p className="text-xs text-slate-400">Ngày này chưa có bữa ăn nào được ghi.</p>
                         <button

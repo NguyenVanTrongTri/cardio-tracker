@@ -337,14 +337,33 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
 
         if (todayMeals.length > 0) {
           // NẾU CÓ: Load dữ liệu cũ lên để hiển thị/chỉnh sửa tiếp
-          const formattedMeals: Meal[] = todayMeals.map((meal: any) => ({
-            id: meal.id,
-            category: meal.category,
-            // 🛠️ Thêm .slice(0, 5) để chỉ lấy đúng 5 ký tự đầu tiên dạng "HH:mm" (ví dụ: "08:30")
-            time: meal.mealTime ? meal.mealTime.slice(0, 5) : '07:00', 
-            foodItems: meal.foodItems || [],
-            totalCalories: meal.totalCalories || 0
-          }));
+         // Hàm chuyển đổi thời gian từ "5:25:06 AM" hoặc "HH:mm:ss" sang "HH:mm"
+        const formatTimeForInput = (timeStr: string) => {
+          if (!timeStr) return '07:00';
+          
+          // Nếu đã đúng định dạng HH:mm thì giữ nguyên
+          if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+
+          // Dùng đối tượng Date để parse chuỗi thời gian bất kỳ (hỗ trợ cả AM/PM)
+          const parsedDate = new Date(`1970-01-01 ${timeStr}`);
+          if (!isNaN(parsedDate.getTime())) {
+            const hours = String(parsedDate.getHours()).padStart(2, '0');
+            const minutes = String(parsedDate.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+          }
+
+          // Fallback nếu không parse được
+          return '07:00';
+        };
+
+        // Áp dụng vào đoạn map dữ liệu từ API của bạn:
+        const formattedMeals: Meal[] = todayMeals.map((meal: any) => ({
+          id: meal.id,
+          category: meal.category,
+          time: formatTimeForInput(meal.mealTime), // 👈 Sử dụng hàm chuyển đổi chuẩn xác ở đây
+          foodItems: meal.foodItems || [],
+          totalCalories: meal.totalCalories || 0
+        }));
           setMeals(formattedMeals);
         } else {
           // NẾU CHƯA: Để mảng trống để người dùng nhập mới từ đầu

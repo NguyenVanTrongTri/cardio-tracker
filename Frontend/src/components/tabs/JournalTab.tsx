@@ -355,13 +355,6 @@ export default function JournalTab() {
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
               Hãy ghi lại các bữa ăn của ngày hôm nay hoặc những ngày trước để kiểm soát calo thâm hụt và giảm mỡ hiệu quả.
             </p>
-            <button
-              onClick={() => handleOpenAddModal()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
-            >
-              <Plus size={14} />
-              <span>Ghi Bữa Ăn Đầu Tiên</span>
-            </button>
           </div>
         ) : (
           filteredJournals.map((journal) => {

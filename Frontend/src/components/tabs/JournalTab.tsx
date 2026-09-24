@@ -40,7 +40,6 @@ export default function JournalTab() {
 
   // Modal State for adding/editing a meal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isModalOpenDetail, setIsModalOpenDetail] = useState(false);
   const [isDetailMode, setIsDetailMode] = useState(false); // Add this state
   const [modalDate, setModalDate] = useState(new Date().toISOString().split('T')[0]);
   const [modalCategory, setModalCategory] = useState('Bữa Trưa');
@@ -175,7 +174,7 @@ export default function JournalTab() {
     setModalCategory(category || 'Bữa Trưa');
     setModalTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
     setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
-    setIsModalOpenDetail(true);
+    setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (date: string, meal: Meal) => {
@@ -529,108 +528,6 @@ export default function JournalTab() {
             </div>
 
             <div className="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto">
-              <div className="flex gap-2 items-center">
-                <input
-                  type="time"
-                  value={modalTime}
-                  onChange={(e) => setModalTime(e.target.value)}
-                  className="w-24 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
-                />
-                <span className="flex-1 text-xs font-bold text-slate-600">
-                  Tổng: {modalItems.reduce((acc, curr) => acc + (Number(curr.calories) || 0), 0)} kcal
-                </span>
-              </div>
-              <div className="space-y-1">
-                {modalItems.map((item) => (
-                  <div key={item.id} className="flex gap-1 items-center text-xs">
-                    <select
-                      value={item.foodName}
-                      onChange={(e) => {
-                        const food = foodDb.find((f) => f.name === e.target.value);
-                        const per100 = food ? food.caloriesPer100g : 130;
-                        const calories = Math.round(((item.grams || 100) / 100) * per100);
-                        setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, foodName: e.target.value, calories } : i));
-                      }}
-                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
-                    >
-                      {foodDb.map((f) => (
-                        <option key={f.name} value={f.name}>{f.name}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="g"
-                      value={item.grams || ''}
-                      onChange={(e) => {
-                        const grams = Number(e.target.value);
-                        const food = foodDb.find((f) => f.name === item.foodName);
-                        const per100 = food ? food.caloriesPer100g : 130;
-                        const calories = Math.round((grams / 100) * per100);
-                        setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, grams, calories } : i));
-                      }}
-                      className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center text-xs"
-                    />
-                    <span className="w-12 text-right">{item.calories || 0}kcal</span>
-                    <button
-                      type="button"
-                      onClick={() => setModalItems(modalItems.filter((i) => i.id !== item.id))}
-                      className="text-rose-400 font-bold px-1 cursor-pointer"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalItems([...modalItems, { id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 0, calories: 0 }]);
-                  }}
-                  className="text-xs text-emerald-600 font-bold cursor-pointer"
-                >
-                  + Món
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveMeal}
-                className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer"
-              >
-                Lưu Bữa Ăn
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {isModalOpenDetail && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
-              <div className="flex items-center gap-2">
-                <UtensilsCrossed size={18} className="text-emerald-600" />
-                <h3 className="text-sm font-bold text-slate-900">
-                  {editingMealId ? 'Chỉnh Sửa Bữa Ăn' : isDetailMode ? 'Bổ sung bữa ăn' : 'Ghi Bữa Ăn Mới'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto">
               {/* Date & Category */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -796,7 +693,6 @@ export default function JournalTab() {
           </div>
         </div>
       )}
-
 
       {/* Modal: Confirm Delete */}
       {deleteTarget && (

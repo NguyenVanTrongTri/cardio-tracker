@@ -392,7 +392,7 @@ export default function JournalTab() {
 
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleOpenAddModal(journal.date)}
+                        onClick={() =>  handleOpenAddModalDetial(journal.date)}
                         title="Thêm bữa ăn vào ngày này"
                         className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors cursor-pointer"
                       >
@@ -424,7 +424,7 @@ export default function JournalTab() {
                       <div className="text-center py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                         <p className="text-xs text-slate-400">Ngày này chưa có bữa ăn nào được ghi.</p>
                         <button
-                          onClick={() =>  handleOpenAddModalDetial(journal.date)}
+                          onClick={() => handleOpenAddModal(journal.date)}
                           className="mt-1 text-xs font-bold text-emerald-600 hover:underline cursor-pointer"
                         >
                           + Ghi bữa ăn ngay

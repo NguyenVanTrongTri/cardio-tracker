@@ -704,67 +704,55 @@ export default function JournalTab() {
                 </div>
 
                 <div className="space-y-2">
-                  {modalItems.map((item, idx) => (
-                    <div key={item.id} className="flex gap-1.5 items-center bg-slate-50 p-2 rounded-xl border border-slate-200/80">
-                      <select
-                        value={item.foodName}
-                        onChange={(e) => {
-                          const food = foodDb.find((f) => f.name === e.target.value);
-                          const per100 = food ? food.caloriesPer100g : 130;
-                          const calories = Math.round(((item.grams || 100) / 100) * per100);
-                          setModalItems(
-                            modalItems.map((it) =>
-                              it.id === item.id ? { ...it, foodName: e.target.value, calories } : it
-                            )
-                          );
-                        }}
-                        className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-800 focus:outline-none"
-                      >
-                        {foodDb.map((f) => (
-                          <option key={f.name} value={f.name}>
-                            {f.name} ({f.caloriesPer100g} kcal/100g)
-                          </option>
-                        ))}
-                      </select>
-
-                      <div className="relative w-20">
-                        <input
-                          type="number"
-                          min="1"
-                          max="1000"
-                          placeholder="g"
-                          value={item.grams || ''}
-                          onChange={(e) => {
-                            const grams = Number(e.target.value);
-                            const food = foodDb.find((f) => f.name === item.foodName);
-                            const per100 = food ? food.caloriesPer100g : 130;
-                            const calories = Math.round((grams / 100) * per100);
-                            setModalItems(
-                              modalItems.map((it) =>
-                                it.id === item.id ? { ...it, grams, calories } : it
-                              )
-                            );
-                          }}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-mono font-bold text-slate-800 text-center focus:outline-none pr-4"
-                        />
-                        <span className="absolute right-1.5 top-2 text-[10px] text-slate-400 font-bold">g</span>
-                      </div>
-
-                      <div className="w-16 text-right font-mono font-black text-orange-600 text-xs">
-                        {item.calories} cal
-                      </div>
-
-                      {modalItems.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setModalItems(modalItems.filter((it) => it.id !== item.id))}
-                          className="p-1 text-slate-400 hover:text-rose-500"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                  {modalItems.map((item) => (
+                  <div key={item.id} className="flex gap-1 items-center text-xs">
+                    <select
+                      value={item.foodName}
+                      onChange={(e) => {
+                        const food = foodDb.find((f) => f.name === e.target.value);
+                        const per100 = food ? food.caloriesPer100g : 130;
+                        const calories = Math.round(((item.grams || 100) / 100) * per100);
+                        setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, foodName: e.target.value, calories } : i));
+                      }}
+                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
+                    >
+                      {foodDb.map((f) => (
+                        <option key={f.name} value={f.name}>{f.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="g"
+                      value={item.grams || ''}
+                      onChange={(e) => {
+                        const grams = Number(e.target.value);
+                        const food = foodDb.find((f) => f.name === item.foodName);
+                        const per100 = food ? food.caloriesPer100g : 130;
+                        const calories = Math.round((grams / 100) * per100);
+                        setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, grams, calories } : i));
+                      }}
+                      className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center text-xs"
+                    />
+                    <span className="w-12 text-right">{item.calories || 0}kcal</span>
+                    <button
+                      type="button"
+                      onClick={() => setModalItems(modalItems.filter((i) => i.id !== item.id))}
+                      className="text-rose-400 font-bold px-1 cursor-pointer"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalItems([...modalItems, { id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 0, calories: 0 }]);
+                  }}
+                  className="text-xs text-emerald-600 font-bold cursor-pointer"
+                >
+                  + Món
+                </button>
                 </div>
               </div>
 

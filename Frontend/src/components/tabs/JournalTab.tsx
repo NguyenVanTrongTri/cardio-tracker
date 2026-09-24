@@ -529,16 +529,25 @@ export default function JournalTab() {
             </div>
 
             <div className="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto">
-              <div className="flex gap-2 items-center">
+              <div className="grid grid-cols-2 gap-2">
                 <input
                   type="time"
                   value={modalTime}
                   onChange={(e) => setModalTime(e.target.value)}
-                  className="w-24 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
                 />
-                <span className="flex-1 text-xs font-bold text-slate-600">
+                <select
+                  value={modalCategory}
+                  onChange={(e) => setModalCategory(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
+                >
+                  {MEAL_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="text-xs font-bold text-slate-600">
                   Tổng: {modalItems.reduce((acc, curr) => acc + (Number(curr.calories) || 0), 0)} kcal
-                </span>
               </div>
               <div className="space-y-1">
                 {modalItems.map((item) => (

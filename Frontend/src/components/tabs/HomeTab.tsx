@@ -340,7 +340,8 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
           const formattedMeals: Meal[] = todayMeals.map((meal: any) => ({
             id: meal.id,
             category: meal.category,
-            time: meal.mealTime || '--:--',
+            // 🛠️ Thêm .slice(0, 5) để chỉ lấy đúng 5 ký tự đầu tiên dạng "HH:mm" (ví dụ: "08:30")
+            time: meal.mealTime ? meal.mealTime.slice(0, 5) : '07:00', 
             foodItems: meal.foodItems || [],
             totalCalories: meal.totalCalories || 0
           }));

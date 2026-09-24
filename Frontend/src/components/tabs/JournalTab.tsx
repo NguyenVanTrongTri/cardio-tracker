@@ -27,6 +27,7 @@ import {
 } from '../../services/storage';
 import { getStoredFoodDatabase, FoodItem } from '../../data/foodData';
 import { API_ENDPOINTS } from '../../services/apiConfig';
+import MealSection from './HomeTab/MealSection';
 
 
 const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối', 'Bữa Phụ'];
@@ -510,10 +511,12 @@ export default function JournalTab() {
       </div>
 
       {/* Modal: Add/Edit Meal */}
-      {isModalOpen && (
+     {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            
+            {/* 1. Header của Modal */}
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70 shrink-0">
               <div className="flex items-center gap-2">
                 <UtensilsCrossed size={18} className="text-emerald-600" />
                 <h3 className="text-sm font-bold text-slate-900">
@@ -522,87 +525,17 @@ export default function JournalTab() {
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
+                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="time"
-                  value={modalTime}
-                  onChange={(e) => setModalTime(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
-                />
-                <select
-                  value={modalCategory}
-                  onChange={(e) => setModalCategory(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
-                >
-                  {MEAL_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="text-xs font-bold text-slate-600">
-                  Tổng: {modalItems.reduce((acc, curr) => acc + (Number(curr.calories) || 0), 0)} kcal
-              </div>
-              <div className="space-y-1">
-                {modalItems.map((item) => (
-                  <div key={item.id} className="flex gap-1 items-center text-xs">
-                    <select
-                      value={item.foodName}
-                      onChange={(e) => {
-                        const food = foodDb.find((f) => f.name === e.target.value);
-                        const per100 = food ? food.caloriesPer100g : 130;
-                        const calories = Math.round(((item.grams || 100) / 100) * per100);
-                        setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, foodName: e.target.value, calories } : i));
-                      }}
-                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs"
-                    >
-                      {foodDb.map((f) => (
-                        <option key={f.name} value={f.name}>{f.name}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="g"
-                      value={item.grams || ''}
-                      onChange={(e) => {
-                        const grams = Number(e.target.value);
-                        const food = foodDb.find((f) => f.name === item.foodName);
-                        const per100 = food ? food.caloriesPer100g : 130;
-                        const calories = Math.round((grams / 100) * per100);
-                        setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, grams, calories } : i));
-                      }}
-                      className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center text-xs"
-                    />
-                    <span className="w-12 text-right">{item.calories || 0}kcal</span>
-                    <button
-                      type="button"
-                      onClick={() => setModalItems(modalItems.filter((i) => i.id !== item.id))}
-                      className="text-rose-400 font-bold px-1 cursor-pointer"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalItems([...modalItems, { id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 0, calories: 0 }]);
-                  }}
-                  className="text-xs text-emerald-600 font-bold cursor-pointer"
-                >
-                  + Món
-                </button>
-              </div>
-            </div>
+            {/* 2. Nội dung chính bên trong Modal (Có scroll nếu danh sách dài) */}
+            
 
-            <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70">
+            {/* 3. Footer chứa các nút hành động */}
+            <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
@@ -618,6 +551,7 @@ export default function JournalTab() {
                 Lưu Bữa Ăn
               </button>
             </div>
+
           </div>
         </div>
       )}

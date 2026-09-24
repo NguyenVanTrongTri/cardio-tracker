@@ -429,7 +429,12 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
 
           <div className="space-y-4">
             {MEAL_CATEGORIES.map((category) => (
-              <MealSection key={category} category={category} meals={meals} setMeals={setMeals} />
+              <MealSection
+                key={category}
+                category={category}
+                meals={meals}
+                setMeals={setMeals}
+              />
             ))}
           </div>
           {meals.some(meal => checkPreWorkoutAlert(workoutStartTime, meal.time)) && (

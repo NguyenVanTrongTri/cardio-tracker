@@ -242,7 +242,6 @@ export default function JournalTab() {
           </p>
         </div>
       </div>
-
       {/* KPI Overview Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm text-center">

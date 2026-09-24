@@ -560,7 +560,7 @@ export default function JournalTab() {
                         const calories = Math.round(((item.grams || 100) / 100) * per100);
                         setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, foodName: e.target.value, calories } : i));
                       }}
-                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
+                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs"
                     >
                       {foodDb.map((f) => (
                         <option key={f.name} value={f.name}>{f.name}</option>
@@ -723,7 +723,7 @@ export default function JournalTab() {
                         const calories = Math.round(((item.grams || 100) / 100) * per100);
                         setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, foodName: e.target.value, calories } : i));
                       }}
-                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
+                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs"
                     >
                       {foodDb.map((f) => (
                         <option key={f.name} value={f.name}>{f.name}</option>

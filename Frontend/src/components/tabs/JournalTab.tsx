@@ -40,6 +40,7 @@ export default function JournalTab() {
 
   // Modal State for adding/editing a meal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailMode, setIsDetailMode] = useState(false); // Add this state
   const [modalDate, setModalDate] = useState(new Date().toISOString().split('T')[0]);
   const [modalCategory, setModalCategory] = useState('Bữa Trưa');
   const [modalTime, setModalTime] = useState(
@@ -158,6 +159,7 @@ export default function JournalTab() {
   };
 
   const handleOpenAddModal = (date?: string, category?: string) => {
+    setIsDetailMode(false); // Set to false
     setEditingMealId(null);
     setModalDate(date || new Date().toISOString().split('T')[0]);
     setModalCategory(category || 'Bữa Trưa');
@@ -165,7 +167,8 @@ export default function JournalTab() {
     setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
     setIsModalOpen(true);
   };
-   const handleOpenAddModalDetial = (date?: string, category?: string) => {
+  const handleOpenAddModalDetial = (date?: string, category?: string) => {
+    setIsDetailMode(true); // Set to true
     setEditingMealId(null);
     setModalDate(date || new Date().toISOString().split('T')[0]);
     setModalCategory(category || 'Bữa Trưa');
@@ -513,7 +516,7 @@ export default function JournalTab() {
               <div className="flex items-center gap-2">
                 <UtensilsCrossed size={18} className="text-emerald-600" />
                 <h3 className="text-sm font-bold text-slate-900">
-                  {editingMealId ? 'Chỉnh Sửa Bữa Ăn' : 'Ghi Bữa Ăn Mới'}
+                  {editingMealId ? 'Chỉnh Sửa Bữa Ăn' : isDetailMode ? 'Bổ sung bữa ăn' : 'Ghi Bữa Ăn Mới'}
                 </h3>
               </div>
               <button

@@ -165,6 +165,14 @@ export default function JournalTab() {
     setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
     setIsModalOpen(true);
   };
+   const handleOpenAddModalDetial = (date?: string, category?: string) => {
+    setEditingMealId(null);
+    setModalDate(date || new Date().toISOString().split('T')[0]);
+    setModalCategory(category || 'Bữa Trưa');
+    setModalTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
+    setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
+    setIsModalOpen(true);
+  };
 
   const handleOpenEditModal = (date: string, meal: Meal) => {
     setEditingMealId(meal.id);
@@ -416,7 +424,7 @@ export default function JournalTab() {
                       <div className="text-center py-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                         <p className="text-xs text-slate-400">Ngày này chưa có bữa ăn nào được ghi.</p>
                         <button
-                          onClick={() => handleOpenAddModal(journal.date)}
+                          onClick={() =>  handleOpenAddModalDetial(journal.date)}
                           className="mt-1 text-xs font-bold text-emerald-600 hover:underline cursor-pointer"
                         >
                           + Ghi bữa ăn ngay

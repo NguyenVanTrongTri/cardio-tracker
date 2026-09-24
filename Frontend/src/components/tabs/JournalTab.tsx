@@ -74,6 +74,7 @@ export default function JournalTab() {
       const rawMeals = result.data;
 
       // Group meals by date
+      // Group meals by date (Ép kiểu Record<string, DailyMealJournal> rõ ràng cho reduce)
       const grouped = rawMeals.reduce((acc: Record<string, DailyMealJournal>, meal: any) => {
         // Cắt chuỗi lấy định dạng YYYY-MM-DD từ ISO date string
         const dateKey = meal.mealDate ? meal.mealDate.split('T')[0] : 'Unknown';
@@ -98,9 +99,10 @@ export default function JournalTab() {
         acc[dateKey].meals.push(mealObj);
         acc[dateKey].totalCalories += meal.totalCalories;
         return acc;
-      }, {});
+      }, {} as Record<string, DailyMealJournal>);
 
-      const list = Object.values(grouped);
+      // 🛠️ Ép kiểu mảng trả về chuẩn DailyMealJournal[] thay vì để any[]
+      const list: DailyMealJournal[] = Object.values(grouped);
       setJournals(list);
       
       // Mặc định mở rộng tất cả các ngày

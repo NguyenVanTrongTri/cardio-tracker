@@ -42,7 +42,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                 { id: 'm-' + Date.now(), category, time: currentTime, foodItems: [], totalCalories: 0 },
               ]);
             }}
-            className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
+            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
           >
             + Thêm món
           </button>
@@ -63,7 +63,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
             <button
               type="button"
               onClick={() => setMeals(meals.filter((m) => m.id !== meal.id))}
-              className="text-slate-400 hover:text-rose-500 text-xs font-bold"
+              className="text-slate-400 hover:text-rose-500 text-xs font-bold cursor-pointer"
             >
               Xóa
             </button>
@@ -113,7 +113,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                     const updatedItems = (meal.foodItems || []).filter((i) => i.id !== item.id);
                     updateMealFoodItems(meal.id, updatedItems);
                   }}
-                  className="text-rose-400"
+                  className="text-rose-400 font-bold px-1 cursor-pointer"
                 >
                   ×
                 </button>
@@ -131,7 +131,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                 const updatedItems = [...(meal.foodItems || []), newItem];
                 updateMealFoodItems(meal.id, updatedItems);
               }}
-              className="text-xs text-emerald-600 font-bold"
+              className="text-xs text-emerald-600 font-bold cursor-pointer"
             >
               + Món
             </button>

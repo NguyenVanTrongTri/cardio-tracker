@@ -318,6 +318,46 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
       setIsSaving(false);
     }
   };
+  const checkAndLoadTodayMeals = async () => {
+    try {
+      const res = await fetch(`${API_ENDPOINTS.MEALS}`, {
+        method: 'GET',
+        credentials: 'include', // Bắt buộc gửi kèm Cookie xác thực
+      });
+      const result = await res.json();
+
+      if (result.success && Array.isArray(result.data)) {
+        // Lấy ngày hôm nay định dạng YYYY-MM-DD
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        // Lọc các món thuộc về ngày hôm nay
+        const todayMeals = result.data.filter((meal: any) => 
+          meal.mealDate && meal.mealDate.split('T')[0] === todayStr
+        );
+
+        if (todayMeals.length > 0) {
+          // NẾU CÓ: Load dữ liệu cũ lên để hiển thị/chỉnh sửa tiếp
+          const formattedMeals: Meal[] = todayMeals.map((meal: any) => ({
+            id: meal.id,
+            category: meal.category,
+            time: meal.mealTime || '--:--',
+            foodItems: meal.foodItems || [],
+            totalCalories: meal.totalCalories || 0
+          }));
+          setMeals(formattedMeals);
+        } else {
+          // NẾU CHƯA: Để mảng trống để người dùng nhập mới từ đầu
+          setMeals([]);
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi kết nối khi kiểm tra bữa ăn hôm nay:', error);
+    }
+  };
+
+  useEffect(() => {
+    checkAndLoadTodayMeals();
+  }, []);
 
   return (
     <div className="max-w-xl mx-auto px-4 pt-4 pb-28 space-y-5">

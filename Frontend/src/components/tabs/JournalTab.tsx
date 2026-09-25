@@ -283,14 +283,23 @@ export default function JournalTab() {
         showToast('Xóa bữa ăn thành công!', 'success');
         
       } else if (deleteTarget.type === 'day') {
-        // Giả sử bạn có API xóa cả ngày, nếu chưa hãy dùng API xóa từng bữa của ngày đó 
-        // hoặc cập nhật backend để có API xóa theo ngày.
-        // Tạm thời nếu chỉ xóa local:
-        deleteDailyJournal(deleteTarget.date); 
+        // Tìm tất cả bữa ăn của ngày này
+        const mealsToDelete = journals.find(j => j.date === deleteTarget.date)?.meals || [];
+        
+        // Gọi API xóa từng bữa của ngày đó
+        for (const meal of mealsToDelete) {
+          const response = await fetch(`${API_ENDPOINTS.MEALS}/${meal.id}`, {
+            method: 'DELETE',
+            credentials: 'include',
+          });
+          if (!response.ok) {
+            throw new Error(`Không thể xóa bữa ${meal.category}`);
+          }
+        }
         showToast('Xóa nhật ký ngày thành công!', 'success');
       }
 
-      // 🛠️ LUÔN TẢI LẠI DỮ LIỆU TỪ SERVER SAU KHI XÓA (bất kể loại nào)
+      // 🛠️ LUÔN TẢI LẠI DỮ LIỆU TỪ SERVER SAU KHI XÓA
       await loadData();
       
     } catch (error: any) {
@@ -535,27 +544,7 @@ export default function JournalTab() {
                               <span className="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
                                 {meal.time || '--:--'}
                               </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-mono font-black text-orange-600">
-                                {meal.totalCalories} kcal
-                              </span>
-                              <button
-                                onClick={() => handleOpenEditModal(journal.date, meal)}
-                                className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                                title="Sửa bữa ăn"
-                              >
-                                <Edit3 size={13} />
-                              </button>
-                              <button
-                                onClick={() => setDeleteTarget({ date: journal.date, mealId: meal.id, type: 'meal' })}
-                                className="p-1 text-slate-400 hover:text-rose-500 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                                title="Xóa bữa ăn"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
+                            </div>   
                           </div>
 
                           {/* Food Items List */}
@@ -958,7 +947,7 @@ export default function JournalTab() {
                 onClick={handleConfirmDelete}
                 className="flex-1 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md shadow-rose-600/20"
               >
-               {isLoading ? 'Đang xóa...' : 'Xác Nhận Xóa'}
+                {isLoading ? 'Đang xóa...' : 'Xác Nhận Xóa'}
               </button>
             </div>
           </div>

@@ -82,14 +82,18 @@ const createMeal = async (req, res) => {
     // 🚀 Tạo Meal và các foodItems liên quan bằng Prisma (Nested Write)
     const newMeal = await prisma.meal.create({
       data: {
-        id: `m-${crypto.randomUUID()}`, // Dùng crypto.randomUUID() chuẩn CommonJS
+        id: `m-${crypto.randomUUID()}`,
         mealDate: mealDate ? new Date(mealDate) : new Date(), 
         category,                                           
         mealTime: mealTime || '07:30',                      
         totalCalories,
+        // 🛠️ Thêm khối liên kết user này vào để Prisma nhận diện quan hệ
+        user: {
+          connect: { id: userId }
+        },
         foodItems: {
           create: foodItems.map((item) => ({
-            id: `fi-${crypto.randomUUID()}`, // 👈 Thêm id cho bảng con foodItems để tránh lỗi thiếu id
+            id: `fi-${crypto.randomUUID()}`,
             foodName: item.foodName,
             grams: parseFloat(item.grams) || 0,
             calories: parseFloat(item.calories) || 0,

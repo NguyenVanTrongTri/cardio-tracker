@@ -570,6 +570,7 @@ export default function JournalTab() {
                               <button
                                 type="button"
                                 onClick={() => {
+                                  setModalCategory(category);
                                   // Nếu bạn muốn click vào đây để chọn category này và thêm món mặc định
                                   const defaultFood = foodDb[0]?.name || 'Cơm trắng';
                                   const per100 = foodDb[0]?.caloriesPer100g || 130;

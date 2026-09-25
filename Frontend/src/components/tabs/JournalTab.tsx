@@ -16,7 +16,8 @@ import {
   Check,
   X,
   TrendingDown,
-  Activity
+  Activity,
+  Utensils
 } from 'lucide-react';
 import { DailyMealJournal, Meal, FoodItemEntry } from '../../types';
 import {
@@ -553,34 +554,70 @@ export default function JournalTab() {
                   </div>
 
                   {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THẺ BỌC ĐỂ CÓ THANH CUỘN VÀ KHỚP KHUNG) */}
-                   <div className="space-y-4">
-                      {/* Tiêu đề mục Bữa Ăn */}
-                      <div className="flex items-center gap-2">
-                        <UtensilsCrossed size={18} className="text-orange-500" />
-                        <h3 className="text-sm font-bold text-slate-800">Bữa Ăn</h3>
+                  <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                      {/* Title */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Utensils size={17} className="text-amber-600" />
+                          <h3 className="text-sm font-bold text-slate-800">Bữa Ăn</h3>
+                        </div>
                       </div>
 
-                      {/* Danh sách các card bữa ăn */}
-                      <div className="space-y-3">
-                          <div 
-                            key={""} 
-                            className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center hover:border-slate-200 transition-all"
-                          >
-                            {/* Tên bữa ăn (Ví dụ: Bữa Sáng, Bữa Trưa...) */}
-                            <span className="text-sm font-bold text-slate-800">
-                            </span>
-
-                            {/* Nút Thêm món nằm bên phải */}
-                            <button
-                              type="button"
-                            
-                              className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer transition-colors"
-                            >
-                              + Thêm món
-                            </button>
-                          </div>
+                      {/* Categories Rendering */}
+                      <div className="space-y-4">
+                        {MEAL_CATEGORIES.map((category) => {
+                          const categoryMeals = meals.filter((m) => m.category === category);
+                          
+                          return (
+                            <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="text-sm font-bold text-slate-700">{category}</h4>
+                                {categoryMeals.length === 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const currentTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                                      setMeals([
+                                        ...meals,
+                                        { id: 'm-' + Date.now(), category, time: currentTime, foodItems: [], totalCalories: 0 },
+                                      ]);
+                                    }}
+                                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
+                                  >
+                                    + Thêm món
+                                  </button>
+                                )}
+                              </div>
+                              
+                              {/* Render existing meals in this category */}
+                              {categoryMeals.map((meal) => (
+                                <div key={meal.id} className="space-y-2 mt-2 pt-2 border-t border-slate-200">
+                                  <div className="flex gap-2 items-center">
+                                    <input
+                                      type="time"
+                                      value={meal.time}
+                                      onChange={(e) =>
+                                        setMeals(meals.map((m) => (m.id === meal.id ? { ...m, time: e.target.value } : m)))
+                                      }
+                                      className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
+                                    />
+                                    <span className="flex-1 text-xs font-bold text-slate-600">Tổng: {meal.totalCalories} kcal</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setMeals(meals.filter((m) => m.id !== meal.id))}
+                                      className="text-slate-400 hover:text-rose-500 text-xs font-bold"
+                                    >
+                                      Xóa
+                                    </button>
+                                  </div>
+                                  {/* ... (Render danh sách food items tại đây nếu cần) */}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
+                  </div>
                   {/* 3. Footer chứa các nút hành động */}
                   <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70 shrink-0">
                     <button
@@ -598,8 +635,6 @@ export default function JournalTab() {
                       Lưu Bữa Ăn
                     </button>
                   </div>
-                  
-
                 </div>
               </div>
             )}

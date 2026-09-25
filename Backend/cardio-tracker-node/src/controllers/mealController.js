@@ -74,6 +74,26 @@ const createMeal = async (req, res) => {
       });
     }
 
+    // Chuẩn hóa ngày gửi lên về dạng Date (bỏ giờ phút giây để so sánh theo ngày)
+    const targetDate = mealDate ? new Date(mealDate) : new Date();
+    targetDate.setHours(0, 0, 0, 0);
+
+    // 🔍 Kiểm tra xem user này đã có dữ liệu cho bữa này trong ngày hôm đó chưa
+    const existingMeal = await prisma.meal.findFirst({
+      where: {
+        userId: userId,
+        category: category,
+        mealDate: targetDate,
+      },
+    });
+
+    if (existingMeal) {
+      return res.status(400).json({
+        success: false,
+        message: `Bạn đã có dữ liệu cho "${category}" vào ngày này rồi. Vui lòng chọn chỉnh sửa thay vì tạo mới!`,
+      });
+    }
+
     // 🧮 Tự động tính tổng calo của bữa ăn dựa trên danh sách món gửi lên
     const totalCalories = foodItems.reduce((sum, item) => {
       return sum + (parseFloat(item.calories) || 0);
@@ -83,11 +103,10 @@ const createMeal = async (req, res) => {
     const newMeal = await prisma.meal.create({
       data: {
         id: `m-${crypto.randomUUID()}`,
-        mealDate: mealDate ? new Date(mealDate) : new Date(), 
+        mealDate: targetDate, 
         category,                                           
         mealTime: mealTime || '07:30',                      
         totalCalories,
-        // 🛠️ Thêm khối liên kết user này vào để Prisma nhận diện quan hệ
         user: {
           connect: { id: userId }
         },

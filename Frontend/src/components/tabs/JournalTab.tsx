@@ -632,7 +632,7 @@ export default function JournalTab() {
                                       min="1"
                                       max="500"
                                       placeholder="g" 
-                                      value={item.grams}
+                                      value={item.grams || ''}
                                       onChange={(e) => {
                                         const grams = Number(e.target.value);
                                         const selected = foodDb.find((f) => f.name === item.foodName);

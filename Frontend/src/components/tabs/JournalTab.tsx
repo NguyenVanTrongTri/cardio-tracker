@@ -49,9 +49,9 @@ export default function JournalTab() {
   const [modalTime, setModalTime] = useState(
     new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   );
-  const [modalItems, setModalItems] = useState<FoodItemEntry[]>([
-    { id: 'fi-1', foodName: 'Cơm trắng', grams: 200, calories: 260 },
-  ]);
+  // NEW: Store meals by category to prevent mixing
+  const [modalMealsData, setModalMealsData] = useState<Record<string, FoodItemEntry[]>>({});
+  
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
 
   // Confirmation modal for delete
@@ -192,13 +192,16 @@ export default function JournalTab() {
   };
 
   const handleSaveMeal = () => {
-    if (modalItems.length === 0) return;
-    const totalCalories = modalItems.reduce((sum, i) => sum + (Number(i.calories) || 0), 0);
+    // Flatten all meals data from the record structure
+    const allItems = Object.values(modalMealsData).flat();
+    if (allItems.length === 0) return;
+    
+    const totalCalories = allItems.reduce((sum, i) => sum + (Number(i.calories) || 0), 0);
     const newMeal: Meal = {
       id: editingMealId || `m-${Date.now()}`,
       category: modalCategory,
       time: modalTime,
-      foodItems: modalItems,
+      foodItems: modalMealsData[modalCategory] || [],
       totalCalories,
     };
 
@@ -206,6 +209,7 @@ export default function JournalTab() {
     setJournals(updated);
     setExpandedDates((prev) => ({ ...prev, [modalDate]: true }));
     setIsModalOpen(false);
+    setModalMealsData({}); // Reset data
   };
 
   const handleConfirmDelete = () => {
@@ -558,29 +562,26 @@ export default function JournalTab() {
                     {/* Categories Rendering */}
                     <div className="space-y-4">
                       {MEAL_CATEGORIES.map((category) => {
-                        // Kiểm tra xem category này có đang được mở hay không
                         const isOpen = category === modalCategory;
+                        const categoryItems = modalMealsData[category] || [];
 
                         return (
                           <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                             <div className="flex justify-between items-center mb-2">
                               <h4 className="text-sm font-bold text-slate-700">{category}</h4>
                               
-                              {/* Nút Thêm món cho từng bữa */}
                               <button
                                 type="button"
                                 onClick={() => {
                                   setModalCategory(category);
-                                  // Nếu bạn muốn click vào đây để chọn category này và thêm món mặc định
-                                  const defaultFood = foodDb[0]?.name || 'Cơm trắng';
-                                  const per100 = foodDb[0]?.caloriesPer100g || 130;
-                                  
-                                  // Cập nhật modalCategory nếu cần, và thêm item mới vào modalItems
-                                  // (Hoặc bạn có thể gọi hàm mở modal tương ứng ở đây)
-                                  setModalItems([
-                                    ...modalItems, 
-                                    { id: `fi-${Date.now()}`, foodName: defaultFood, grams: 150, calories: Math.round(1.5 * per100) }
-                                  ]);
+                                  const defaultFood = foodDb[0] || { name: 'Cơm trắng', caloriesPer100g: 130 };
+                                  setModalMealsData(prev => ({
+                                    ...prev,
+                                    [category]: [
+                                      ...(prev[category] || []),
+                                      { id: `fi-${Date.now()}`, foodName: defaultFood.name, grams: 150, calories: Math.round(1.5 * defaultFood.caloriesPer100g) }
+                                    ]
+                                  }));
                                 }}
                                 className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
                               >
@@ -588,53 +589,42 @@ export default function JournalTab() {
                               </button>
                             </div>
                             
-                            {/* Khu vực hiển thị danh sách món đã thêm trong bữa này */}
                             {isOpen && (
                               <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
-                                {/* Ô chỉnh thời gian bữa ăn */}
                                 <div className="flex gap-2 items-center mb-2">
-                                  <input
-                                    type="time"
-                                    value={modalTime}
-                                    onChange={(e) => setModalTime(e.target.value)}
-                                    className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
-                                  />
+                                  <input type="time" value={modalTime} onChange={(e) => setModalTime(e.target.value)} className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800" />
                                   <span className="text-xs text-slate-500">Thời gian ăn</span>
                                 </div>
 
-                                {/* Danh sách các món ăn trong modalItems */}
-                                {modalItems.map((item) => (
+                                {categoryItems.map((item) => (
                                   <div key={item.id} className="flex gap-2 items-center text-xs">
-                                    {/* Select chọn món ăn */}
                                     <select
                                       value={item.foodName}
                                       onChange={(e) => {
-                                        const selectedFood = foodDb.find((f) => f.name === e.target.value);
-                                        const per100 = selectedFood ? selectedFood.caloriesPer100g : 0;
-                                        const calories = Math.round((item.grams / 100) * per100);
-                                        setModalItems(modalItems.map(i => i.id === item.id ? { ...i, foodName: e.target.value, calories } : i));
+                                        const selected = foodDb.find((f) => f.name === e.target.value);
+                                        const per100 = selected ? selected.caloriesPer100g : 0;
+                                        setModalMealsData(prev => ({
+                                          ...prev,
+                                          [category]: prev[category].map(i => i.id === item.id ? { ...i, foodName: e.target.value, calories: Math.round((i.grams / 100) * per100) } : i)
+                                        }));
                                       }}
                                       className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
                                     >
-                                      {foodDb.map((f) => (
-                                        <option key={f.name} value={f.name}>
-                                          {f.name}
-                                        </option>
-                                      ))}
+                                      {foodDb.map((f) => <option key={f.name} value={f.name}>{f.name}</option>)}
                                     </select>
 
-                                    {/* Input nhập số gram */}
                                     <input
                                       type="number"
                                       min="1"
-                                      max="1000"
                                       value={item.grams}
                                       onChange={(e) => {
                                         const grams = Number(e.target.value);
-                                        const selectedFood = foodDb.find((f) => f.name === item.foodName);
-                                        const per100 = selectedFood ? selectedFood.caloriesPer100g : 0;
-                                        const calories = Math.round((grams / 100) * per100);
-                                        setModalItems(modalItems.map(i => i.id === item.id ? { ...i, grams, calories } : i));
+                                        const selected = foodDb.find((f) => f.name === item.foodName);
+                                        const per100 = selected ? selected.caloriesPer100g : 0;
+                                        setModalMealsData(prev => ({
+                                          ...prev,
+                                          [category]: prev[category].map(i => i.id === item.id ? { ...i, grams, calories: Math.round((grams / 100) * per100) } : i)
+                                        }));
                                       }}
                                       className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center"
                                       placeholder="g"
@@ -642,10 +632,12 @@ export default function JournalTab() {
 
                                     <span className="w-16 text-right font-medium">{item.calories} kcal</span>
 
-                                    {/* Nút xóa món */}
                                     <button
                                       type="button"
-                                      onClick={() => setModalItems(modalItems.filter(i => i.id !== item.id))}
+                                      onClick={() => setModalMealsData(prev => ({
+                                        ...prev,
+                                        [category]: prev[category].filter(i => i.id !== item.id)
+                                      }))}
                                       className="text-slate-400 hover:text-rose-500 font-bold px-1"
                                     >
                                       ×

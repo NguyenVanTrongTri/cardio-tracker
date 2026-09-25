@@ -50,7 +50,15 @@ export default function JournalTab() {
     new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   );
   // NEW: Store meals by category to prevent mixing
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [modalMealsData, setModalMealsData] = useState<Record<string, FoodItemEntry[]>>({});
+  const [modalItems, setModalItems] = useState<FoodItemEntry[]>([]); // For backward compatibility, not used in new structure
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
   
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
 
@@ -64,7 +72,6 @@ export default function JournalTab() {
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 3000);
   };
-  const [modalItems, setModalItems] = useState<FoodItemEntry[]>([]);
 
   const loadData = async () => {
   try {
@@ -563,18 +570,23 @@ export default function JournalTab() {
                     {/* Categories Rendering */}
                     <div className="space-y-4">
                       {MEAL_CATEGORIES.map((category) => {
-                        const isOpen = category === modalCategory;
+                        const isOpen = !!expandedCategories[category];
                         const categoryItems = modalMealsData[category] || [];
 
                         return (
                           <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                             <div className="flex justify-between items-center mb-2">
-                              <h4 className="text-sm font-bold text-slate-700">{category}</h4>
+                              <h4 
+                                className="text-sm font-bold text-slate-700 cursor-pointer"
+                                onClick={() => toggleCategory(category)}
+                              >
+                                {category}
+                              </h4>
                               
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setModalCategory(category);
+                                  if (!expandedCategories[category]) toggleCategory(category);
                                   const defaultFood = foodDb[0] || { name: 'Cơm trắng', caloriesPer100g: 130 };
                                   setModalMealsData(prev => ({
                                     ...prev,

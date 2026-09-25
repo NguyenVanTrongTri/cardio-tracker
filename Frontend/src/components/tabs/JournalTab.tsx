@@ -31,7 +31,7 @@ import { API_ENDPOINTS } from '../../services/apiConfig';
 import MealSection from './HomeTab/MealSection';
 
 
-const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối', 'Bữa Phụ'];
+const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối'];
 
 export default function JournalTab() {
   const [journals, setJournals] = useState<DailyMealJournal[]>([]);
@@ -555,52 +555,108 @@ export default function JournalTab() {
 
                   {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THẺ BỌC ĐỂ CÓ THANH CUỘN VÀ KHỚP KHUNG) */}
                   <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-                      {/* Categories Rendering */}
-                      <div className="space-y-4">
-                        {MEAL_CATEGORIES.map((category) => (
+                    {/* Categories Rendering */}
+                    <div className="space-y-4">
+                      {MEAL_CATEGORIES.map((category) => {
+                        // Kiểm tra xem category này có đang được mở hay không
+                        const isOpen = category === modalCategory;
+
+                        return (
                           <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                             <div className="flex justify-between items-center mb-2">
                               <h4 className="text-sm font-bold text-slate-700">{category}</h4>
-                              {category === modalCategory && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const defaultFood = foodDb[0]?.name || 'Cơm trắng';
-                                    const per100 = foodDb[0]?.caloriesPer100g || 130;
-                                    setModalItems([...modalItems, { id: `fi-${Date.now()}`, foodName: defaultFood, grams: 150, calories: Math.round(1.5 * per100) }]);
-                                  }}
-                                  className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
-                                >
-                                  + Thêm món
-                                </button>
-                              )}
+                              
+                              {/* Nút Thêm món cho từng bữa */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  // Nếu bạn muốn click vào đây để chọn category này và thêm món mặc định
+                                  const defaultFood = foodDb[0]?.name || 'Cơm trắng';
+                                  const per100 = foodDb[0]?.caloriesPer100g || 130;
+                                  
+                                  // Cập nhật modalCategory nếu cần, và thêm item mới vào modalItems
+                                  // (Hoặc bạn có thể gọi hàm mở modal tương ứng ở đây)
+                                  setModalItems([
+                                    ...modalItems, 
+                                    { id: `fi-${Date.now()}`, foodName: defaultFood, grams: 150, calories: Math.round(1.5 * per100) }
+                                  ]);
+                                }}
+                                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
+                              >
+                                + Thêm món
+                              </button>
                             </div>
                             
-                            {category === modalCategory && (
+                            {/* Khu vực hiển thị danh sách món đã thêm trong bữa này */}
+                            {isOpen && (
                               <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
+                                {/* Ô chỉnh thời gian bữa ăn */}
+                                <div className="flex gap-2 items-center mb-2">
+                                  <input
+                                    type="time"
+                                    value={modalTime}
+                                    onChange={(e) => setModalTime(e.target.value)}
+                                    className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
+                                  />
+                                  <span className="text-xs text-slate-500">Thời gian ăn</span>
+                                </div>
+
+                                {/* Danh sách các món ăn trong modalItems */}
                                 {modalItems.map((item) => (
-                                  <div key={item.id} className="flex gap-2 items-center">
+                                  <div key={item.id} className="flex gap-2 items-center text-xs">
+                                    {/* Select chọn món ăn */}
+                                    <select
+                                      value={item.foodName}
+                                      onChange={(e) => {
+                                        const selectedFood = foodDb.find((f) => f.name === e.target.value);
+                                        const per100 = selectedFood ? selectedFood.caloriesPer100g : 0;
+                                        const calories = Math.round((item.grams / 100) * per100);
+                                        setModalItems(modalItems.map(i => i.id === item.id ? { ...i, foodName: e.target.value, calories } : i));
+                                      }}
+                                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
+                                    >
+                                      {foodDb.map((f) => (
+                                        <option key={f.name} value={f.name}>
+                                          {f.name}
+                                        </option>
+                                      ))}
+                                    </select>
+
+                                    {/* Input nhập số gram */}
                                     <input
-                                      type="time"
-                                      value={modalTime}
-                                      onChange={(e) => setModalTime(e.target.value)}
-                                      className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
+                                      type="number"
+                                      min="1"
+                                      max="1000"
+                                      value={item.grams}
+                                      onChange={(e) => {
+                                        const grams = Number(e.target.value);
+                                        const selectedFood = foodDb.find((f) => f.name === item.foodName);
+                                        const per100 = selectedFood ? selectedFood.caloriesPer100g : 0;
+                                        const calories = Math.round((grams / 100) * per100);
+                                        setModalItems(modalItems.map(i => i.id === item.id ? { ...i, grams, calories } : i));
+                                      }}
+                                      className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center"
+                                      placeholder="g"
                                     />
-                                    <span className="flex-1 text-xs font-bold text-slate-600">{item.foodName}: {item.calories} kcal</span>
+
+                                    <span className="w-16 text-right font-medium">{item.calories} kcal</span>
+
+                                    {/* Nút xóa món */}
                                     <button
                                       type="button"
                                       onClick={() => setModalItems(modalItems.filter(i => i.id !== item.id))}
-                                      className="text-slate-400 hover:text-rose-500 text-xs font-bold"
+                                      className="text-slate-400 hover:text-rose-500 font-bold px-1"
                                     >
-                                      Xóa
+                                      ×
                                     </button>
                                   </div>
                                 ))}
                               </div>
                             )}
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
+                    </div>
                   </div>
                   {/* 3. Footer chứa các nút hành động */}
                   <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70 shrink-0">

@@ -938,7 +938,7 @@ export default function JournalTab() {
                 onClick={handleConfirmDelete}
                 className="flex-1 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md shadow-rose-600/20"
               >
-                Xác Nhận Xóa
+                {isLoading ? 'Đang xóa...' : 'Xác Nhận Xóa'}
               </button>
             </div>
           </div>

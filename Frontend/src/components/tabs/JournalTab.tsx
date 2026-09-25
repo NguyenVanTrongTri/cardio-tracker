@@ -606,9 +606,9 @@ export default function JournalTab() {
                               <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
                                 <div className="flex gap-2 items-center mb-2">
                                   <input type="time" value={modalTime} onChange={(e) => setModalTime(e.target.value)} className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800" />
-                                  <span className="text-xs text-slate-500">Thời gian ăn</span>
+                                  <span className="text-xs text-slate-500">Tổng: {categoryItems.reduce((sum, item) => sum + item.calories, 0)} kcal</span>
                                 </div>
-
+                              
                                 {categoryItems.map((item) => (
                                   <div key={item.id} className="flex gap-2 items-center text-xs">
                                     <select

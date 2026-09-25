@@ -566,45 +566,31 @@ export default function JournalTab() {
                       {/* Categories Rendering */}
                       <div className="space-y-4">
                         {MEAL_CATEGORIES.map((category) => {
-                          const categoryMeals = meals.filter((m) => m.category === category);
-                          
                           return (
                             <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                               <div className="flex justify-between items-center mb-2">
                                 <h4 className="text-sm font-bold text-slate-700">{category}</h4>
-                                {categoryMeals.length === 0 && (
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      const currentTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-                                      setMeals([
-                                        ...meals,
-                                        { id: 'm-' + Date.now(), category, time: currentTime, foodItems: [], totalCalories: 0 },
-                                      ]);
-                                    }}
                                     className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
                                   >
                                     + Thêm món
                                   </button>
-                                )}
                               </div>
                               
                               {/* Render existing meals in this category */}
-                              {categoryMeals.map((meal) => (
-                                <div key={meal.id} className="space-y-2 mt-2 pt-2 border-t border-slate-200">
+                                <div key={""} className="space-y-2 mt-2 pt-2 border-t border-slate-200">
                                   <div className="flex gap-2 items-center">
                                     <input
                                       type="time"
-                                      value={meal.time}
-                                      onChange={(e) =>
-                                        setMeals(meals.map((m) => (m.id === meal.id ? { ...m, time: e.target.value } : m)))
-                                      }
+                                      value={""}
+                                      
                                       className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
                                     />
-                                    <span className="flex-1 text-xs font-bold text-slate-600">Tổng: {meal.totalCalories} kcal</span>
+                                    <span className="flex-1 text-xs font-bold text-slate-600">Tổng: {""} kcal</span>
                                     <button
                                       type="button"
-                                      onClick={() => setMeals(meals.filter((m) => m.id !== meal.id))}
+                                      
                                       className="text-slate-400 hover:text-rose-500 text-xs font-bold"
                                     >
                                       Xóa
@@ -612,7 +598,6 @@ export default function JournalTab() {
                                   </div>
                                   {/* ... (Render danh sách food items tại đây nếu cần) */}
                                 </div>
-                              ))}
                             </div>
                           );
                         })}

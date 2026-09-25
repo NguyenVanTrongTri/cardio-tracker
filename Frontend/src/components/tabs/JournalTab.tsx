@@ -553,67 +553,31 @@ export default function JournalTab() {
                   </div>
 
                   {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THẺ BỌC ĐỂ CÓ THANH CUỘN VÀ KHỚP KHUNG) */}
-                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-sm font-bold text-slate-700"></h4>
-                          <button
-                            type="button"
-                            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
-                          >
-                            + Thêm món
-                          </button>
+                   <div className="space-y-4">
+                      {/* Tiêu đề mục Bữa Ăn */}
+                      <div className="flex items-center gap-2">
+                        <UtensilsCrossed size={18} className="text-orange-500" />
+                        <h3 className="text-sm font-bold text-slate-800">Bữa Ăn</h3>
                       </div>
-                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                          <div key={""} className="space-y-2 first:mt-0 first:pt-0 first:border-t-0 mt-2 pt-2 border-t border-slate-200">
-                            <div className="flex gap-2 items-center">
-                              <input
-                                type="time"
-                                value={""}
-                                className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
-                              />
-                              <span className="flex-1 text-xs font-bold text-slate-600">Tổng: kcal</span>
-                              <button
-                                type="button"
-                                className="text-slate-400 hover:text-rose-500 text-xs font-bold cursor-pointer"
-                              >
-                                Xóa
-                              </button>
-                            </div>
-                            <div className="space-y-1">
-                                <div key={""} className="flex gap-1 items-center text-xs">
-                                  <select
-                                    value={""}
-                                    className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
-                                  >
-                                    {FOOD_DATABASE.map((f) => (
-                                      <option key={f.name} value={f.name}>
-                                        {f.name}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max="500"
-                                    placeholder="g"
-                                    value={""}
-                                    className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center text-xs"
-                                  />
-                                  <span className="w-12 text-right"> kcal</span>
-                                  <button
-                                    type="button"
-                                    className="text-rose-400 font-bold px-1 cursor-pointer"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              <button
-                                type="button"
-                                className="text-xs text-emerald-600 font-bold cursor-pointer pt-1 inline-block"
-                              >
-                                + Món
-                              </button>
-                            </div>
+
+                      {/* Danh sách các card bữa ăn */}
+                      <div className="space-y-3">
+                          <div 
+                            key={""} 
+                            className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex justify-between items-center hover:border-slate-200 transition-all"
+                          >
+                            {/* Tên bữa ăn (Ví dụ: Bữa Sáng, Bữa Trưa...) */}
+                            <span className="text-sm font-bold text-slate-800">
+                            </span>
+
+                            {/* Nút Thêm món nằm bên phải */}
+                            <button
+                              type="button"
+                            
+                              className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer transition-colors"
+                            >
+                              + Thêm món
+                            </button>
                           </div>
                       </div>
                     </div>

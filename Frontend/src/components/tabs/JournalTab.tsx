@@ -64,6 +64,7 @@ export default function JournalTab() {
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 3000);
   };
+  const [modalItems, setModalItems] = useState<FoodItemEntry[]>([]);
 
   const loadData = async () => {
   try {

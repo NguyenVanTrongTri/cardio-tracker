@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { WorkoutCard } from './HistoryTab/WorkoutCard';
 import { EditWorkoutModal } from './HistoryTab/EditWorkoutModal';
+import { DeleteConfirmationModal } from './HistoryTab/DeleteConfirmationModal';
+import { formatDate, renderPhaseDetails } from './HistoryTab/utils';
 import { EquipmentType, WorkoutPhase, WorkoutRecord } from '../../types';
 import { getEquipmentDef } from '../workout/equipmentData';
 import { Bike, Waves, Footprints, Compass } from 'lucide-react';
@@ -38,6 +40,22 @@ const getAuthToken = () => {
     token = localStorage.getItem('token') || '';
   }
   return token;
+};
+export const getEquipmentIcon = (type?: EquipmentType) => {
+  switch (type) {
+    case 'STATIONARY_BIKE':
+      return <Bike size={16} className="text-blue-500" />;
+    case 'ROWING_MACHINE':
+      return <Waves size={16} className="text-cyan-500" />;
+    case 'STAIR_CLIMBER':
+      return <Footprints size={16} className="text-amber-500" />;
+    case 'OUTDOOR_RUN':
+      return <Compass size={16} className="text-purple-500" />;
+    case 'TREADMILL':
+      return <Flame size={16} className="text-emerald-500 fill-emerald-500" />;
+    default:
+      return <Flame size={16} className="text-emerald-500 fill-emerald-500" />;
+  }
 };
 
 export default function HistoryTab() {
@@ -172,69 +190,9 @@ export default function HistoryTab() {
     }
   };
 
-  const formatDate = (isoStr: string) => {
-    try {
-      const date = new Date(isoStr);
-      const hour = String(date.getUTCHours()).padStart(2, '0');
-      const minute = String(date.getUTCMinutes()).padStart(2, '0');
-
-      // Lấy ngày hiện tại ở dạng YYYY-MM-DD để so sánh
-      const today = new Date();
-      
-      const isToday = 
-        date.getUTCFullYear() === today.getUTCFullYear() &&
-        date.getUTCMonth() === today.getUTCMonth() &&
-        date.getUTCDate() === today.getUTCDate();
-
-      // Nếu là hôm nay thì hiển thị "Hôm nay"
-      if (isToday) {
-        return `${hour}:${minute} Hôm nay`;
-      }
-
-      // Nếu không phải hôm nay thì hiển thị đầy đủ thứ, ngày/tháng/năm
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const year = date.getUTCFullYear();
-      const weekdayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-      const weekday = weekdayNames[date.getUTCDay()];
-
-      return `${hour}:${minute} ${weekday}, ${day}/${month}/${year}`;
-    } catch {
-      return isoStr;
-    }
-  };
-
-  const getEquipmentIcon = (type?: EquipmentType) => {
-    switch (type) {
-      case 'STATIONARY_BIKE':
-        return <Bike size={16} className="text-blue-500" />;
-      case 'ROWING_MACHINE':
-        return <Waves size={16} className="text-cyan-500" />;
-      case 'STAIR_CLIMBER':
-        return <Footprints size={16} className="text-amber-500" />;
-      case 'OUTDOOR_RUN':
-        return <Compass size={16} className="text-purple-500" />;
-      case 'TREADMILL':
-      default:
-        return <Flame size={16} className="text-emerald-500 fill-emerald-500" />;
-    }
-  };
-
-  const renderPhaseDetails = (p: WorkoutPhase, eq?: EquipmentType) => {
-    if (eq === 'STATIONARY_BIKE') {
-      return `Mức ${p.resistanceLevel || 0} • ${p.cadenceRpm || 70} RPM`;
-    }
-    if (eq === 'ROWING_MACHINE') {
-      return `Damper ${p.resistanceLevel || 0} • ${p.strokeRateSpm || 24} SPM`;
-    }
-    if (eq === 'STAIR_CLIMBER') {
-      return `Mức ${p.resistanceLevel || 0} • ${p.stepsPerMin || 60} bậc/p`;
-    }
-    return `Dốc ${p.inclineDegree}° • ${p.speedKmh} km/h`;
-  };
-
   return (
     <div className="max-w-xl mx-auto px-4 pt-4 pb-28 space-y-4">
+
       {/* Header & Filters */}
       <div className="flex items-center justify-between">
         <div>
@@ -318,31 +276,11 @@ export default function HistoryTab() {
 
       {/* Delete Confirmation Modal */}
       {deleteCandidateId && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95">
-            <h3 className="text-base font-bold text-slate-900">
-              Xác nhận xóa buổi tập?
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Thao tác này sẽ xóa vĩnh viễn buổi tập khỏi lịch sử và cập nhật lại biểu đồ thống kê.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setDeleteCandidateId(null)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={isDeleting}
-                className={`flex-1 py-2.5 ${isDeleting ? 'bg-rose-400' : 'bg-rose-600 hover:bg-rose-700'} text-white rounded-xl font-bold text-xs transition-colors shadow-xs`}
-              >
-                {isDeleting ? 'Đang xóa...' : 'Xóa ngay'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteConfirmationModal
+          onClose={() => setDeleteCandidateId(null)}
+          onConfirm={confirmDelete}
+          isDeleting={isDeleting}
+        />
       )}
 
       {/* Quick Edit Modal */}

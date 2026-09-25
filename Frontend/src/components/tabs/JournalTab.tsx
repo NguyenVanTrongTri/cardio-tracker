@@ -533,102 +533,101 @@ export default function JournalTab() {
 
             {/* 2. Nội dung chính bên trong Modal (Có scroll nếu danh sách dài) */}
              {isModalOpen && (
-  <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-      
-      {/* 1. Header của Modal */}
-      <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70 shrink-0">
-        <div className="flex items-center gap-2">
-          <UtensilsCrossed size={18} className="text-emerald-600" />
-          <h3 className="text-sm font-bold text-slate-900">
-            {editingMealId ? 'Chỉnh Sửa Bữa Ăn' : isDetailMode ? 'Bổ sung bữa ăn' : 'Ghi Bữa Ăn Mới'}
-          </h3>
-        </div>
-        <button
-          onClick={() => setIsModalOpen(false)}
-          className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 cursor-pointer"
-        >
-          <X size={18} />
-        </button>
-      </div>
+              <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                  
+                  {/* 1. Header của Modal */}
+                  <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <UtensilsCrossed size={18} className="text-emerald-600" />
+                      <h3 className="text-sm font-bold text-slate-900">
+                        {editingMealId ? 'Chỉnh Sửa Bữa Ăn' : isDetailMode ? 'Bổ sung bữa ăn' : 'Ghi Bữa Ăn Mới'}
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => setIsModalOpen(false)}
+                      className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 cursor-pointer"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
 
-      {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THẺ BỌC ĐỂ CÓ THANH CUỘN VÀ KHỚP KHUNG) */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div key={""} className="space-y-2 first:mt-0 first:pt-0 first:border-t-0 mt-2 pt-2 border-t border-slate-200">
-            <div className="flex gap-2 items-center">
-              <input
-                type="time"
-                value={""}
-                className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
-              />
-              <span className="flex-1 text-xs font-bold text-slate-600">Tổng: kcal</span>
-              <button
-                type="button"
-                className="text-slate-400 hover:text-rose-500 text-xs font-bold cursor-pointer"
-              >
-                Xóa
-              </button>
-            </div>
-            <div className="space-y-1">
-                <div key={""} className="flex gap-1 items-center text-xs">
-                  <select
-                    value={}
-                    onChange={}
-                    className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
-                  >
-                    {FOOD_DATABASE.map((f) => (
-                      <option key={f.name} value={f.name}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min="1"
-                    max="500"
-                    placeholder="g"
-                    value={""}
-                    className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center text-xs"
-                  />
-                  <span className="w-12 text-right"> kcal</span>
-                  <button
-                    type="button"
-                    className="text-rose-400 font-bold px-1 cursor-pointer"
-                  >
-                    ×
-                  </button>
+                  {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THẺ BỌC ĐỂ CÓ THANH CUỘN VÀ KHỚP KHUNG) */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                      <div key={""} className="space-y-2 first:mt-0 first:pt-0 first:border-t-0 mt-2 pt-2 border-t border-slate-200">
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="time"
+                            value={""}
+                            className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
+                          />
+                          <span className="flex-1 text-xs font-bold text-slate-600">Tổng: kcal</span>
+                          <button
+                            type="button"
+                            className="text-slate-400 hover:text-rose-500 text-xs font-bold cursor-pointer"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                            <div key={""} className="flex gap-1 items-center text-xs">
+                              <select
+                                value={""}
+                                className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
+                              >
+                                {FOOD_DATABASE.map((f) => (
+                                  <option key={f.name} value={f.name}>
+                                    {f.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                type="number"
+                                min="1"
+                                max="500"
+                                placeholder="g"
+                                value={""}
+                                className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center text-xs"
+                              />
+                              <span className="w-12 text-right"> kcal</span>
+                              <button
+                                type="button"
+                                className="text-rose-400 font-bold px-1 cursor-pointer"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          <button
+                            type="button"
+                            className="text-xs text-emerald-600 font-bold cursor-pointer pt-1 inline-block"
+                          >
+                            + Món
+                          </button>
+                        </div>
+                      </div>
+                  </div>
+
+                  {/* 3. Footer chứa các nút hành động */}
+                  <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(false)}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveMeal}
+                      className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer"
+                    >
+                      Lưu Bữa Ăn
+                    </button>
+                  </div>
+
                 </div>
-              <button
-                type="button"
-                className="text-xs text-emerald-600 font-bold cursor-pointer pt-1 inline-block"
-              >
-                + Món
-              </button>
-            </div>
-          </div>
-      </div>
-
-      {/* 3. Footer chứa các nút hành động */}
-      <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70 shrink-0">
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(false)}
-          className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 cursor-pointer"
-        >
-          Hủy
-        </button>
-        <button
-          type="button"
-          onClick={handleSaveMeal}
-          className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer"
-        >
-          Lưu Bữa Ăn
-        </button>
-      </div>
-
-    </div>
-  </div>
-)}
+              </div>
+            )}
 
             {/* 3. Footer chứa các nút hành động */}
             <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70 shrink-0">

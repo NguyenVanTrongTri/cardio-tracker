@@ -53,7 +53,70 @@ const getMeals = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-const createMeal = async (req, res) => {}
+const createMeal = async (req, res) => {
+  try {
+    // 🔒 Lấy userId trực tiếp từ middleware verifyToken
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để thêm nhật ký dinh dưỡng!' 
+      });
+    }
+
+    // Lấy dữ liệu gửi lên từ client (req.body)
+    const { mealDate, category, mealTime, foodItems } = req.body;
+
+    // Kiểm tra dữ liệu bắt buộc
+    if (!category || !foodItems || !Array.isArray(foodItems) || foodItems.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Vui lòng cung cấp loại bữa ăn và ít nhất một món ăn!' 
+      });
+    }
+
+    // 🧮 Tự động tính tổng calo của bữa ăn dựa trên danh sách món gửi lên
+    const totalCalories = foodItems.reduce((sum, item) => {
+      return sum + (parseFloat(item.calories) || 0);
+    }, 0);
+
+    // 🚀 Tạo Meal và các foodItems liên quan bằng Prisma (Nested Write)
+    const newMeal = await prisma.meal.create({
+      data: {
+        userId,
+        mealDate: mealDate ? new Date(mealDate) : new Date(), // Mặc định là ngày giờ hiện tại nếu không truyền
+        category,                                           // Ví dụ: "Bữa Sáng", "Bữa Trưa"...
+        mealTime: mealTime || '07:30',                      // Thời gian ăn mặc định
+        totalCalories,
+        foodItems: {
+          create: foodItems.map((item) => ({
+            foodName: item.foodName,
+            grams: parseFloat(item.grams) || 0,
+            calories: parseFloat(item.calories) || 0,
+          }))
+        }
+      },
+      include: {
+        foodItems: true // Trả về kèm danh sách món ăn sau khi tạo thành công
+      }
+    });
+
+    // Trả về kết quả thành công cho client
+    return res.status(201).json({ 
+      success: true, 
+      message: 'Thêm bữa ăn thành công!',
+      data: newMeal 
+    });
+
+  } catch (error) {
+    console.error('Error creating meal:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+};
 const updateMeal = async (req, res) => {}  
 const deleteMeal = async (req, res) => {}   
 module.exports = {getMeals, createMeal, updateMeal, deleteMeal};

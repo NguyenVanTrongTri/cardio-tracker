@@ -685,10 +685,6 @@ export default function JournalTab() {
                 </div>
               </div>
             )}
-
-            
-
-
           </div>
         </div>
       )}

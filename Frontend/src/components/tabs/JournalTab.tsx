@@ -201,10 +201,21 @@ export default function JournalTab() {
     setIsModalOpen(true);
   };
 
+  const isMealExists = useMemo(() => {
+    return journals.find(j => j.date === modalDate)?.meals.some(m => m.category === modalCategory);
+  }, [journals, modalDate, modalCategory]);
+
   const handleSaveMeal = async () => {
     // Collect all categories that have items
     const categoriesToSave = Object.keys(modalMealsData).filter(cat => modalMealsData[cat].length > 0);
     if (categoriesToSave.length === 0) return;
+    
+    // Check if meal already exists for this date and category
+    const existingMeal = journals.find(j => j.date === modalDate)?.meals.find(m => categoriesToSave.includes(m.category));
+    if (existingMeal) {
+      showToast(`Bữa ${existingMeal.category} đã tồn tại trong ngày này!`, 'error');
+      return;
+    }
     
     setIsLoading(true);
 
@@ -212,7 +223,6 @@ export default function JournalTab() {
       // Loop through each category and save
       for (const category of categoriesToSave) {
         const currentMealItems = modalMealsData[category];
-        const totalCalories = currentMealItems.reduce((sum, i) => sum + (Number(i.calories) || 0), 0);
         
         const payload = {
           mealDate: modalDate,
@@ -708,7 +718,7 @@ export default function JournalTab() {
                       onClick={handleSaveMeal}
                       className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer"
                     >
-                      {isLoading ? 'Đang lưu...' : 'Lưu Bữa Ăn'}
+                                              {isLoading ? 'Đang lưu...' : (isMealExists ? 'Bữa ăn đã tồn tại' : 'Lưu Bữa Ăn')}
                     </button>
                   </div>
                 </div>

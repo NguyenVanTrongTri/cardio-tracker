@@ -264,16 +264,42 @@ export default function JournalTab() {
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    if (deleteTarget.type === 'meal' && deleteTarget.mealId) {
-      const updated = deleteMealFromDateJournal(deleteTarget.date, deleteTarget.mealId);
-      setJournals(updated);
-    } else if (deleteTarget.type === 'day') {
-      const updated = deleteDailyJournal(deleteTarget.date);
-      setJournals(updated);
+    
+    setIsLoading(true); // Bật trạng thái loading nếu có
+
+    try {
+      if (deleteTarget.type === 'meal' && deleteTarget.mealId) {
+        // 🚀 Gọi API xóa bữa ăn theo ID ở backend
+        const response = await fetch(`${API_ENDPOINTS.MEALS}/${deleteTarget.mealId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Không thể xóa bữa ăn');
+        }
+
+        // Tải lại dữ liệu mới nhất từ server sau khi xóa thành công
+        loadData();
+        showToast('Xóa bữa ăn thành công!', 'success');
+        
+      } else if (deleteTarget.type === 'day') {
+        // Nếu phần xóa cả ngày (day) cũng đã có API ở backend thì gọi tương tự, 
+        // hoặc nếu vẫn giữ logic local thì bạn giữ nguyên đoạn này:
+        const updated = deleteDailyJournal(deleteTarget.date);
+        setJournals(updated);
+        showToast('Xóa nhật ký ngày thành công!', 'success');
+      }
+    } catch (error: any) { // 👈 Thêm : any vào đây
+      console.error('Lỗi khi xóa:', error);
+      showToast(error?.message || 'Có lỗi xảy ra khi xóa!', 'error');
+    } finally {
+      setIsLoading(false);
+      setDeleteTarget(null); // Đóng modal xác nhận xóa
     }
-    setDeleteTarget(null);
   };
 
   const formatDisplayDate = (dateStr: string) => {

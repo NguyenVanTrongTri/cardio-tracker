@@ -201,7 +201,6 @@ export default function JournalTab() {
     setIsModalOpen(true);
   };
 
-  
   const handleSaveMeal = async () => {
     // Collect all categories that have items
     const categoriesToSave = Object.keys(modalMealsData).filter(cat => modalMealsData[cat].length > 0);
@@ -236,21 +235,16 @@ export default function JournalTab() {
         });
 
         if (!response.ok) {
-          // 🛠️ Đọc dữ liệu JSON trả về từ backend để lấy message lỗi cụ thể
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage = errorData.message || `Lỗi khi lưu bữa ${category}`;
-          throw new Error(errorMessage); // Ném lỗi này xuống khối catch bên dưới
+          throw new Error(`Lỗi khi lưu bữa ${category}`);
         }
       }
 
       setIsModalOpen(false);
       setModalMealsData({});
       loadData();
-      showToast('Lưu nhật ký dinh dưỡng thành công!', 'success'); // Thêm thông báo thành công nếu muốn
     } catch (error) {
-      console.error('Lỗi khi lưu:', error);
-      // 🛠️ Hiển thị trực tiếp thông báo (ví dụ: đã có dữ liệu bữa ăn...) ra giao diện qua toast
-      showToast(error.message || 'Có lỗi xảy ra khi lưu bữa ăn!', 'error');
+      console.error('Lỗi kết nối API:', error);
+      showToast('Có lỗi xảy ra khi lưu bữa ăn!', 'error');
     } finally {
       setIsLoading(false);
     }

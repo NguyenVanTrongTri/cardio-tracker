@@ -267,33 +267,33 @@ export default function JournalTab() {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     
-    setIsLoading(true); // Bật trạng thái loading nếu có
+    setIsLoading(true);
 
     try {
       if (deleteTarget.type === 'meal' && deleteTarget.mealId) {
-        // 🚀 Gọi API xóa bữa ăn theo ID ở backend
+        // Gọi API xóa bữa ăn
         const response = await fetch(`${API_ENDPOINTS.MEALS}/${deleteTarget.mealId}`, {
           method: 'DELETE',
           credentials: 'include',
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Không thể xóa bữa ăn');
+          throw new Error('Không thể xóa bữa ăn');
         }
-
-        // Tải lại dữ liệu mới nhất từ server sau khi xóa thành công
-        loadData();
         showToast('Xóa bữa ăn thành công!', 'success');
         
       } else if (deleteTarget.type === 'day') {
-        // Nếu phần xóa cả ngày (day) cũng đã có API ở backend thì gọi tương tự, 
-        // hoặc nếu vẫn giữ logic local thì bạn giữ nguyên đoạn này:
-        const updated = deleteDailyJournal(deleteTarget.date);
-        setJournals(updated);
+        // Giả sử bạn có API xóa cả ngày, nếu chưa hãy dùng API xóa từng bữa của ngày đó 
+        // hoặc cập nhật backend để có API xóa theo ngày.
+        // Tạm thời nếu chỉ xóa local:
+        deleteDailyJournal(deleteTarget.date); 
         showToast('Xóa nhật ký ngày thành công!', 'success');
       }
-    } catch (error: any) { // 👈 Thêm : any vào đây
+
+      // 🛠️ LUÔN TẢI LẠI DỮ LIỆU TỪ SERVER SAU KHI XÓA (bất kể loại nào)
+      await loadData();
+      
+    } catch (error: any) {
       console.error('Lỗi khi xóa:', error);
       showToast(error?.message || 'Có lỗi xảy ra khi xóa!', 'error');
     } finally {

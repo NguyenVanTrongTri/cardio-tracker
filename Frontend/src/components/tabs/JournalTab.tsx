@@ -566,8 +566,8 @@ export default function JournalTab() {
                     </button>
                   </div>
 
-                  {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THẺ BỌC ĐỂ CÓ THANH CUỘN VÀ KHỚP KHUNG) */}
-                  <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                  {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THANH CUỘN VÀ KHỚP KHUNG) */}
+                  <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 overflow-y-auto max-h-[60vh]">
                     {/* Categories Rendering */}
                     <div className="space-y-4">
                       {MEAL_CATEGORIES.map((category) => {
@@ -630,9 +630,7 @@ export default function JournalTab() {
                                     <input
                                       type="number"
                                       min="1"
-                                      max="500"
-                                      placeholder="g" 
-                                      value={item.grams || ''}
+                                      value={item.grams}
                                       onChange={(e) => {
                                         const grams = Number(e.target.value);
                                         const selected = foodDb.find((f) => f.name === item.foodName);
@@ -643,6 +641,7 @@ export default function JournalTab() {
                                         }));
                                       }}
                                       className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center"
+                                      placeholder="g"
                                     />
 
                                     <span className="w-16 text-right font-medium">{item.calories} kcal</span>
@@ -804,7 +803,6 @@ export default function JournalTab() {
                     <input
                       type="number"
                       min="1"
-                      max="500"
                       placeholder="g"
                       value={item.grams || ''}
                       onChange={(e) => {

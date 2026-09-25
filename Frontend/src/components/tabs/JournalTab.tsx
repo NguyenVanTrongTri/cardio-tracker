@@ -630,6 +630,8 @@ export default function JournalTab() {
                                     <input
                                       type="number"
                                       min="1"
+                                      max="500"
+                                      placeholder="g" 
                                       value={item.grams}
                                       onChange={(e) => {
                                         const grams = Number(e.target.value);
@@ -641,7 +643,6 @@ export default function JournalTab() {
                                         }));
                                       }}
                                       className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center"
-                                      placeholder="g"
                                     />
 
                                     <span className="w-16 text-right font-medium">{item.calories} kcal</span>
@@ -803,6 +804,7 @@ export default function JournalTab() {
                     <input
                       type="number"
                       min="1"
+                      max="500"
                       placeholder="g"
                       value={item.grams || ''}
                       onChange={(e) => {

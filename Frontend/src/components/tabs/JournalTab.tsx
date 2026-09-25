@@ -202,8 +202,12 @@ export default function JournalTab() {
   };
 
   const isMealExists = useMemo(() => {
-    return journals.find(j => j.date === modalDate)?.meals.some(m => m.category === modalCategory);
-  }, [journals, modalDate, modalCategory]);
+    // Lấy các category đang có dữ liệu trong modal
+    const categoriesInModal = Object.keys(modalMealsData).filter(cat => modalMealsData[cat].length > 0);
+    
+    // Kiểm tra xem bất kỳ category nào trong số đó đã tồn tại trên server chưa
+    return journals.find(j => j.date === modalDate)?.meals.some(m => categoriesInModal.includes(m.category));
+  }, [journals, modalDate, modalMealsData]);
 
   const handleSaveMeal = async () => {
     // Collect all categories that have items

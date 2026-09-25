@@ -72,6 +72,7 @@ export default function JournalTab() {
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 3000);
   };
+  const [isLoading, setIsLoading] = useState(false); // State for loading indicator
 
   const loadData = async () => {
   try {
@@ -200,26 +201,49 @@ export default function JournalTab() {
     setIsModalOpen(true);
   };
 
-  const handleSaveMeal = () => {
-    // Flatten all meals data from the record structure
-    const allItems = Object.values(modalMealsData).flat();
-    if (allItems.length === 0) return;
+  const handleSaveMeal = async () => {
+  const currentMealItems = modalMealsData[modalCategory] || [];
+  if (currentMealItems.length === 0) return;
+  
+  setIsLoading(true); // Nếu bạn có state loading cho meal
+
+  try {
+    const totalCalories = currentMealItems.reduce((sum, i) => sum + (Number(i.calories) || 0), 0);
     
-    const totalCalories = allItems.reduce((sum, i) => sum + (Number(i.calories) || 0), 0);
-    const newMeal: Meal = {
-      id: editingMealId || `m-${Date.now()}`,
+    // Dữ liệu gửi lên API khớp với backend createMeal bạn vừa viết
+    const payload = {
+      mealDate: modalDate,
       category: modalCategory,
-      time: modalTime,
-      foodItems: modalMealsData[modalCategory] || [],
-      totalCalories,
+      mealTime: modalTime,
+      foodItems: currentMealItems.map(item => ({
+        foodName: item.foodName,
+        grams: Number(item.grams) || 0,
+        calories: Number(item.calories) || 0,
+      }))
     };
 
-    const updated = saveMealToDateJournal(modalDate, newMeal);
-    setJournals(updated);
-    setExpandedDates((prev) => ({ ...prev, [modalDate]: true }));
-    setIsModalOpen(false);
-    setModalMealsData({}); // Reset data
-  };
+    const response = await fetch(API_ENDPOINTS.MEALS, {
+      method: 'POST', // Hoặc PUT tùy thuộc vào việc bạn đang tạo mới hay cập nhật
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      setIsModalOpen(false);
+      setModalMealsData({}); // Reset data
+      loadData(); // Gọi lại hàm load dữ liệu từ server giống bên workout
+    } else {
+      console.error('Lỗi khi lưu bữa ăn lên server');
+    }
+  } catch (error) {
+    console.error('Lỗi kết nối API:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
@@ -679,7 +703,7 @@ export default function JournalTab() {
                       onClick={handleSaveMeal}
                       className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer"
                     >
-                      Lưu Bữa Ăn
+                      {isLoading ? 'Đang lưu...' : 'Lưu Bữa Ăn'}
                     </button>
                   </div>
                 </div>

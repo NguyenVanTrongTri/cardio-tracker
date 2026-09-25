@@ -559,20 +559,18 @@ export default function JournalTab() {
               <input
                 type="time"
                 value={""}
-                onChange={ }
                 className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
               />
               <span className="flex-1 text-xs font-bold text-slate-600">Tổng: kcal</span>
               <button
                 type="button"
-                onClick={}
                 className="text-slate-400 hover:text-rose-500 text-xs font-bold cursor-pointer"
               >
                 Xóa
               </button>
             </div>
             <div className="space-y-1">
-                <div key={ } className="flex gap-1 items-center text-xs">
+                <div key={""} className="flex gap-1 items-center text-xs">
                   <select
                     value={}
                     onChange={}
@@ -589,14 +587,12 @@ export default function JournalTab() {
                     min="1"
                     max="500"
                     placeholder="g"
-                    value={}
-                    onChange={ }
+                    value={""}
                     className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center text-xs"
                   />
                   <span className="w-12 text-right"> kcal</span>
                   <button
                     type="button"
-                    onClick={}
                     className="text-rose-400 font-bold px-1 cursor-pointer"
                   >
                     ×
@@ -604,7 +600,6 @@ export default function JournalTab() {
                 </div>
               <button
                 type="button"
-                onClick={}
                 className="text-xs text-emerald-600 font-bold cursor-pointer pt-1 inline-block"
               >
                 + Món

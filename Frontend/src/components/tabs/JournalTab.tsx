@@ -134,6 +134,7 @@ export default function JournalTab() {
 
   useEffect(() => {
     loadData();
+    setFoodDb(FOOD_DATABASE);
   }, []);
 
   // Filtered Journals

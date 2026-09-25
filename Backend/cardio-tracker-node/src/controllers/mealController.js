@@ -84,7 +84,7 @@ const createMeal = async (req, res) => {
     // 🚀 Tạo Meal và các foodItems liên quan bằng Prisma (Nested Write)
     const newMeal = await prisma.meal.create({
       data: {
-        userId,
+        id: `m-${randomUUID()}`,
         mealDate: mealDate ? new Date(mealDate) : new Date(), // Mặc định là ngày giờ hiện tại nếu không truyền
         category,                                           // Ví dụ: "Bữa Sáng", "Bữa Trưa"...
         mealTime: mealTime || '07:30',                      // Thời gian ăn mặc định

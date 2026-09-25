@@ -555,52 +555,51 @@ export default function JournalTab() {
 
                   {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THẺ BỌC ĐỂ CÓ THANH CUỘN VÀ KHỚP KHUNG) */}
                   <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-                      {/* Title */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Utensils size={17} className="text-amber-600" />
-                          <h3 className="text-sm font-bold text-slate-800">Bữa Ăn</h3>
-                        </div>
-                      </div>
-
                       {/* Categories Rendering */}
                       <div className="space-y-4">
-                        {MEAL_CATEGORIES.map((category) => {
-                          return (
-                            <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                              <div className="flex justify-between items-center mb-2">
-                                <h4 className="text-sm font-bold text-slate-700">{category}</h4>
-                                  <button
-                                    type="button"
-                                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
-                                  >
-                                    + Thêm món
-                                  </button>
-                              </div>
-                              
-                              {/* Render existing meals in this category */}
-                                <div key={""} className="space-y-2 mt-2 pt-2 border-t border-slate-200">
-                                  <div className="flex gap-2 items-center">
+                        {MEAL_CATEGORIES.map((category) => (
+                          <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="text-sm font-bold text-slate-700">{category}</h4>
+                              {category === modalCategory && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const defaultFood = foodDb[0]?.name || 'Cơm trắng';
+                                    const per100 = foodDb[0]?.caloriesPer100g || 130;
+                                    setModalItems([...modalItems, { id: `fi-${Date.now()}`, foodName: defaultFood, grams: 150, calories: Math.round(1.5 * per100) }]);
+                                  }}
+                                  className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
+                                >
+                                  + Thêm món
+                                </button>
+                              )}
+                            </div>
+                            
+                            {category === modalCategory && (
+                              <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
+                                {modalItems.map((item) => (
+                                  <div key={item.id} className="flex gap-2 items-center">
                                     <input
                                       type="time"
-                                      value={""}
-                                      
+                                      value={modalTime}
+                                      onChange={(e) => setModalTime(e.target.value)}
                                       className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800"
                                     />
-                                    <span className="flex-1 text-xs font-bold text-slate-600">Tổng: {""} kcal</span>
+                                    <span className="flex-1 text-xs font-bold text-slate-600">{item.foodName}: {item.calories} kcal</span>
                                     <button
                                       type="button"
-                                      
+                                      onClick={() => setModalItems(modalItems.filter(i => i.id !== item.id))}
                                       className="text-slate-400 hover:text-rose-500 text-xs font-bold"
                                     >
                                       Xóa
                                     </button>
                                   </div>
-                                  {/* ... (Render danh sách food items tại đây nếu cần) */}
-                                </div>
-                            </div>
-                          );
-                        })}
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                   </div>
                   {/* 3. Footer chứa các nút hành động */}

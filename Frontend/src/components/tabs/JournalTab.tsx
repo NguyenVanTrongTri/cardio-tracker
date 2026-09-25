@@ -202,48 +202,53 @@ export default function JournalTab() {
   };
 
   const handleSaveMeal = async () => {
-  const currentMealItems = modalMealsData[modalCategory] || [];
-  if (currentMealItems.length === 0) return;
-  
-  setIsLoading(true); // Nếu bạn có state loading cho meal
-
-  try {
-    const totalCalories = currentMealItems.reduce((sum, i) => sum + (Number(i.calories) || 0), 0);
+    // Collect all categories that have items
+    const categoriesToSave = Object.keys(modalMealsData).filter(cat => modalMealsData[cat].length > 0);
+    if (categoriesToSave.length === 0) return;
     
-    // Dữ liệu gửi lên API khớp với backend createMeal bạn vừa viết
-    const payload = {
-      mealDate: modalDate,
-      category: modalCategory,
-      mealTime: modalTime,
-      foodItems: currentMealItems.map(item => ({
-        foodName: item.foodName,
-        grams: Number(item.grams) || 0,
-        calories: Number(item.calories) || 0,
-      }))
-    };
+    setIsLoading(true);
 
-    const response = await fetch(API_ENDPOINTS.MEALS, {
-      method: 'POST', // Hoặc PUT tùy thuộc vào việc bạn đang tạo mới hay cập nhật
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(payload),
-    });
+    try {
+      // Loop through each category and save
+      for (const category of categoriesToSave) {
+        const currentMealItems = modalMealsData[category];
+        const totalCalories = currentMealItems.reduce((sum, i) => sum + (Number(i.calories) || 0), 0);
+        
+        const payload = {
+          mealDate: modalDate,
+          category: category,
+          mealTime: modalTime,
+          foodItems: currentMealItems.map(item => ({
+            foodName: item.foodName,
+            grams: Number(item.grams) || 0,
+            calories: Number(item.calories) || 0,
+          }))
+        };
 
-    if (response.ok) {
+        const response = await fetch(API_ENDPOINTS.MEALS, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Lỗi khi lưu bữa ${category}`);
+        }
+      }
+
       setIsModalOpen(false);
-      setModalMealsData({}); // Reset data
-      loadData(); // Gọi lại hàm load dữ liệu từ server giống bên workout
-    } else {
-      console.error('Lỗi khi lưu bữa ăn lên server');
+      setModalMealsData({});
+      loadData();
+    } catch (error) {
+      console.error('Lỗi kết nối API:', error);
+      showToast('Có lỗi xảy ra khi lưu bữa ăn!', 'error');
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Lỗi kết nối API:', error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;

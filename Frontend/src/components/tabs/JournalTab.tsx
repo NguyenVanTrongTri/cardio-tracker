@@ -535,27 +535,7 @@ export default function JournalTab() {
                               <span className="text-[10px] font-mono text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
                                 {meal.time || '--:--'}
                               </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-mono font-black text-orange-600">
-                                {meal.totalCalories} kcal
-                              </span>
-                              <button
-                                onClick={() => handleOpenEditModal(journal.date, meal)}
-                                className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                                title="Sửa bữa ăn"
-                              >
-                                <Edit3 size={13} />
-                              </button>
-                              <button
-                                onClick={() => setDeleteTarget({ date: journal.date, mealId: meal.id, type: 'meal' })}
-                                className="p-1 text-slate-400 hover:text-rose-500 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                                title="Xóa bữa ăn"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
+                            </div>   
                           </div>
 
                           {/* Food Items List */}

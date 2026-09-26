@@ -687,7 +687,8 @@ const handleSaveMeal = async () => {
                           <div className="flex gap-2 items-center mb-2">
                             <input 
                               type="time" 
-                              value={modalTime} 
+                              value={modalTime}
+                              lang="en-GB" 
                               onChange={(e) => setModalTime(e.target.value)} 
                               className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800" 
                             />

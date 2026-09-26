@@ -42,6 +42,7 @@ export default function JournalTab() {
 
   // Modal State for adding/editing a meal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [isModalOpenDetail, setIsModalOpenDetail] = useState(false);
   const [isDetailMode, setIsDetailMode] = useState(false); // Add this state
   const [modalDate, setModalDate] = useState(new Date().toISOString().split('T')[0]);
@@ -172,12 +173,14 @@ export default function JournalTab() {
   };
 
   const handleOpenAddModal = (date?: string, category?: string) => {
+    setModalMode('add');
     setIsDetailMode(false); // Set to false
     setEditingMealId(null);
     setModalDate(date || new Date().toISOString().split('T')[0]);
     setModalCategory(category || 'Bữa Trưa');
     setModalTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
     setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
+    setModalMealsData({});
     setIsModalOpen(true);
   };
   const handleOpenAddModalDetial = (date?: string, category?: string) => {
@@ -191,6 +194,7 @@ export default function JournalTab() {
   };
 
   const handleOpenEditModal = (date: string, meal: Meal) => {
+    setModalMode('edit');
     setEditingMealId(meal.id);
     setModalDate(date);
     setModalCategory(meal.category);
@@ -209,6 +213,7 @@ export default function JournalTab() {
       return;
     }
 
+    setModalMode('edit');
     setEditingMealId(null); // Không chỉnh sửa cụ thể bữa nào
     setModalDate(date);
     setIsDetailMode(false); // Dùng modal chính
@@ -223,6 +228,7 @@ export default function JournalTab() {
 
     setIsModalOpen(true);
   };
+
 
   const isMealExists = useMemo(() => {
     // Lấy các category đang có dữ liệu trong modal
@@ -606,7 +612,7 @@ export default function JournalTab() {
       </div>
 
       {/* Modal: Add/Edit Meal */}
-     {isModalOpen && (
+      {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             
@@ -615,7 +621,7 @@ export default function JournalTab() {
               <div className="flex items-center gap-2">
                 <UtensilsCrossed size={18} className="text-emerald-600" />
                 <h3 className="text-sm font-bold text-slate-900">
-                  {editingMealId ? 'Chỉnh Sửa Bữa Ăn' : isDetailMode ? 'Bổ sung bữa ăn' : 'Ghi Bữa Ăn Mới'}
+                  {modalMode === 'edit' ? 'Chỉnh Sửa Nhật Ký Ngày' : 'Ghi Bữa Ăn Mới'}
                 </h3>
               </div>
               <button
@@ -626,150 +632,128 @@ export default function JournalTab() {
               </button>
             </div>
 
-            {/* 2. Nội dung chính bên trong Modal (Có scroll nếu danh sách dài) */}
-             {isModalOpen && (
-              <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-                  
-                  {/* 1. Header của Modal */}
-                  <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <UtensilsCrossed size={18} className="text-emerald-600" />
-                      <h3 className="text-sm font-bold text-slate-900">
-                        {editingMealId ? 'Chỉnh Sửa Bữa Ăn' : isDetailMode ? 'Bổ sung bữa ăn' : 'Ghi Bữa Ăn Mới'}
-                      </h3>
-                    </div>
-                    <button
-                      onClick={() => setIsModalOpen(false)}
-                      className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 cursor-pointer"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
+            {/* 2. Nội dung chính bên trong Modal */}
+            <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 overflow-y-auto flex-1">
+              {/* Categories Rendering */}
+              <div className="space-y-4">
+                {MEAL_CATEGORIES.map((category) => {
+                  const isOpen = !!expandedCategories[category];
+                  const categoryItems = modalMealsData[category] || [];
 
-                  {/* 2. Nội dung chính bên trong Modal (ĐÃ THÊM THANH CUỘN VÀ KHỚP KHUNG) */}
-                  <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 overflow-y-auto max-h-[60vh]">
-                    {/* Categories Rendering */}
-                    <div className="space-y-4">
-                      {MEAL_CATEGORIES.map((category) => {
-                        const isOpen = !!expandedCategories[category];
-                        const categoryItems = modalMealsData[category] || [];
-
-                        return (
-                          <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 
-                                className="text-sm font-bold text-slate-700 cursor-pointer"
-                                onClick={() => toggleCategory(category)}
-                              >
-                                {category}
-                              </h4>
-                              
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!expandedCategories[category]) toggleCategory(category);
-                                  const defaultFood = foodDb[0] || { name: 'Cơm trắng', caloriesPer100g: 130 };
+                  return (
+                    <div key={category} className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 
+                          className="text-sm font-bold text-slate-700 cursor-pointer"
+                          onClick={() => toggleCategory(category)}
+                        >
+                          {category}
+                        </h4>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!expandedCategories[category]) toggleCategory(category);
+                            const defaultFood = foodDb[0] || { name: 'Cơm trắng', caloriesPer100g: 130 };
+                            setModalMealsData(prev => ({
+                              ...prev,
+                              [category]: [
+                                ...(prev[category] || []),
+                                { id: `fi-${Date.now()}`, foodName: defaultFood.name, grams: 150, calories: Math.round(1.5 * defaultFood.caloriesPer100g) }
+                              ]
+                            }));
+                          }}
+                          className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
+                        >
+                          + Thêm món
+                        </button>
+                      </div>
+                      
+                      {isOpen && (
+                        <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
+                          <div className="flex gap-2 items-center mb-2">
+                            <input type="time" value={modalTime} onChange={(e) => setModalTime(e.target.value)} className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800" />
+                            <span className="text-xs text-slate-500">Tổng: {categoryItems.reduce((sum, item) => sum + item.calories, 0)} kcal</span>
+                          </div>
+                        
+                          {categoryItems.map((item) => (
+                            <div key={item.id} className="flex gap-2 items-center text-xs">
+                              <select
+                                value={item.foodName}
+                                onChange={(e) => {
+                                  const selected = foodDb.find((f) => f.name === e.target.value);
+                                  const per100 = selected ? selected.caloriesPer100g : 0;
                                   setModalMealsData(prev => ({
                                     ...prev,
-                                    [category]: [
-                                      ...(prev[category] || []),
-                                      { id: `fi-${Date.now()}`, foodName: defaultFood.name, grams: 150, calories: Math.round(1.5 * defaultFood.caloriesPer100g) }
-                                    ]
+                                    [category]: prev[category].map(i => i.id === item.id ? { ...i, foodName: e.target.value, calories: Math.round((i.grams / 100) * per100) } : i)
                                   }));
                                 }}
-                                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
+                                className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
                               >
-                                + Thêm món
+                                {foodDb.map((f) => <option key={f.name} value={f.name}>{f.name}</option>)}
+                              </select>
+
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.grams}
+                                onChange={(e) => {
+                                  const grams = Number(e.target.value);
+                                  const selected = foodDb.find((f) => f.name === item.foodName);
+                                  const per100 = selected ? selected.caloriesPer100g : 0;
+                                  setModalMealsData(prev => ({
+                                    ...prev,
+                                    [category]: prev[category].map(i => i.id === item.id ? { ...i, grams, calories: Math.round((grams / 100) * per100) } : i)
+                                  }));
+                                }}
+                                className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center"
+                                placeholder="g"
+                              />
+
+                              <span className="w-16 text-right font-medium">{item.calories} kcal</span>
+
+                              <button
+                                type="button"
+                                onClick={() => setModalMealsData(prev => ({
+                                  ...prev,
+                                  [category]: prev[category].filter(i => i.id !== item.id)
+                                }))}
+                                className="text-slate-400 hover:text-rose-500 font-bold px-1"
+                              >
+                                ×
                               </button>
                             </div>
-                            
-                            {isOpen && (
-                              <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
-                                <div className="flex gap-2 items-center mb-2">
-                                  <input type="time" value={modalTime} onChange={(e) => setModalTime(e.target.value)} className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800" />
-                                  <span className="text-xs text-slate-500">Tổng: {categoryItems.reduce((sum, item) => sum + item.calories, 0)} kcal</span>
-                                </div>
-                              
-                                {categoryItems.map((item) => (
-                                  <div key={item.id} className="flex gap-2 items-center text-xs">
-                                    <select
-                                      value={item.foodName}
-                                      onChange={(e) => {
-                                        const selected = foodDb.find((f) => f.name === e.target.value);
-                                        const per100 = selected ? selected.caloriesPer100g : 0;
-                                        setModalMealsData(prev => ({
-                                          ...prev,
-                                          [category]: prev[category].map(i => i.id === item.id ? { ...i, foodName: e.target.value, calories: Math.round((i.grams / 100) * per100) } : i)
-                                        }));
-                                      }}
-                                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
-                                    >
-                                      {foodDb.map((f) => <option key={f.name} value={f.name}>{f.name}</option>)}
-                                    </select>
-
-                                    <input
-                                      type="number"
-                                      min="1"
-                                      value={item.grams}
-                                      onChange={(e) => {
-                                        const grams = Number(e.target.value);
-                                        const selected = foodDb.find((f) => f.name === item.foodName);
-                                        const per100 = selected ? selected.caloriesPer100g : 0;
-                                        setModalMealsData(prev => ({
-                                          ...prev,
-                                          [category]: prev[category].map(i => i.id === item.id ? { ...i, grams, calories: Math.round((grams / 100) * per100) } : i)
-                                        }));
-                                      }}
-                                      className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center"
-                                      placeholder="g"
-                                    />
-
-                                    <span className="w-16 text-right font-medium">{item.calories} kcal</span>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => setModalMealsData(prev => ({
-                                        ...prev,
-                                        [category]: prev[category].filter(i => i.id !== item.id)
-                                      }))}
-                                      className="text-slate-400 hover:text-rose-500 font-bold px-1"
-                                    >
-                                      ×
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  {/* 3. Footer chứa các nút hành động */}
-                  <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 cursor-pointer"
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveMeal}
-                      disabled={isLoading || isMealExists}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold text-white ${isMealExists ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer'}`}
-                    >
-                      {isLoading ? 'Đang lưu...' : (isMealExists ? 'Bữa ăn đã tồn tại' : 'Lưu Bữa Ăn')}
-                    </button>
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
+
+            {/* 3. Footer chứa các nút hành động */}
+            <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveMeal}
+                disabled={isLoading || isMealExists}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold text-white ${isMealExists ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer'}`}
+              >
+                {isLoading ? 'Đang lưu...' : (isMealExists ? 'Bữa ăn đã tồn tại' : (modalMode === 'edit' ? 'Cập nhật' : 'Lưu Bữa Ăn'))}
+              </button>
+            </div>
           </div>
         </div>
       )}
+
       {isModalOpenDetail && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">

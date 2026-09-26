@@ -205,94 +205,100 @@ export default function JournalTab() {
     setIsModalOpen(true);
   };
 
-  const handleOpenEditJournalModal = (date: string) => {
-    // Tìm dữ liệu của ngày cần chỉnh sửa
-    const dayData = journals.find(j => j.date === date);
-    if (!dayData) {
-      showToast('Không tìm thấy dữ liệu ngày này', 'error');
-      return;
+  // 1. Hàm mở modal chỉnh sửa
+// 1. Hàm mở modal chỉnh sửa
+const handleOpenEditJournalModal = (date: string) => {
+  const dayData = journals.find(j => j.date === date);
+  if (!dayData) {
+    showToast('Không tìm thấy dữ liệu ngày này', 'error');
+    return;
+  }
+
+  setModalMode('edit');
+  setEditingMealId(null);
+  setModalDate(date);
+  setIsDetailMode(false);
+  
+  const mappedMealsData: Record<string, FoodItemEntry[]> = {};
+  const newExpandedCategories: Record<string, boolean> = {};
+
+  dayData.meals.forEach(m => {
+    mappedMealsData[m.category] = m.foodItems || [];
+    if (m.foodItems && m.foodItems.length > 0) {
+      newExpandedCategories[m.category] = true;
     }
+  });
 
-    setModalMode('edit');
-    setEditingMealId(null); // Không chỉnh sửa cụ thể bữa nào
-    setModalDate(date);
-    setIsDetailMode(false); // Dùng modal chính
-    
-    // Ở đây bạn cần map dữ liệu của dayData.meals vào modalMealsData
-    // Ví dụ giả định bạn cần cấu trúc lại dữ liệu meals của ngày vào modalMealsData
-    const mappedMealsData: Record<string, FoodItemEntry[]> = {};
-    dayData.meals.forEach(m => {
-       mappedMealsData[m.category] = m.foodItems || [];
-    });
-    setModalMealsData(mappedMealsData);
+  setModalMealsData(mappedMealsData);
+  setExpandedCategories(newExpandedCategories);
 
-    setIsModalOpen(true);
-  };
+  if (dayData.meals.length > 0 && dayData.meals[0].time) {
+    setModalTime(dayData.meals[0].time);
+  } else {
+    setModalTime('12:00');
+  }
 
+  setIsModalOpen(true);
+};
 
-  const isMealExists = useMemo(() => {
-    // Lấy các category đang có dữ liệu trong modal
-    const categoriesInModal = Object.keys(modalMealsData).filter(cat => modalMealsData[cat].length > 0);
-    
-    // Kiểm tra xem bất kỳ category nào trong số đó đã tồn tại trên server chưa
-    return journals.find(j => j.date === modalDate)?.meals.some(m => categoriesInModal.includes(m.category));
-  }, [journals, modalDate, modalMealsData]);
+// 2. Logic kiểm tra bữa ăn đã tồn tại (CHỈ áp dụng khi thêm mới)
+const categoriesToSave = Object.keys(modalMealsData).filter(cat => modalMealsData[cat] && modalMealsData[cat].length > 0);
+const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journals.find(j => j.date === modalDate)?.meals.some(m => categoriesToSave.includes(m.category));
 
-  const handleSaveMeal = async () => {
-    // Collect all categories that have items
-    const categoriesToSave = Object.keys(modalMealsData).filter(cat => modalMealsData[cat].length > 0);
-    if (categoriesToSave.length === 0) return;
-    
-    // Check if meal already exists for this date and category
-    const existingMeal = journals.find(j => j.date === modalDate)?.meals.find(m => categoriesToSave.includes(m.category));
-    if (existingMeal) {
-      showToast(`Bữa ${existingMeal.category} đã tồn tại trong ngày này!`, 'error');
-      return;
-    }
-    
-    setIsLoading(true);
+// 3. Hàm lưu / cập nhật dữ liệu
+const handleSaveMeal = async () => {
+  if (categoriesToSave.length === 0) {
+    showToast('Vui lòng nhập ít nhất một món ăn!', 'error');
+    return;
+  }
+  
+  if (modalMode === 'add' && isMealExists) {
+    showToast('Bữa ăn đã tồn tại trong ngày này!', 'error');
+    return;
+  }
+  
+  setIsLoading(true);
 
-    try {
-      // Loop through each category and save
-      for (const category of categoriesToSave) {
-        const currentMealItems = modalMealsData[category];
-        
-        const payload = {
-          mealDate: modalDate,
-          category: category,
-          mealTime: modalTime,
-          foodItems: currentMealItems.map(item => ({
-            foodName: item.foodName,
-            grams: Number(item.grams) || 0,
-            calories: Number(item.calories) || 0,
-          }))
-        };
+  try {
+    for (const category of categoriesToSave) {
+      const currentMealItems = modalMealsData[category];
+      
+      const payload = {
+        mealDate: modalDate,
+        category: category,
+        mealTime: modalTime,
+        foodItems: currentMealItems.map(item => ({
+          foodName: item.foodName,
+          grams: Number(item.grams) || 0,
+          calories: Number(item.calories) || 0,
+        }))
+      };
 
-        const response = await fetch(API_ENDPOINTS.MEALS, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(payload),
-        });
+      const response = await fetch(API_ENDPOINTS.MEALS, {
+        method: 'POST', // Hoặc 'PUT' tùy theo API backend của bạn hỗ trợ upsert/update
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
 
-        if (!response.ok) {
-          throw new Error(`Lỗi khi lưu bữa ${category}`);
-        }
+      if (!response.ok) {
+        throw new Error(`Lỗi khi lưu bữa ${category}`);
       }
-
-      setIsModalOpen(false);
-      setModalMealsData({});
-      loadData();
-    } catch (error) {
-      console.error('Lỗi kết nối API:', error);
-      showToast('Có lỗi xảy ra khi lưu bữa ăn!', 'error');
-    } finally {
-      setIsLoading(false);
     }
-  };
 
+    showToast(modalMode === 'edit' ? 'Cập nhật nhật ký thành công!' : 'Thêm bữa ăn thành công!', 'success');
+    setIsModalOpen(false);
+    setModalMealsData({});
+    loadData();
+  } catch (error) {
+    console.error('Lỗi kết nối API:', error);
+    showToast('Có lỗi xảy ra khi lưu dữ liệu!', 'error');
+  } finally {
+    setIsLoading(false);
+  }
+};
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     
@@ -621,7 +627,7 @@ export default function JournalTab() {
               <div className="flex items-center gap-2">
                 <UtensilsCrossed size={18} className="text-emerald-600" />
                 <h3 className="text-sm font-bold text-slate-900">
-                  {modalMode === 'edit' ? 'Chỉnh Sửa Nhật Ký Ngày' : 'Ghi Bữa Ăn Mới'}
+                  {modalMode === 'edit' ? `Chỉnh Sửa Nhật Ký (${modalDate})` : 'Ghi Bữa Ăn Mới'}
                 </h3>
               </div>
               <button
@@ -634,7 +640,6 @@ export default function JournalTab() {
 
             {/* 2. Nội dung chính bên trong Modal */}
             <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3 overflow-y-auto flex-1">
-              {/* Categories Rendering */}
               <div className="space-y-4">
                 {MEAL_CATEGORIES.map((category) => {
                   const isOpen = !!expandedCategories[category];
@@ -672,7 +677,12 @@ export default function JournalTab() {
                       {isOpen && (
                         <div className="space-y-2 mt-2 pt-2 border-t border-slate-200">
                           <div className="flex gap-2 items-center mb-2">
-                            <input type="time" value={modalTime} onChange={(e) => setModalTime(e.target.value)} className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800" />
+                            <input 
+                              type="time" 
+                              value={modalTime} 
+                              onChange={(e) => setModalTime(e.target.value)} 
+                              className="w-24 bg-white border border-slate-200 rounded-lg px-2 py-1 text-sm font-medium text-slate-800" 
+                            />
                             <span className="text-xs text-slate-500">Tổng: {categoryItems.reduce((sum, item) => sum + item.calories, 0)} kcal</span>
                           </div>
                         
@@ -718,7 +728,7 @@ export default function JournalTab() {
                                   ...prev,
                                   [category]: prev[category].filter(i => i.id !== item.id)
                                 }))}
-                                className="text-slate-400 hover:text-rose-500 font-bold px-1"
+                                className="text-slate-400 hover:text-rose-500 font-bold px-1 cursor-pointer"
                               >
                                 ×
                               </button>
@@ -745,7 +755,11 @@ export default function JournalTab() {
                 type="button"
                 onClick={handleSaveMeal}
                 disabled={isLoading || isMealExists}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold text-white ${isMealExists ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer'}`}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold text-white ${
+                  isMealExists 
+                    ? 'bg-slate-400 cursor-not-allowed' 
+                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer'
+                }`}
               >
                 {isLoading ? 'Đang lưu...' : (isMealExists ? 'Bữa ăn đã tồn tại' : (modalMode === 'edit' ? 'Cập nhật' : 'Lưu Bữa Ăn'))}
               </button>
@@ -753,181 +767,6 @@ export default function JournalTab() {
           </div>
         </div>
       )}
-
-      {isModalOpenDetail && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
-              <div className="flex items-center gap-2">
-                <UtensilsCrossed size={18} className="text-emerald-600" />
-                <h3 className="text-sm font-bold text-slate-900">
-                  {editingMealId ? 'Chỉnh Sửa Bữa Ăn' : isDetailMode ? 'Bổ sung bữa ăn' : 'Ghi Bữa Ăn Mới'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto">
-              {/* Date & Category */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Ngày Ăn
-                  </label>
-                  <input
-                    type="date"
-                    value={modalDate}
-                    onChange={(e) => setModalDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Phân Loại Bữa
-                  </label>
-                  <select
-                    value={modalCategory}
-                    onChange={(e) => setModalCategory(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  >
-                    {MEAL_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Time */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Giờ Ăn
-                </label>
-                <input
-                  type="time"
-                  value={modalTime}
-                  onChange={(e) => setModalTime(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </div>
-
-              {/* Food Items */}
-              <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Các Món Ăn Trong Bữa
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const defaultFood = foodDb[0]?.name || 'Cơm trắng';
-                      const defaultPer100g = foodDb[0]?.caloriesPer100g || 130;
-                      setModalItems([
-                        ...modalItems,
-                        {
-                          id: `fi-${Date.now()}`,
-                          foodName: defaultFood,
-                          grams: 150,
-                          calories: Math.round((150 / 100) * defaultPer100g),
-                        },
-                      ]);
-                    }}
-                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
-                  >
-                    + Thêm món
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  {modalItems.map((item) => (
-                  <div key={item.id} className="flex gap-1 items-center text-xs">
-                    <select
-                      value={item.foodName}
-                      onChange={(e) => {
-                        const food = foodDb.find((f) => f.name === e.target.value);
-                        const per100 = food ? food.caloriesPer100g : 130;
-                        const calories = Math.round(((item.grams || 100) / 100) * per100);
-                        setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, foodName: e.target.value, calories } : i));
-                      }}
-                      className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs"
-                    >
-                      {foodDb.map((f) => (
-                        <option key={f.name} value={f.name}>{f.name}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="g"
-                      value={item.grams || ''}
-                      onChange={(e) => {
-                        const grams = Number(e.target.value);
-                        const food = foodDb.find((f) => f.name === item.foodName);
-                        const per100 = food ? food.caloriesPer100g : 130;
-                        const calories = Math.round((grams / 100) * per100);
-                        setModalItems(modalItems.map((i) => i.id === item.id ? { ...i, grams, calories } : i));
-                      }}
-                      className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center text-xs"
-                    />
-                    <span className="w-12 text-right">{item.calories || 0}kcal</span>
-                    <button
-                      type="button"
-                      onClick={() => setModalItems(modalItems.filter((i) => i.id !== item.id))}
-                      className="text-rose-400 font-bold px-1 cursor-pointer"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalItems([...modalItems, { id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 0, calories: 0 }]);
-                  }}
-                  className="text-xs text-emerald-600 font-bold cursor-pointer"
-                >
-                  + Món
-                </button>
-                </div>
-              </div>
-
-              {/* Total Calories Preview */}
-              <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-200/80 flex justify-between items-center">
-                <span className="text-xs font-bold text-emerald-950">Tổng calo bữa ăn:</span>
-                <span className="font-mono text-base font-black text-emerald-700">
-                  {modalItems.reduce((acc, curr) => acc + (Number(curr.calories) || 0), 0)} kcal
-                </span>
-              </div>
-            </div>
-
-            <div className="p-3.5 border-t border-slate-100 flex gap-2 bg-slate-50/70">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveMeal}
-                className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer"
-              >
-                Lưu Bữa Ăn
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
       {/* Modal: Confirm Delete */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">

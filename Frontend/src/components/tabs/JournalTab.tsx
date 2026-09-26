@@ -205,28 +205,45 @@ export default function JournalTab() {
     setIsModalOpen(true);
   };
 
-  const handleOpenEditJournalModal = (date: string) => {
-    // Tìm dữ liệu của ngày cần chỉnh sửa
-    const dayData = journals.find(j => j.date === date);
-    if (!dayData) {
-      showToast('Không tìm thấy dữ liệu ngày này', 'error');
-      return;
+  const handleOpenEditJournalModal = async (date: string) => {
+    setIsLoading(true);
+    try {
+      // Fetch data for the specific date
+      const res = await fetch(`${API_ENDPOINTS.MEALS}?date=${date}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const result = await res.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Không thể tải dữ liệu bữa ăn!');
+      }
+
+      const dayMeals: Meal[] = result.data.map((meal: any) => ({
+        id: meal.id,
+        category: meal.category,
+        time: meal.mealTime,
+        foodItems: meal.foodItems,
+        totalCalories: meal.totalCalories
+      }));
+
+      setModalMode('edit');
+      setEditingMealId(null);
+      setModalDate(date);
+      setIsDetailMode(false);
+      
+      const mappedMealsData: Record<string, FoodItemEntry[]> = {};
+      dayMeals.forEach(m => {
+         mappedMealsData[m.category] = m.foodItems || [];
+      });
+      setModalMealsData(mappedMealsData);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu chỉnh sửa:', error);
+      showToast('Không thể tải dữ liệu bữa ăn!', 'error');
+    } finally {
+      setIsLoading(false);
     }
-
-    setModalMode('edit');
-    setEditingMealId(null); // Không chỉnh sửa cụ thể bữa nào
-    setModalDate(date);
-    setIsDetailMode(false); // Dùng modal chính
-    
-    // Ở đây bạn cần map dữ liệu của dayData.meals vào modalMealsData
-    // Ví dụ giả định bạn cần cấu trúc lại dữ liệu meals của ngày vào modalMealsData
-    const mappedMealsData: Record<string, FoodItemEntry[]> = {};
-    dayData.meals.forEach(m => {
-       mappedMealsData[m.category] = m.foodItems || [];
-    });
-    setModalMealsData(mappedMealsData);
-
-    setIsModalOpen(true);
   };
 
 

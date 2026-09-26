@@ -61,6 +61,14 @@ export default function JournalTab() {
     }));
   };
   
+  const normalizeTime = (timeStr: string) => {
+    if (!timeStr) return "12:00";
+    if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+    const date = new Date(`1970-01-01 ${timeStr}`);
+    if (isNaN(date.getTime())) return "12:00";
+    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  };
+
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
 
   // Confirmation modal for delete
@@ -233,7 +241,7 @@ const handleOpenEditJournalModal = (date: string) => {
   setExpandedCategories(newExpandedCategories);
 
   if (dayData.meals.length > 0 && dayData.meals[0].time) {
-    setModalTime(dayData.meals[0].time);
+    setModalTime(normalizeTime(dayData.meals[0].time));
   } else {
     setModalTime('12:00');
   }

@@ -202,7 +202,26 @@ export default function JournalTab() {
   };
 
   const handleOpenEditJournalModal = (date: string) => {
-    showToast(`Chức năng chỉnh sửa thông tin ngày ${date} đang được phát triển!`, 'success');
+    // Tìm dữ liệu của ngày cần chỉnh sửa
+    const dayData = journals.find(j => j.date === date);
+    if (!dayData) {
+      showToast('Không tìm thấy dữ liệu ngày này', 'error');
+      return;
+    }
+
+    setEditingMealId(null); // Không chỉnh sửa cụ thể bữa nào
+    setModalDate(date);
+    setIsDetailMode(false); // Dùng modal chính
+    
+    // Ở đây bạn cần map dữ liệu của dayData.meals vào modalMealsData
+    // Ví dụ giả định bạn cần cấu trúc lại dữ liệu meals của ngày vào modalMealsData
+    const mappedMealsData: Record<string, FoodItemEntry[]> = {};
+    dayData.meals.forEach(m => {
+       mappedMealsData[m.category] = m.foodItems || [];
+    });
+    setModalMealsData(mappedMealsData);
+
+    setIsModalOpen(true);
   };
 
   const isMealExists = useMemo(() => {

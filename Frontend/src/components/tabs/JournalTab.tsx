@@ -201,6 +201,10 @@ export default function JournalTab() {
     setIsModalOpen(true);
   };
 
+  const handleOpenEditJournalModal = (date: string) => {
+    showToast(`Chức năng chỉnh sửa thông tin ngày ${date} đang được phát triển!`, 'success');
+  };
+
   const isMealExists = useMemo(() => {
     // Lấy các category đang có dữ liệu trong modal
     const categoriesInModal = Object.keys(modalMealsData).filter(cat => modalMealsData[cat].length > 0);
@@ -489,11 +493,11 @@ export default function JournalTab() {
 
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() =>  handleOpenAddModalDetial(journal.date)}
-                        title="Thêm bữa ăn vào ngày này"
-                        className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors cursor-pointer"
+                        onClick={() => handleOpenEditJournalModal(journal.date)}
+                        title="Chỉnh sửa thông tin ngày này"
+                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
                       >
-                        <Plus size={16} />
+                        <Edit3 size={16} />
                       </button>
                       <button
                         onClick={() => setDeleteTarget({ date: journal.date, type: 'day' })}

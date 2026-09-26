@@ -40,22 +40,6 @@ export default function JournalTab() {
   const [customDate, setCustomDate] = useState<string>('');
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
-  const formatTo24h = (date: Date) => {
-    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  };
-
-  const normalizeTime = (timeStr: string) => {
-    if (!timeStr) return formatTo24h(new Date());
-    // Nếu đã là HH:mm
-    if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
-    
-    // Parse các định dạng khác
-    const date = new Date(`1970-01-01 ${timeStr}`);
-    if (!isNaN(date.getTime())) return formatTo24h(date);
-    
-    return formatTo24h(new Date());
-  };
-
   // Modal State for adding/editing a meal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
@@ -63,7 +47,9 @@ export default function JournalTab() {
   const [isDetailMode, setIsDetailMode] = useState(false); // Add this state
   const [modalDate, setModalDate] = useState(new Date().toISOString().split('T')[0]);
   const [modalCategory, setModalCategory] = useState('Bữa Trưa');
-  const [modalTime, setModalTime] = useState(formatTo24h(new Date()));
+  const [modalTime, setModalTime] = useState(
+    new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  );
   // NEW: Store meals by category to prevent mixing
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [modalMealsData, setModalMealsData] = useState<Record<string, FoodItemEntry[]>>({});
@@ -73,6 +59,14 @@ export default function JournalTab() {
       ...prev,
       [category]: !prev[category]
     }));
+  };
+  
+  const normalizeTime = (timeStr: string) => {
+    if (!timeStr) return "12:00";
+    if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+    const date = new Date(`1970-01-01 ${timeStr}`);
+    if (isNaN(date.getTime())) return "12:00";
+    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   };
 
   const [editingMealId, setEditingMealId] = useState<string | null>(null);
@@ -192,7 +186,7 @@ export default function JournalTab() {
     setEditingMealId(null);
     setModalDate(date || new Date().toISOString().split('T')[0]);
     setModalCategory(category || 'Bữa Trưa');
-    setModalTime(formatTo24h(new Date()));
+    setModalTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
     setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
     setModalMealsData({});
     setIsModalOpen(true);
@@ -202,7 +196,7 @@ export default function JournalTab() {
     setEditingMealId(null);
     setModalDate(date || new Date().toISOString().split('T')[0]);
     setModalCategory(category || 'Bữa Trưa');
-    setModalTime(formatTo24h(new Date()));
+    setModalTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
     setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
     setIsModalOpenDetail(true);
   };

@@ -12,7 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { DailyMealJournal, Meal, FoodItemEntry } from '../../types';
-import { FOOD_DATABASE } from '../../data/foodData';
+import { FOOD_DATABASE, FoodItem } from '../../data/foodData';
 import { API_ENDPOINTS } from '../../services/apiConfig';
 
 const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối'];

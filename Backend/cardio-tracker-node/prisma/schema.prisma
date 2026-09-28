@@ -224,10 +224,3 @@ enum WorkoutSubType {
   RELIEF
   SURGE
 }
-
-enum MealCategory {
-  BREAKFAST
-  LUNCH
-  DINNER
-  SNACK
-}

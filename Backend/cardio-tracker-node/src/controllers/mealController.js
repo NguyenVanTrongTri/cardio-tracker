@@ -122,59 +122,33 @@ const createMeal = async (req, res) => {
 };
 const updateMeal = async (req, res) => {
   try {
-    // 🔒 Lấy userId trực tiếp từ middleware verifyToken
     const userId = req.user?.id;
-    
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Bạn cần đăng nhập để cập nhật nhật ký dinh dưỡng!' 
-      });
+      return res.status(401).json({ success: false, message: 'Bạn cần đăng nhập!' });
     }
 
-    // Lấy mealId từ tham số đường dẫn (params) và dữ liệu mới từ client (req.body)
     const { id: mealId } = req.params;
     const { mealDate, category, mealTime, foodItems } = req.body;
 
-    if (!mealId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Thiếu mã định danh bữa ăn (mealId) cần cập nhật!'
-      });
-    }
-
-    // Kiểm tra xem bữa ăn có tồn tại và thực sự thuộc về user này hay không
     const existingMeal = await prisma.meal.findFirst({
-      where: { 
-        id: mealId,
-        userId: userId 
-      }
+      where: { id: mealId, userId: userId }
     });
 
     if (!existingMeal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy bữa ăn hoặc bạn không có quyền chỉnh sửa!'
-      });
+      return res.status(404).json({ success: false, message: 'Không tìm thấy bữa ăn!' });
     }
 
-    // Kiểm tra dữ liệu bắt buộc nếu có truyền lên
-    if (foodItems && (!Array.isArray(foodItems) || foodItems.length === 0)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Danh sách món ăn không được để trống!' 
-      });
+    // Nếu người dùng xóa sạch món ăn (mảng rỗng), ta có thể tiến hành xóa luôn bữa ăn đó khỏi DB
+    if (foodItems && Array.isArray(foodItems) && foodItems.length === 0) {
+      await prisma.foodItem.deleteMany({ where: { mealId: mealId } });
+      await prisma.meal.delete({ where: { id: mealId } });
+      return res.status(200).json({ success: true, message: 'Đã xóa bữa ăn do không còn món nào!' });
     }
 
-    // 🧮 Tính lại tổng calo nếu có danh sách foodItems mới
-    let totalCalories = existingMeal.totalCalories;
-    if (foodItems && foodItems.length > 0) {
-      totalCalories = foodItems.reduce((sum, item) => {
-        return sum + (parseFloat(item.calories) || 0);
-      }, 0);
-    }
+    // Tính lại tổng calo
+    const totalCalories = foodItems ? foodItems.reduce((sum, item) => sum + (parseFloat(item.calories) || 0), 0) : existingMeal.totalCalories;
 
-    // 🚀 Tiến hành cập nhật Meal và làm mới danh sách foodItems bằng Transaction hoặc Nested Writes
+    // Cập nhật meal và làm mới foodItems
     const updatedMeal = await prisma.meal.update({
       where: { id: mealId },
       data: {
@@ -182,9 +156,8 @@ const updateMeal = async (req, res) => {
         category: category || undefined,
         mealTime: mealTime || undefined,
         totalCalories,
-        // Nếu client có gửi lên danh sách foodItems mới, ta xóa hết món cũ và thêm món mới vào
         foodItems: foodItems ? {
-          deleteMany: {}, // Xóa toàn bộ món cũ thuộc meal này
+          deleteMany: {},
           create: foodItems.map((item) => ({
             id: `fi-${crypto.randomUUID()}`,
             foodName: item.foodName,
@@ -193,24 +166,14 @@ const updateMeal = async (req, res) => {
           }))
         } : undefined
       },
-      include: {
-        foodItems: true 
-      }
+      include: { foodItems: true }
     });
 
-    // Trả về kết quả thành công cho client
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Cập nhật bữa ăn thành công!',
-      data: updatedMeal 
-    });
+    return res.status(200).json({ success: true, message: 'Cập nhật thành công!', data: updatedMeal });
 
   } catch (error) {
     console.error('Error updating meal:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 const deleteMeal = async (req, res) => {

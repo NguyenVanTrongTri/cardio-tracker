@@ -767,7 +767,7 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
                               <input
                                 type="number"
                                 min="1"
-                                value={item.grams}
+                                value={item.grams ||''}
                                 onChange={(e) => {
                                   const grams = Number(e.target.value);
                                   const selected = foodDb.find((f) => f.name === item.foodName);

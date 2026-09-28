@@ -235,5 +235,4 @@ const deleteMeal = async (req, res) => {
   }
 };
 
-module.exports = { deleteMeal }; 
 module.exports = {getMeals, createMeal, updateMeal, deleteMeal};

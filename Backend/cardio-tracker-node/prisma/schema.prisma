@@ -134,6 +134,18 @@ model MealFoodItem {
   @@index([mealId], map: "idx_meal_food_items_meal_id")
   @@map("meal_food_items")
 }
+model MealCategory {
+  id          String   @id @db.VarChar(50)
+  userId      String?  @map("user_id") @db.VarChar(50) // Null nếu là danh mục hệ thống chung, có id nếu là do user tự tạo
+  name        String   @db.VarChar(50) // Tên danh mục (Sáng, Trưa,...)
+  icon        String?  @db.VarChar(50) // Icon hiển thị
+  badgeColor  String?  @map("badge_color") @db.VarChar(50) // Màu sắc
+  sortOrder   Int      @default(0) @map("sort_order") // Thứ tự sắp xếp
+
+  meals       Meal[]   @relation("CategoryMeals")
+
+  @@map("meal_categories")
+}
 
 model Practice {
   id          String   @id @db.VarChar(50)
@@ -211,4 +223,11 @@ enum WorkoutSubType {
   MAIN
   RELIEF
   SURGE
+}
+
+enum MealCategory {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
 }

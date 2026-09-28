@@ -770,7 +770,7 @@ const handleSaveMeal = async () => {
                     : 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer'
                 }`}
               >
-                {isLoading ? 'Đang lưu...' : (isMealExists ? 'Bữa ăn đã tồn tại' : (modalMode === 'edit' ? 'Cập nhật' : 'Lưu Bữa Ăn'))}
+                {isLoading ? 'Đang xử lý...' : (isMealExists ? 'Bữa ăn đã tồn tại' : (modalMode === 'edit' ? 'Cập nhật' : 'Lưu Bữa Ăn'))}
               </button>
             </div>
           </div>

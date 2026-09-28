@@ -255,8 +255,10 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
 
 // 3. Hàm lưu / cập nhật dữ liệu
   const handleSaveMeal = async () => {
-    if (categoriesToSave.length === 0) {
-      showToast('Vui lòng nhập ít nhất một món ăn!', 'error');
+    // Kiểm tra xem có bất kỳ danh mục nào còn món hay không
+    const hasAnyItems = Object.values(modalMealsData).some(items => items && items.length > 0);
+    if (!hasAnyItems) {
+      showToast('Vui lòng nhập ít nhất một món ăn cho bữa bất kỳ!', 'error');
       return;
     }
     
@@ -270,40 +272,48 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
     try {
       const dayJournal = journals.find(j => j.date === modalDate);
 
-      for (const category of categoriesToSave) {
-        const currentMealItems = modalMealsData[category];
-        
-        if (modalMode === 'edit' && dayJournal) {
-          const existingMeal = dayJournal.meals.find(m => m.category === category);
-          if (existingMeal) {
-            await updateMeal(existingMeal.id, category, currentMealItems, modalTime, modalDate);
-            continue; // Move to next category
-          }
+      // Lấy tất cả các category đang có mặt trong state hoặc trong DB để duyệt xử lý
+      // (hoặc duyệt qua toàn bộ các category khả dụng của app)
+      const allCategories = Object.keys(modalMealsData);
+
+      for (const category of allCategories) {
+        const currentMealItems = modalMealsData[category] || [];
+        const existingMeal = dayJournal?.meals.find(m => m.category === category);
+
+        // THƯỜNG HỢP 1: Bữa này đã có trong DB từ trước (`existingMeal`)
+        if (existingMeal) {
+          // Dù user sửa thêm món hay xóa sạch món, ta đều đẩy vào hàm updateMeal 
+          // (hàm updateMeal ở trên sẽ tự phân định: hết món thì gọi DELETE, còn món thì gọi PUT)
+          await updateMeal(existingMeal.id, category, currentMealItems, modalTime, modalDate);
+          continue; 
         }
 
-        // Logic for POST (add) or POST for new category in edit mode
-        const payload = {
-          mealDate: modalDate,
-          category: category,
-          mealTime: modalTime,
-          foodItems: currentMealItems.map(item => ({
-            foodName: item.foodName,
-            grams: Number(item.grams) || 0,
-            calories: Number(item.calories) || 0,
-          }))
-        };
+        // TRƯỜNG HỢP 2: Bữa này CHƯA có trong DB trước đó, nhưng user có nhập món mới vào (`> 0`) -> Gọi POST
+        if (!existingMeal && currentMealItems.length > 0) {
+          const payload = {
+            mealDate: modalDate,
+            category: category,
+            mealTime: modalTime,
+            foodItems: currentMealItems.map(item => ({
+              foodName: item.foodName,
+              grams: Number(item.grams) || 0,
+              calories: Number(item.calories) || 0,
+            }))
+          };
 
-        const response = await fetch(API_ENDPOINTS.MEALS, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(payload),
-        });
+          const response = await fetch(API_ENDPOINTS.MEALS, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(payload),
+          });
 
-        if (!response.ok) {
-          throw new Error(`Lỗi khi lưu bữa ${category}`);
+          const result = await response.json();
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || `Lỗi khi lưu bữa ${category}`);
+          }
         }
       }
 
@@ -319,46 +329,50 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
     }
   };
   const updateMeal = async (mealId: string, category: string, foodItems: FoodItemEntry[], mealTime: string, mealDate: string) => {
-    try {
-      setIsLoading(true);
-
-      const payload = {
-        mealDate,
-        category,
-        mealTime,
-        foodItems: foodItems.map(item => ({
-          foodName: item.foodName,
-          grams: Number(item.grams) || 0,
-          calories: Number(item.calories) || 0,
-        }))
-      };
-
+  try {
+    // Nếu mảng món ăn trống, ta gọi DELETE để xóa luôn bữa ăn đó khỏi DB
+    if (!foodItems || foodItems.length === 0) {
       const response = await fetch(`${API_ENDPOINTS.MEALS}/${mealId}`, {
-        method: 'PUT', // Hoặc 'PATCH' tùy thuộc vào route backend của bạn
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Gửi kèm cookie chứa token xác thực
-        body: JSON.stringify(payload),
+        method: 'DELETE',
+        credentials: 'include',
       });
-
       const result = await response.json();
-
       if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Lỗi khi cập nhật bữa ăn');
+        throw new Error(result.message || 'Lỗi khi xóa bữa ăn');
       }
-
-      showToast('Cập nhật bữa ăn thành công!', 'success');
-      setIsModalOpen(false);
-      loadData(); // Tải lại dữ liệu mới nhất lên giao diện
-      
-    } catch (error: any) {
-      console.error('Lỗi khi gọi API cập nhật:', error);
-      showToast(error.message || 'Có lỗi xảy ra khi cập nhật!', 'error');
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
+
+    // Nếu vẫn còn món, tiến hành PUT cập nhật bình thường
+    const payload = {
+      mealDate,
+      category,
+      mealTime,
+      foodItems: foodItems.map(item => ({
+        foodName: item.foodName,
+        grams: Number(item.grams) || 0,
+        calories: Number(item.calories) || 0,
+      }))
+    };
+
+    const response = await fetch(`${API_ENDPOINTS.MEALS}/${mealId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Lỗi khi cập nhật bữa ăn');
+    }
+  } catch (error: any) {
+    throw error; // Ném lỗi ra ngoài để vòng lặp ở handleSaveMeal bắt được
+  }
+};
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     

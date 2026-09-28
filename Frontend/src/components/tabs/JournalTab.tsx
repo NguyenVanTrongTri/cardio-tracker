@@ -254,59 +254,111 @@ const categoriesToSave = Object.keys(modalMealsData).filter(cat => modalMealsDat
 const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journals.find(j => j.date === modalDate)?.meals.some(m => categoriesToSave.includes(m.category));
 
 // 3. Hàm lưu / cập nhật dữ liệu
-const handleSaveMeal = async () => {
-  if (categoriesToSave.length === 0) {
-    showToast('Vui lòng nhập ít nhất một món ăn!', 'error');
-    return;
-  }
-  
-  if (modalMode === 'add' && isMealExists) {
-    showToast('Bữa ăn đã tồn tại trong ngày này!', 'error');
-    return;
-  }
-  
-  setIsLoading(true);
+  const handleSaveMeal = async () => {
+    if (categoriesToSave.length === 0) {
+      showToast('Vui lòng nhập ít nhất một món ăn!', 'error');
+      return;
+    }
+    
+    if (modalMode === 'add' && isMealExists) {
+      showToast('Bữa ăn đã tồn tại trong ngày này!', 'error');
+      return;
+    }
+    
+    setIsLoading(true);
 
-  try {
-    for (const category of categoriesToSave) {
-      const currentMealItems = modalMealsData[category];
-      
+    try {
+      const dayJournal = journals.find(j => j.date === modalDate);
+
+      for (const category of categoriesToSave) {
+        const currentMealItems = modalMealsData[category];
+        
+        if (modalMode === 'edit' && dayJournal) {
+          const existingMeal = dayJournal.meals.find(m => m.category === category);
+          if (existingMeal) {
+            await updateMeal(existingMeal.id, category, currentMealItems, modalTime, modalDate);
+            continue; // Move to next category
+          }
+        }
+
+        // Logic for POST (add) or POST for new category in edit mode
+        const payload = {
+          mealDate: modalDate,
+          category: category,
+          mealTime: modalTime,
+          foodItems: currentMealItems.map(item => ({
+            foodName: item.foodName,
+            grams: Number(item.grams) || 0,
+            calories: Number(item.calories) || 0,
+          }))
+        };
+
+        const response = await fetch(API_ENDPOINTS.MEALS, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Lỗi khi lưu bữa ${category}`);
+        }
+      }
+
+      showToast(modalMode === 'edit' ? 'Cập nhật nhật ký thành công!' : 'Thêm bữa ăn thành công!', 'success');
+      setIsModalOpen(false);
+      setModalMealsData({});
+      loadData();
+    } catch (error: any) {
+      console.error('Lỗi kết nối API:', error);
+      showToast(error.message || 'Có lỗi xảy ra khi lưu dữ liệu!', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const updateMeal = async (mealId: string, category: string, foodItems: FoodItemEntry[], mealTime: string, mealDate: string) => {
+    try {
+      setIsLoading(true);
+
       const payload = {
-        mealDate: modalDate,
-        category: category,
-        mealTime: modalTime,
-        foodItems: currentMealItems.map(item => ({
+        mealDate,
+        category,
+        mealTime,
+        foodItems: foodItems.map(item => ({
           foodName: item.foodName,
           grams: Number(item.grams) || 0,
           calories: Number(item.calories) || 0,
         }))
       };
 
-      const response = await fetch(API_ENDPOINTS.MEALS, {
-        method: 'POST', // Hoặc 'PUT' tùy theo API backend của bạn hỗ trợ upsert/update
+      const response = await fetch(`${API_ENDPOINTS.MEALS}/${mealId}`, {
+        method: 'PUT', // Hoặc 'PATCH' tùy thuộc vào route backend của bạn
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
+        credentials: 'include', // Gửi kèm cookie chứa token xác thực
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error(`Lỗi khi lưu bữa ${category}`);
-      }
-    }
+      const result = await response.json();
 
-    showToast(modalMode === 'edit' ? 'Cập nhật nhật ký thành công!' : 'Thêm bữa ăn thành công!', 'success');
-    setIsModalOpen(false);
-    setModalMealsData({});
-    loadData();
-  } catch (error) {
-    console.error('Lỗi kết nối API:', error);
-    showToast('Có lỗi xảy ra khi lưu dữ liệu!', 'error');
-  } finally {
-    setIsLoading(false);
-  }
-};
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Lỗi khi cập nhật bữa ăn');
+      }
+
+      showToast('Cập nhật bữa ăn thành công!', 'success');
+      setIsModalOpen(false);
+      loadData(); // Tải lại dữ liệu mới nhất lên giao diện
+      
+    } catch (error: any) {
+      console.error('Lỗi khi gọi API cập nhật:', error);
+      showToast(error.message || 'Có lỗi xảy ra khi cập nhật!', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     

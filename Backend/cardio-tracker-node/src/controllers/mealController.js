@@ -120,7 +120,99 @@ const createMeal = async (req, res) => {
     });
   }
 };
-const updateMeal = async (req, res) => {}  
+const updateMeal = async (req, res) => {
+  try {
+    // 🔒 Lấy userId trực tiếp từ middleware verifyToken
+    const userId = req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để cập nhật nhật ký dinh dưỡng!' 
+      });
+    }
+
+    // Lấy mealId từ tham số đường dẫn (params) và dữ liệu mới từ client (req.body)
+    const { id: mealId } = req.params;
+    const { mealDate, category, mealTime, foodItems } = req.body;
+
+    if (!mealId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu mã định danh bữa ăn (mealId) cần cập nhật!'
+      });
+    }
+
+    // Kiểm tra xem bữa ăn có tồn tại và thực sự thuộc về user này hay không
+    const existingMeal = await prisma.meal.findFirst({
+      where: { 
+        id: mealId,
+        userId: userId 
+      }
+    });
+
+    if (!existingMeal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy bữa ăn hoặc bạn không có quyền chỉnh sửa!'
+      });
+    }
+
+    // Kiểm tra dữ liệu bắt buộc nếu có truyền lên
+    if (foodItems && (!Array.isArray(foodItems) || foodItems.length === 0)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Danh sách món ăn không được để trống!' 
+      });
+    }
+
+    // 🧮 Tính lại tổng calo nếu có danh sách foodItems mới
+    let totalCalories = existingMeal.totalCalories;
+    if (foodItems && foodItems.length > 0) {
+      totalCalories = foodItems.reduce((sum, item) => {
+        return sum + (parseFloat(item.calories) || 0);
+      }, 0);
+    }
+
+    // 🚀 Tiến hành cập nhật Meal và làm mới danh sách foodItems bằng Transaction hoặc Nested Writes
+    const updatedMeal = await prisma.meal.update({
+      where: { id: mealId },
+      data: {
+        mealDate: mealDate ? new Date(mealDate) : undefined,
+        category: category || undefined,
+        mealTime: mealTime || undefined,
+        totalCalories,
+        // Nếu client có gửi lên danh sách foodItems mới, ta xóa hết món cũ và thêm món mới vào
+        foodItems: foodItems ? {
+          deleteMany: {}, // Xóa toàn bộ món cũ thuộc meal này
+          create: foodItems.map((item) => ({
+            id: `fi-${crypto.randomUUID()}`,
+            foodName: item.foodName,
+            grams: parseFloat(item.grams) || 0,
+            calories: parseFloat(item.calories) || 0,
+          }))
+        } : undefined
+      },
+      include: {
+        foodItems: true 
+      }
+    });
+
+    // Trả về kết quả thành công cho client
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Cập nhật bữa ăn thành công!',
+      data: updatedMeal 
+    });
+
+  } catch (error) {
+    console.error('Error updating meal:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+};
 const deleteMeal = async (req, res) => {
   try {
     // 🔒 Lấy userId trực tiếp từ middleware verifyToken

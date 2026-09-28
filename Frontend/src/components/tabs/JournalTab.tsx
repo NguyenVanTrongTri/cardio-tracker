@@ -694,7 +694,7 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
       {/* Modal: Add/Edit Meal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
             
             {/* 1. Header của Modal */}
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70 shrink-0">

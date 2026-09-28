@@ -815,14 +815,14 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
               <button
                 type="button"
                 onClick={handleSaveMeal}
-                disabled={isLoading || isMealExists}
+                disabled={isLoading || (modalMode === 'add' && isMealExists)}
                 className={`flex-1 py-2 rounded-xl text-xs font-bold text-white ${
-                  isMealExists 
+                  (modalMode === 'add' && isMealExists)
                     ? 'bg-slate-400 cursor-not-allowed' 
                     : 'bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer'
                 }`}
               >
-                {isLoading ? 'Đang xử lý...' : (isMealExists ? 'Bữa ăn đã tồn tại' : (modalMode === 'edit' ? 'Cập nhật' : 'Lưu Bữa Ăn'))}
+                {isLoading ? 'Đang xử lý...' : (modalMode === 'add' && isMealExists ? 'Bữa ăn đã tồn tại' : (modalMode === 'edit' ? 'Cập nhật' : 'Lưu Bữa Ăn'))}
               </button>
             </div>
           </div>

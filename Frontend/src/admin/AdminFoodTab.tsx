@@ -30,6 +30,7 @@ interface AdminFoodTabProps {
 
 export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTabProps) {
   const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Tất cả');
 
@@ -61,7 +62,9 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
   };
 
   const refreshList = async () => {
+    setIsLoading(true);
     setFoods(await getStoredFood());
+    setIsLoading(false);
     onRefreshStats();
   };
 
@@ -313,7 +316,13 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredFoods.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={4} className="py-12 text-center text-slate-400">
+                    Đang tải...
+                  </td>
+                </tr>
+              ) : filteredFoods.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-12 text-center text-slate-400">
                     Không tìm thấy món ăn nào.

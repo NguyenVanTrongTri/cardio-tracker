@@ -17,29 +17,20 @@ export const INITIAL_FOOD_DATABASE: FoodItem[] = [
 
 const FOOD_STORAGE_KEY = 'cardio_food_database_v1';
 
-export async function getStoredFoodDatabase() {
+export function getStoredFoodDatabase(): FoodItem[] {
   try {
-    // Gọi API tới endpoint tương ứng với hàm getCateLog ở Backend
-    // (Ví dụ: đường dẫn API là /api/categories hoặc /api/meal-categories)
-    const response = await fetch('/api/categories', {
-      method: 'GET',
-      credentials: 'include', // Đảm bảo gửi kèm cookie xác thực (tương đương withCredentials: true)
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const result = await response.json();
-
-    // Kiểm tra dữ liệu trả về từ cấu trúc { success: true, data: [...] } của getCateLog
-    if (result.success && Array.isArray(result.data)) {
-      return result.data;
+    const raw = localStorage.getItem(FOOD_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(FOOD_STORAGE_KEY, JSON.stringify(INITIAL_FOOD_DATABASE));
+      return INITIAL_FOOD_DATABASE;
     }
-
-    return [];
-  } catch (error) {
-    console.error('Lỗi khi lấy danh sách từ server:', error);
-    return []; // Trả về mảng rỗng nếu lỗi mạng hoặc lỗi server để không làm sập ứng dụng
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    return INITIAL_FOOD_DATABASE;
+  } catch {
+    return INITIAL_FOOD_DATABASE;
   }
 }
 
@@ -51,9 +42,9 @@ export function saveStoredFoodDatabase(list: FoodItem[]) {
   }
 }
 
-export async function addFoodItemToDatabase(item: FoodItem) {
-  const current = await getStoredFoodDatabase();
-  const exists = current.some((f: { name: string; }) => f.name.toLowerCase() === item.name.trim().toLowerCase());
+export function addFoodItemToDatabase(item: FoodItem): FoodItem[] {
+  const current = getStoredFoodDatabase();
+  const exists = current.some((f) => f.name.toLowerCase() === item.name.trim().toLowerCase());
   if (exists) {
     throw new Error(`Món "${item.name}" đã tồn tại trong danh mục.`);
   }
@@ -62,19 +53,19 @@ export async function addFoodItemToDatabase(item: FoodItem) {
   return updated;
 }
 
-export async function deleteFoodItemFromDatabase(name: string) {
-  const current = await getStoredFoodDatabase();
-  const updated = current.filter((f: { name: string; }) => f.name !== name);
+export function deleteFoodItemFromDatabase(name: string): FoodItem[] {
+  const current = getStoredFoodDatabase();
+  const updated = current.filter((f) => f.name !== name);
   saveStoredFoodDatabase(updated);
   return updated;
 }
 
-export async function updateFoodItemInDatabase(oldName: string, updatedItem: FoodItem) {
-  const current = await getStoredFoodDatabase();
-  const updated = current.map((f: { name: string; }) => (f.name === oldName ? updatedItem : f));
+export function updateFoodItemInDatabase(oldName: string, updatedItem: FoodItem): FoodItem[] {
+  const current = getStoredFoodDatabase();
+  const updated = current.map((f) => (f.name === oldName ? updatedItem : f));
   saveStoredFoodDatabase(updated);
   return updated;
 }
 
-export const FOOD_DATABASE: Promise<FoodItem[]> = getStoredFoodDatabase();
+export const FOOD_DATABASE: FoodItem[] = getStoredFoodDatabase();
 

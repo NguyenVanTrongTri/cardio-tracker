@@ -137,12 +137,14 @@ model MealFoodItem {
 
 // Bảng danh sách độc lập, không dính dáng khóa ngoại tới Meal
 model MealCategory {
-  id          String   @id @db.VarChar(50)
-  userId      String?  @map("user_id") @db.VarChar(50) 
-  name        String   @db.VarChar(50) 
-  icon        String?  @db.VarChar(50) 
-  badgeColor  String?  @map("badge_color") @db.VarChar(50) 
-  sortOrder   Int      @default(0) @map("sort_order") 
+  id              String   @id @db.VarChar(50)
+  userId          String?  @map("user_id") @db.VarChar(50) 
+  name            String   @db.VarChar(50)  // Tên món ăn hoặc tên danh mục
+  category        String?  @db.VarChar(50)  // Nhóm dinh dưỡng (Tinh bột, Đạm, ...)
+  caloriesPer100g Int?     @map("calories_per_100g") // Lượng calo trên 100g
+  icon            String?  @db.VarChar(50) 
+  badgeColor      String?  @map("badge_color") @db.VarChar(50)  
+  sortOrder       Int      @default(0) @map("sort_order")  
 
   @@map("meal_categories")
 }

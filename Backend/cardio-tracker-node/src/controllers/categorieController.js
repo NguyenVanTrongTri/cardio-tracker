@@ -4,9 +4,217 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { symlinkSync } = require('fs');
 
-const getCateLog = async (req, res);
-const createCateLog = async (req, res);
-const updateCateLog = async (req, res);
-const deleteCateLog = async (req, res);
+const getCateLog = async (req, res) => {
+  try {
+    // 🔒 Lấy userId từ middleware (nếu có hệ thống phân chia danh mục theo từng user)
+    const userId = req.user?.id;
+
+    // Truy vấn bảng meal_categories từ Prisma
+    // Bạn có thể lấy danh mục của riêng user đó HOẶC các danh mục mặc định (userId bằng null)
+    const categories = await prisma.mealCategory.findMany({
+      where: {
+        OR: [
+          { userId: userId },
+          { userId: null } // Danh mục hệ thống chung (nếu có)
+        ]
+      },
+      orderBy: {
+        sortOrder: 'asc' // Sắp xếp theo thứ tự ưu tiên
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: categories
+    });
+  } catch (error) {
+    console.error('Error getting meal categories:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+const createCateLog = async (req, res) => {
+  try {
+    // 🔒 Lấy userId từ middleware xác thực
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để tạo danh mục bữa ăn!' 
+      });
+    }
+
+    // Lấy các thông tin từ request body gửi lên từ client
+    const { name, icon, badgeColor, sortOrder } = req.body;
+
+    // Validate dữ liệu bắt buộc
+    if (!name) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Tên danh mục (name) không được để trống!' 
+      });
+    }
+
+    // Tạo một ID ngẫu nhiên độc nhất cho danh mục (vì bảng dùng chuỗi VarChar(50))
+    const categoryId = `cat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+    // Lưu vào cơ sở dữ liệu thông qua Prisma
+    const newCategory = await prisma.mealCategory.create({
+      data: {
+        id: categoryId,
+        userId: userId,
+        name: name,
+        icon: icon || null,
+        badgeColor: badgeColor || null,
+        sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : 0,
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Tạo danh mục thành công!',
+      data: newCategory,
+    });
+    
+  } catch (error) {
+    console.error('Error creating meal category:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+};
+const updateCateLog = async (req, res) => {
+  try {
+    // 🔒 Lấy userId từ middleware xác thực
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để thực hiện thao tác này!' 
+      });
+    }
+
+    // Lấy category ID từ URL params (ví dụ: /api/categories/:id)
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Thiếu ID danh mục cần cập nhật!' 
+      });
+    }
+
+    // Kiểm tra xem danh mục có tồn tại và thuộc về user này không
+    const existingCategory = await prisma.mealCategory.findUnique({
+      where: { id },
+    });
+
+    if (!existingCategory) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy danh mục bữa ăn!' 
+      });
+    }
+
+    if (existingCategory.userId && existingCategory.userId !== userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Bạn không có quyền chỉnh sửa danh mục này!' 
+      });
+    }
+
+    // Lấy dữ liệu cần cập nhật từ request body
+    const { name, icon, badgeColor, sortOrder } = req.body;
+
+    // Tiến hành cập nhật thông tin qua Prisma
+    const updatedCategory = await prisma.mealCategory.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(icon !== undefined && { icon }),
+        ...(badgeColor !== undefined && { badgeColor }),
+        ...(sortOrder !== undefined && { sortOrder: parseInt(sortOrder) }),
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật danh mục thành công!',
+      data: updatedCategory,
+    });
+
+  } catch (error) {
+    console.error('Error updating meal category:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+};
+const deleteCateLog = async (req, res) => {
+  try {
+    // 🔒 Lấy userId từ middleware xác thực
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Bạn cần đăng nhập để thực hiện thao tác này!' 
+      });
+    }
+
+    // Lấy category ID từ URL params (ví dụ: /api/categories/:id)
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Thiếu ID danh mục cần xóa!' 
+      });
+    }
+
+    // Kiểm tra xem danh mục có tồn tại trong database không
+    const existingCategory = await prisma.mealCategory.findUnique({
+      where: { id },
+    });
+
+    if (!existingCategory) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Không tìm thấy danh mục bữa ăn!' 
+      });
+    }
+
+    // Kiểm tra quyền sở hữu (tránh user A xóa nhầm danh mục của user B)
+    if (existingCategory.userId && existingCategory.userId !== userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Bạn không có quyền xóa danh mục này!' 
+      });
+    }
+
+    // Thực hiện xóa danh mục thông qua Prisma
+    await prisma.mealCategory.delete({
+      where: { id },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Xóa danh mục thành công!',
+    });
+
+  } catch (error) {
+    console.error('Error deleting meal category:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+};
 
 module.exports = {getCateLog, createCateLog, updateCateLog, deleteCateLog};

@@ -21,6 +21,7 @@ import {
   saveStoredFoodDatabase
 } from '../data/foodData';
 import { logAdminAction } from './adminService';
+import { API_ENDPOINTS } from '../services/apiConfig';
 
 interface AdminFoodTabProps {
   adminEmail: string;
@@ -77,7 +78,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
 
   const getStoredFood = async () => {
     try {
-      const response = await fetch('/api/categories', {
+      const response = await fetch(API_ENDPOINTS.CATEGORIES, {
         method: 'GET',
         credentials: 'include',
         headers: {

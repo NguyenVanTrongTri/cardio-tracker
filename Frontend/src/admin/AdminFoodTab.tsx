@@ -27,8 +27,8 @@ interface AdminFoodTabProps {
   onRefreshStats: () => void;
 }
 
-export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTabProps) {
-  const [foods, setFoods] = useState<FoodItem[]>(getStoredFoodDatabase());
+export default async function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTabProps) {
+  const [foods, setFoods] = useState<FoodItem[]>(await getStoredFoodDatabase());
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Tất cả');
 
@@ -55,8 +55,8 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
     setTimeout(() => setFeedback(null), 3000);
   };
 
-  const refreshList = () => {
-    setFoods(getStoredFoodDatabase());
+  const refreshList = async () => {
+    setFoods(await getStoredFoodDatabase());
     onRefreshStats();
   };
 

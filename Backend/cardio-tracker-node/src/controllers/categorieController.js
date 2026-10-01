@@ -6,20 +6,20 @@ const { symlinkSync } = require('fs');
 
 const getCateLog = async (req, res) => {
   try {
-    // 🔒 Lấy userId từ middleware (nếu có hệ thống phân chia danh mục theo từng user)
     const userId = req.user?.id;
 
-    // Truy vấn bảng meal_categories từ Prisma
-    // Bạn có thể lấy danh mục của riêng user đó HOẶC các danh mục mặc định (userId bằng null)
+    // Xây dựng điều kiện lọc linh hoạt
+    const whereCondition = {
+      OR: [
+        { userId: null }, // Luôn luôn lấy dữ liệu chung của hệ thống
+        ...(userId ? [{ userId: userId }] : []) // Chỉ thêm điều kiện user nếu đã đăng nhập
+      ]
+    };
+
     const categories = await prisma.mealCategory.findMany({
-      where: {
-        OR: [
-          { userId: userId },
-          { userId: null } // Danh mục hệ thống chung (nếu có)
-        ]
-      },
+      where: whereCondition,
       orderBy: {
-        sortOrder: 'asc' // Sắp xếp theo thứ tự ưu tiên
+        sortOrder: 'asc'
       }
     });
 

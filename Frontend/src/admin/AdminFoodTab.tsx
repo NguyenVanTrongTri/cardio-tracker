@@ -100,6 +100,14 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
     return []; // Trả về mảng rỗng nếu lỗi mạng hoặc lỗi server để không làm sập ứng dụng
   }
   }
+  useEffect(() => {
+    const fetchFoods = async () => {
+      const foodList = await getStoredFood();
+      setFoods(foodList); // Cập nhật state của React
+    };
+    fetchFoods();
+  }, []);
+
   const handleAddFood = (e: FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || newCals === '') return;

@@ -76,37 +76,32 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
   }, [foods, searchTerm, categoryFilter]);
 
   const getStoredFood = async () => {
-  try {
-    // Gọi API tới endpoint tương ứng với hàm getCateLog ở Backend
-    // (Ví dụ: đường dẫn API là /api/categories hoặc /api/meal-categories)
-    const response = await fetch('/api/categories', {
-      method: 'GET',
-      credentials: 'include', // Đảm bảo gửi kèm cookie xác thực (tương đương withCredentials: true)
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    // Kiểm tra dữ liệu trả về từ cấu trúc { success: true, data: [...] } của getCateLog
-    if (result.success && Array.isArray(result.data)) {
-      return result.data;
+      if (result.success && Array.isArray(result.data)) {
+        return result.data.map((item: any) => ({
+          name: item.name,
+          caloriesPer100g: item.caloriesPer100g ?? 0,
+          category: item.category || 'Khác',
+        }));
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Lỗi khi lấy danh sách từ server:', error);
+      return [];
     }
+  };
 
-    return [];
-  } catch (error) {
-    console.error('Lỗi khi lấy danh sách từ server:', error);
-    return []; // Trả về mảng rỗng nếu lỗi mạng hoặc lỗi server để không làm sập ứng dụng
-  }
-  }
-  useEffect(() => {
-    const fetchFoods = async () => {
-      const foodList = await getStoredFood();
-      setFoods(foodList); // Cập nhật state của React
-    };
-    fetchFoods();
-  }, []);
 
   const handleAddFood = (e: FormEvent) => {
     e.preventDefault();

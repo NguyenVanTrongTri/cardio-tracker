@@ -1,4 +1,4 @@
-import { useState, useMemo, type FormEvent } from 'react';
+import { useState, useMemo, type FormEvent, useEffect } from 'react';
 import {
   Apple,
   Search,
@@ -27,10 +27,14 @@ interface AdminFoodTabProps {
   onRefreshStats: () => void;
 }
 
-export default async function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTabProps) {
-  const [foods, setFoods] = useState<FoodItem[]>(await getStoredFoodDatabase());
+export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTabProps) {
+  const [foods, setFoods] = useState<FoodItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Tất cả');
+
+  useEffect(() => {
+    refreshList();
+  }, []);
 
   const categories = useMemo(() => {
     const cats = new Set(foods.map((f) => f.category || 'Khác'));
@@ -56,7 +60,7 @@ export default async function AdminFoodTab({ adminEmail, onRefreshStats }: Admin
   };
 
   const refreshList = async () => {
-    setFoods(await getStoredFoodDatabase());
+    setFoods(await getStoredFood());
     onRefreshStats();
   };
 
@@ -71,6 +75,31 @@ export default async function AdminFoodTab({ adminEmail, onRefreshStats }: Admin
     });
   }, [foods, searchTerm, categoryFilter]);
 
+  const getStoredFood = async () => {
+  try {
+    // Gọi API tới endpoint tương ứng với hàm getCateLog ở Backend
+    // (Ví dụ: đường dẫn API là /api/categories hoặc /api/meal-categories)
+    const response = await fetch('/api/categories', {
+      method: 'GET',
+      credentials: 'include', // Đảm bảo gửi kèm cookie xác thực (tương đương withCredentials: true)
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result = await response.json();
+
+    // Kiểm tra dữ liệu trả về từ cấu trúc { success: true, data: [...] } của getCateLog
+    if (result.success && Array.isArray(result.data)) {
+      return result.data;
+    }
+
+    return [];
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách từ server:', error);
+    return []; // Trả về mảng rỗng nếu lỗi mạng hoặc lỗi server để không làm sập ứng dụng
+  }
+  }
   const handleAddFood = (e: FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || newCals === '') return;

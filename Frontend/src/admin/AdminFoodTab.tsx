@@ -105,20 +105,20 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
       return [];
     }
   };
-
-
-  const handleAddFood = (e: FormEvent) => {
+  const handleAddFood = async (e: FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || newCals === '') return;
 
     try {
-      addFoodItemToDatabase({
+      await addFoodItemToDatabase({
         name: newName.trim(),
         caloriesPer100g: Number(newCals),
         category: newCategory,
       });
+
       logAdminAction(adminEmail, 'Thêm món ăn mới', `Thêm món ${newName.trim()} (${newCals} kcal/100g)`, 'SUCCESS');
       showToast(`Đã thêm món "${newName.trim()}" vào cơ sở dữ liệu!`);
+      
       setNewName('');
       setNewCals('');
       setIsAdding(false);

@@ -152,12 +152,30 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
     if (!foodToDelete) return;
     
     setIsDeleting(true);
-    deleteFoodItemFromDatabase(foodToDelete);
-    logAdminAction(adminEmail, 'Xóa món ăn', `Đã xóa món ${foodToDelete}`, 'WARNING');
-    showToast(`Đã xóa "${foodToDelete}"`);
-    setIsDeleting(false);
-    setFoodToDelete(null);
-    refreshList();
+    
+    try {
+        // Assuming API needs the name for deletion based on the previous structure
+        const res = await fetch(`${API_ENDPOINTS.CATEGORIES}/${encodeURIComponent(foodToDelete)}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+    
+        const data = await res.json();
+    
+        if (data.success) {
+          logAdminAction(adminEmail, 'Xóa món ăn', `Đã xóa món ${foodToDelete}`, 'WARNING');
+          showToast(`Đã xóa "${foodToDelete}" thành công!`);
+          refreshList();
+        } else {
+          showToast(data.message || 'Xóa thất bại!', 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting food:', error);
+        showToast('Lỗi kết nối khi xóa thực phẩm!', 'error');
+      } finally {
+        setIsDeleting(false);
+        setFoodToDelete(null);
+      }
   };
 
   const startEdit = (food: FoodItem) => {

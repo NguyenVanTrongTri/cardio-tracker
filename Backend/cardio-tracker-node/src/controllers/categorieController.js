@@ -91,7 +91,6 @@ const createCateLog = async (req, res) => {
 };
 const updateCateLog = async (req, res) => {
   try {
-    // 🔒 Lấy userId từ middleware xác thực
     const userId = req.user?.id;
 
     if (!userId) {
@@ -101,7 +100,6 @@ const updateCateLog = async (req, res) => {
       });
     }
 
-    // Lấy category ID từ URL params (ví dụ: /api/categories/:id)
     const { id } = req.params;
 
     if (!id) {
@@ -111,7 +109,6 @@ const updateCateLog = async (req, res) => {
       });
     }
 
-    // Kiểm tra xem danh mục có tồn tại và thuộc về user này không
     const existingCategory = await prisma.mealCategory.findUnique({
       where: { id },
     });
@@ -130,10 +127,10 @@ const updateCateLog = async (req, res) => {
       });
     }
 
-    // Lấy dữ liệu cần cập nhật từ request body
-    const { name, icon, badgeColor, sortOrder } = req.body;
+    // [FIX]: Lấy thêm các trường cần thiết từ request body
+    const { name, icon, badgeColor, sortOrder, caloriesPer100g, category } = req.body;
 
-    // Tiến hành cập nhật thông tin qua Prisma
+    // [FIX]: Thêm các trường vào lệnh cập nhật của Prisma
     const updatedCategory = await prisma.mealCategory.update({
       where: { id },
       data: {
@@ -141,6 +138,8 @@ const updateCateLog = async (req, res) => {
         ...(icon !== undefined && { icon }),
         ...(badgeColor !== undefined && { badgeColor }),
         ...(sortOrder !== undefined && { sortOrder: parseInt(sortOrder) }),
+        ...(caloriesPer100g !== undefined && { caloriesPer100g: Number(caloriesPer100g) }), // Thêm trường này
+        ...(category !== undefined && { category }), // Thêm trường này
       },
     });
 

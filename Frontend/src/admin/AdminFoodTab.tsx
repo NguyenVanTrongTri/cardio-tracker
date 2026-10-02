@@ -106,26 +106,39 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
     }
   };
   const handleAddFood = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim() || newCals === '') return;
+      e.preventDefault();
+      if (!newName.trim() || newCals === '') return;
 
-    try {
-      await addFoodItemToDatabase({
-        name: newName.trim(),
-        caloriesPer100g: Number(newCals),
-        category: newCategory,
-      });
+      try {
+        const res = await fetch(API_ENDPOINTS.CATEGORIES, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Đảm bảo gửi kèm cookie xác thực
+          body: JSON.stringify({
+            name: newName.trim(),
+            caloriesPer100g: Number(newCals),
+            category: newCategory,
+          }),
+        });
 
-      logAdminAction(adminEmail, 'Thêm món ăn mới', `Thêm món ${newName.trim()} (${newCals} kcal/100g)`, 'SUCCESS');
-      showToast(`Đã thêm món "${newName.trim()}" vào cơ sở dữ liệu!`);
-      
-      setNewName('');
-      setNewCals('');
-      setIsAdding(false);
-      refreshList();
-    } catch (err: any) {
-      showToast(err.message || 'Lỗi khi thêm thực phẩm', 'error');
-    }
+        const data = await res.json();
+
+        if (data.success) {
+          logAdminAction(adminEmail, 'Thêm món ăn mới', `Thêm món ${newName.trim()} (${newCals} kcal/100g)`, 'SUCCESS');
+          showToast(`Đã thêm món "${newName.trim()}" vào cơ sở dữ liệu!`);
+          setNewName('');
+          setNewCals('');
+          setIsAdding(false);
+          refreshList();
+        } else {
+          showToast(data.message || 'Lỗi khi thêm thực phẩm', 'error');
+        }
+      } catch (error) {
+        console.error('Error adding food:', error);
+        showToast('Lỗi kết nối khi thêm thực phẩm!', 'error');
+      }
   };
 
   const handleDeleteFood = (name: string) => {

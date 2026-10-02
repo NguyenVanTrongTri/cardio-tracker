@@ -23,6 +23,7 @@ import AdminPracticeTab from './AdminPracticeTab';
 import AdminFoodTab from './AdminFoodTab';
 import AdminNotifyTab from './AdminNotifyTab';
 import AdminSettingsTab from './AdminSettingsTab';
+import { API_ENDPOINTS } from '../services/apiConfig';
 
 interface AdminPortalProps {
   currentUser: UserAccount;

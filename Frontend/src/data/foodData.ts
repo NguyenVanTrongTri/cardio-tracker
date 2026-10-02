@@ -1,18 +1,19 @@
 export interface FoodItem {
+  id: string;
   name: string;
   caloriesPer100g: number;
   category?: string;
 }
 
 export const INITIAL_FOOD_DATABASE: FoodItem[] = [
-  { name: 'Cơm trắng', caloriesPer100g: 130, category: 'Tinh bột' },
-  { name: 'Ức gà (đã nấu)', caloriesPer100g: 165, category: 'Đạm' },
-  { name: 'Thịt bò (nạc)', caloriesPer100g: 250, category: 'Đạm' },
-  { name: 'Trứng gà (luộc)', caloriesPer100g: 155, category: 'Đạm' },
-  { name: 'Bông cải xanh', caloriesPer100g: 35, category: 'Rau xanh' },
-  { name: 'Khoai lang', caloriesPer100g: 86, category: 'Tinh bột' },
-  { name: 'Cá hồi', caloriesPer100g: 208, category: 'Đạm & Béo tốt' },
-  { name: 'Yến mạch', caloriesPer100g: 389, category: 'Tinh bột' },
+  { id: '1', name: 'Cơm trắng', caloriesPer100g: 130, category: 'Tinh bột' },
+  { id: '2', name: 'Ức gà (đã nấu)', caloriesPer100g: 165, category: 'Đạm' },
+  { id: '3', name: 'Thịt bò (nạc)', caloriesPer100g: 250, category: 'Đạm' },
+  { id: '4', name: 'Trứng gà (luộc)', caloriesPer100g: 155, category: 'Đạm' },
+  { id: '5', name: 'Bông cải xanh', caloriesPer100g: 35, category: 'Rau xanh' },
+  { id: '6', name: 'Khoai lang', caloriesPer100g: 86, category: 'Tinh bột' },
+  { id: '7', name: 'Cá hồi', caloriesPer100g: 208, category: 'Đạm & Béo tốt' },
+  { id: '8', name: 'Yến mạch', caloriesPer100g: 389, category: 'Tinh bột' },
 ];
 
 const FOOD_STORAGE_KEY = 'cardio_food_database_v1';

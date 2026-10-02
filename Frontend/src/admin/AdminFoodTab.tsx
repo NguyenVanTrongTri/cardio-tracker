@@ -414,12 +414,18 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
 
                       <td className="py-3.5 px-4">
                         {isEditing ? (
-                          <input
-                            type="text"
+                          <select
                             value={editCategory}
                             onChange={(e) => setEditCategory(e.target.value)}
-                            className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-900 w-32"
-                          />
+                            className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-900 w-full"
+                          >
+                            <option value="Tinh bột">Tinh bột</option>
+                            <option value="Đạm">Chất đạm (Protein)</option>
+                            <option value="Rau xanh">Rau xanh / Củ quả</option>
+                            <option value="Đạm & Béo tốt">Đạm & Béo tốt</option>
+                            <option value="Trái cây">Trái cây</option>
+                            <option value="Đồ uống / Bổ sung">Đồ uống / Bổ sung</option>
+                          </select>
                         ) : (
                           <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">
                             {food.category || 'Thực phẩm'}

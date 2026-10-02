@@ -43,23 +43,23 @@ const createCateLog = async (req, res) => {
     if (!userId) {
       return res.status(401).json({ 
         success: false, 
-        message: 'Bạn cần đăng nhập để tạo danh mục bữa ăn!' 
+        message: 'Bạn cần đăng nhập để thực hiện thao tác này!' 
       });
     }
 
-    // Lấy các thông tin từ request body gửi lên từ client
-    const { name, icon, badgeColor, sortOrder } = req.body;
+    // Lấy các thông tin từ request body (bao gồm cả thông tin món ăn mới)
+    const { name, category, caloriesPer100g, icon, badgeColor, sortOrder } = req.body;
 
     // Validate dữ liệu bắt buộc
     if (!name) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Tên danh mục (name) không được để trống!' 
+        message: 'Tên món ăn/danh mục (name) không được để trống!' 
       });
     }
 
-    // Tạo một ID ngẫu nhiên độc nhất cho danh mục (vì bảng dùng chuỗi VarChar(50))
-    const categoryId = `cat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    // Tạo một ID ngẫu nhiên độc nhất
+    const categoryId = `food_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     // Lưu vào cơ sở dữ liệu thông qua Prisma
     const newCategory = await prisma.mealCategory.create({
@@ -67,6 +67,8 @@ const createCateLog = async (req, res) => {
         id: categoryId,
         userId: userId,
         name: name,
+        category: category || null, // Nhóm dinh dưỡng (Tinh bột, Đạm, Rau xanh...)
+        caloriesPer100g: caloriesPer100g !== undefined && caloriesPer100g !== '' ? Number(caloriesPer100g) : null, // Số calo trên 100g
         icon: icon || null,
         badgeColor: badgeColor || null,
         sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : 0,
@@ -75,12 +77,12 @@ const createCateLog = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Tạo danh mục thành công!',
+      message: 'Thêm thành công!',
       data: newCategory,
     });
     
   } catch (error) {
-    console.error('Error creating meal category:', error);
+    console.error('Error creating meal category/food:', error);
     return res.status(500).json({ 
       success: false, 
       error: error.message 

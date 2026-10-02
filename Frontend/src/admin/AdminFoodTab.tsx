@@ -54,7 +54,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
   const [editCals, setEditCals] = useState<number>(0);
   const [editCategory, setEditCategory] = useState<string>('');
 
-  const [foodToDelete, setFoodToDelete] = useState<string | null>(null);
+  const [foodToDelete, setFoodToDelete] = useState<FoodItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -93,9 +93,11 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
       });
 
       const result = await response.json();
+      console.log('API Categories Response:', result); // Log the response
 
       if (result.success && Array.isArray(result.data)) {
         return result.data.map((item: any) => ({
+          id: item.id, // Try capturing ID if it exists
           name: item.name,
           caloriesPer100g: item.caloriesPer100g ?? 0,
           category: item.category || 'Khác',
@@ -144,8 +146,8 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
       }
   };
 
-  const handleDeleteFood = (name: string) => {
-    setFoodToDelete(name);
+  const handleDeleteFood = (food: FoodItem) => {
+    setFoodToDelete(food);
   };
 
   const confirmDeleteFood = async () => {
@@ -154,8 +156,8 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
     setIsDeleting(true);
     
     try {
-        // Assuming API needs the name for deletion based on the previous structure
-        const res = await fetch(`${API_ENDPOINTS.CATEGORIES}/${encodeURIComponent(foodToDelete)}`, {
+        const idOrName = foodToDelete.id || encodeURIComponent(foodToDelete.name);
+        const res = await fetch(`${API_ENDPOINTS.CATEGORIES}/${idOrName}`, {
           method: 'DELETE',
           credentials: 'include',
         });
@@ -163,8 +165,8 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
         const data = await res.json();
     
         if (data.success) {
-          logAdminAction(adminEmail, 'Xóa món ăn', `Đã xóa món ${foodToDelete}`, 'WARNING');
-          showToast(`Đã xóa "${foodToDelete}" thành công!`);
+          logAdminAction(adminEmail, 'Xóa món ăn', `Đã xóa món ${foodToDelete.name}`, 'WARNING');
+          showToast(`Đã xóa "${foodToDelete.name}" thành công!`);
           refreshList();
         } else {
           showToast(data.message || 'Xóa thất bại!', 'error');
@@ -276,7 +278,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
               <Trash2 size={20} />
             </div>
             <h3 className="text-base font-bold text-slate-900 text-center">
-              Xóa món "{foodToDelete}"?
+              Xóa món "{foodToDelete.name}"?
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed text-center">
               Thao tác này sẽ xóa vĩnh viễn món ăn này khỏi cơ sở dữ liệu.
@@ -468,7 +470,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
                               </button>
 
                               <button
-                                onClick={() => handleDeleteFood(food.name)}
+                                onClick={() => handleDeleteFood(food)}
                                 className="p-1.5 rounded-xl bg-slate-50 text-rose-500 border border-slate-200 hover:bg-rose-50 hover:border-rose-200 transition-all cursor-pointer"
                                 title="Xóa món"
                               >

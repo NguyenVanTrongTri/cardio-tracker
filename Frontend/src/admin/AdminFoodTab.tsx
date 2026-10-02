@@ -186,16 +186,40 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
     setEditCategory(food.category || 'Khác');
   };
 
-  const saveEdit = (oldName: string) => {
-    updateFoodItemInDatabase(oldName, {
-      name: oldName,
-      caloriesPer100g: editCals,
-      category: editCategory,
+  const saveEdit = async (id: string, oldName: string) => {
+  if (!id) {
+    showToast('Lỗi: Không tìm thấy ID món ăn cần sửa!', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_ENDPOINTS.CATEGORIES}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Bắt buộc gửi kèm cookie xác thực
+      body: JSON.stringify({
+        name: editingName, // Fixed: use editingName state
+        caloriesPer100g: Number(editCals),
+        category: editCategory,
+      }),
     });
-    logAdminAction(adminEmail, 'Cập nhật món ăn', `Cập nhật calo món ${oldName} thành ${editCals} kcal`, 'INFO');
-    showToast(`Đã cập nhật món "${oldName}"!`);
-    setEditingName(null);
-    refreshList();
+
+    const data = await res.json();
+
+    if (data.success) {
+      logAdminAction(adminEmail, 'Cập nhật món ăn', `Cập nhật món ${oldName} thành ${editCals} kcal`, 'INFO');
+      showToast(`Đã cập nhật món "${oldName}" thành công!`);
+      setEditingName(null);
+      refreshList();
+    } else {
+      showToast(data.message || 'Cập nhật thất bại!', 'error');
+    }
+  } catch (error) {
+    console.error('Error updating food:', error);
+    showToast('Lỗi kết nối khi cập nhật thực phẩm!', 'error');
+  }
   };
 
   const handleResetDefaults = () => {
@@ -451,7 +475,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
                           {isEditing ? (
                             <>
                               <button
-                                onClick={() => saveEdit(food.name)}
+                                onClick={() => saveEdit(food.id!, food.name)}
                                 className="p-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all cursor-pointer"
                                 title="Lưu thay đổi"
                               >

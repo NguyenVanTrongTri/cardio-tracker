@@ -5,6 +5,15 @@ export interface FoodItem {
   category?: string;
 }
 
+export const FOOD_CATEGORIES = [
+  { value: 'Tinh bột', label: 'Tinh bột' },
+  { value: 'Đạm', label: 'Chất đạm (Protein)' },
+  { value: 'Rau xanh', label: 'Rau xanh / Củ quả' },
+  { value: 'Đạm & Béo tốt', label: 'Đạm & Béo tốt' },
+  { value: 'Trái cây', label: 'Trái cây' },
+  { value: 'Đồ uống / Bổ sung', label: 'Đồ uống / Bổ sung' },
+];
+
 export const INITIAL_FOOD_DATABASE: FoodItem[] = [
   { name: 'Cơm trắng', caloriesPer100g: 130, category: 'Tinh bột' },
   { name: 'Ức gà (đã nấu)', caloriesPer100g: 165, category: 'Đạm' },

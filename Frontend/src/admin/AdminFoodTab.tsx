@@ -141,30 +141,15 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
       }
   };
 
-  const handleDeleteFood = async (id: string, name: string) => {
-  const confirm = window.confirm(`Xóa món "${name}" khỏi cơ sở dữ liệu?`);
-  if (!confirm) return;
+  const handleDeleteFood = (name: string) => {
+    const confirm = window.confirm(`Xóa món "${name}" khỏi cơ sở dữ liệu?`);
+    if (!confirm) return;
 
-  try {
-    const res = await fetch(`${API_ENDPOINTS.CATEGORIES}/${id}`, {
-      method: 'DELETE',
-      credentials: 'include', // Bắt buộc để gửi kèm cookie xác thực
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      logAdminAction(adminEmail, 'Xóa món ăn', `Đã xóa món ${name}`, 'WARNING');
-      showToast(`Đã xóa "${name}" thành công!`);
-      refreshList(); // Làm mới lại danh sách sau khi xóa
-    } else {
-      showToast(data.message || 'Xóa thất bại!', 'error');
-    }
-  } catch (error) {
-    console.error('Error deleting food:', error);
-    showToast('Lỗi kết nối khi xóa thực phẩm!', 'error');
-  }
-};
+    deleteFoodItemFromDatabase(name);
+    logAdminAction(adminEmail, 'Xóa món ăn', `Đã xóa món ${name}`, 'WARNING');
+    showToast(`Đã xóa "${name}"`);
+    refreshList();
+  };
 
   const startEdit = (food: FoodItem) => {
     setEditingName(food.name);
@@ -174,7 +159,6 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
 
   const saveEdit = (oldName: string) => {
     updateFoodItemInDatabase(oldName, {
-      id: '',
       name: oldName,
       caloriesPer100g: editCals,
       category: editCategory,
@@ -425,7 +409,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
                               </button>
 
                               <button
-                                onClick={() => handleDeleteFood(food.id, food.name)}
+                                onClick={() => handleDeleteFood(food.name)}
                                 className="p-1.5 rounded-xl bg-slate-50 text-rose-500 border border-slate-200 hover:bg-rose-50 hover:border-rose-200 transition-all cursor-pointer"
                                 title="Xóa món"
                               >

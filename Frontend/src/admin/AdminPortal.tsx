@@ -41,27 +41,31 @@ interface AdminNavTab {
 
 export default function AdminPortal({ currentUser, onExitToApp, onLogout, onAddNotification }: AdminPortalProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'workouts' | 'practice' | 'food' | 'notify' | 'settings'>('overview');
-  const [stats, setStats] = useState<AdminStats>(calculateAdminStats());
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const refreshStats = () => {
+  const refreshStats = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setStats(calculateAdminStats());
+    try {
+      const newStats = await calculateAdminStats();
+      setStats(newStats);
+    } catch (e) {
+      console.error('Failed to refresh stats', e);
+    } finally {
       setIsRefreshing(false);
-    }, 300);
+    }
   };
 
   useEffect(() => {
-    setStats(calculateAdminStats());
+    refreshStats();
   }, [activeTab]);
 
   const navTabs: AdminNavTab[] = [
     { id: 'overview', label: 'Tổng Quan', icon: LayoutDashboard },
-    { id: 'users', label: 'Người Dùng', icon: Users, badge: stats.totalUsers },
-    { id: 'workouts', label: 'Buổi Tập', icon: Activity, badge: stats.totalWorkouts },
+    { id: 'users', label: 'Người Dùng', icon: Users, badge: stats?.totalUsers },
+    { id: 'workouts', label: 'Buổi Tập', icon: Activity, badge: stats?.totalWorkouts },
     { id: 'practice', label: 'Bài Tập/Máy', icon: Bike, badge: EQUIPMENT_LIST.length },
-    { id: 'food', label: 'Thực Phẩm', icon: Apple, badge: stats.totalFoodItems },
+    { id: 'food', label: 'Thực Phẩm', icon: Apple, badge: stats?.totalFoodItems },
     { id: 'notify', label: 'Thông Báo', icon: Bell },
     { id: 'settings', label: 'Hệ Thống', icon: Settings },
   ];
@@ -159,7 +163,7 @@ export default function AdminPortal({ currentUser, onExitToApp, onLogout, onAddN
 
       {/* Main Content View */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
-        {activeTab === 'overview' && (
+        {activeTab === 'overview' && stats && (
           <AdminOverviewTab
             stats={stats}
             onNavigateTab={(tab) => setActiveTab(tab)}

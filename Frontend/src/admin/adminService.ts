@@ -3,6 +3,7 @@ import { getStoredWorkouts, getStoredMetrics } from '../services/storage';
 import { getStoredFoodDatabase, saveStoredFoodDatabase } from '../data/foodData';
 import { AdminStats, SystemAuditLog } from './types';
 import { EquipmentType, WorkoutRecord } from '../types';
+import { API_ENDPOINTS } from '../services/apiConfig';
 
 const AUDIT_LOGS_KEY = 'cardio_admin_audit_logs_v1';
 
@@ -55,10 +56,24 @@ export function logAdminAction(adminEmail: string, action: string, details: stri
   }
 }
 
-export function calculateAdminStats(): AdminStats {
+export async function calculateAdminStats(): Promise<AdminStats> {
   const users = getStoredUsers();
   const workouts = getStoredWorkouts();
-  const foods = getStoredFoodDatabase();
+  
+  let foods: any[] = [];
+  try {
+    const response = await fetch(API_ENDPOINTS.CATEGORIES, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const result = await response.json();
+    if (result.success && Array.isArray(result.data)) {
+      foods = result.data;
+    }
+  } catch (error) {
+    console.error('Failed to fetch foods for stats', error);
+  }
 
   const totalUsers = users.length;
   const totalAdmins = users.filter((u) => u.role === 'ADMIN').length;

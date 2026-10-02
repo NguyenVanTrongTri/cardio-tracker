@@ -54,6 +54,9 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
   const [editCals, setEditCals] = useState<number>(0);
   const [editCategory, setEditCategory] = useState<string>('');
 
+  const [foodToDelete, setFoodToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -142,12 +145,18 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
   };
 
   const handleDeleteFood = (name: string) => {
-    const confirm = window.confirm(`Xóa món "${name}" khỏi cơ sở dữ liệu?`);
-    if (!confirm) return;
+    setFoodToDelete(name);
+  };
 
-    deleteFoodItemFromDatabase(name);
-    logAdminAction(adminEmail, 'Xóa món ăn', `Đã xóa món ${name}`, 'WARNING');
-    showToast(`Đã xóa "${name}"`);
+  const confirmDeleteFood = async () => {
+    if (!foodToDelete) return;
+    
+    setIsDeleting(true);
+    deleteFoodItemFromDatabase(foodToDelete);
+    logAdminAction(adminEmail, 'Xóa món ăn', `Đã xóa món ${foodToDelete}`, 'WARNING');
+    showToast(`Đã xóa "${foodToDelete}"`);
+    setIsDeleting(false);
+    setFoodToDelete(null);
     refreshList();
   };
 
@@ -238,6 +247,38 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
         >
           {feedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
           <span>{feedback.text}</span>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal (Local Implementation) */}
+      {foodToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95">
+            <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <Trash2 size={20} />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 text-center">
+              Xóa món "{foodToDelete}"?
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed text-center">
+              Thao tác này sẽ xóa vĩnh viễn món ăn này khỏi cơ sở dữ liệu.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFoodToDelete(null)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={confirmDeleteFood}
+                disabled={isDeleting}
+                className={`flex-1 py-2.5 ${isDeleting ? 'bg-rose-400' : 'bg-rose-600 hover:bg-rose-700'} text-white rounded-xl font-bold text-xs transition-colors shadow-xs`}
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xóa ngay'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

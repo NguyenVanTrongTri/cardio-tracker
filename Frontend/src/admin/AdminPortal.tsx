@@ -23,7 +23,6 @@ import AdminPracticeTab from './AdminPracticeTab';
 import AdminFoodTab from './AdminFoodTab';
 import AdminNotifyTab from './AdminNotifyTab';
 import AdminSettingsTab from './AdminSettingsTab';
-import { EQUIPMENT_LIST } from '../components/workout/equipmentData';
 
 interface AdminPortalProps {
   currentUser: UserAccount;
@@ -43,12 +42,19 @@ export default function AdminPortal({ currentUser, onExitToApp, onLogout, onAddN
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'workouts' | 'practice' | 'food' | 'notify' | 'settings'>('overview');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [practicesCount, setPracticesCount] = useState<number>(0);
 
   const refreshStats = async () => {
     setIsRefreshing(true);
     try {
-      const newStats = await calculateAdminStats();
+      const [newStats, practicesRes] = await Promise.all([
+        calculateAdminStats(),
+        fetch(API_ENDPOINTS.PRACTICES, { credentials: 'include' }).then(res => res.json())
+      ]);
       setStats(newStats);
+      if (practicesRes.success && Array.isArray(practicesRes.data)) {
+        setPracticesCount(practicesRes.data.length);
+      }
     } catch (e) {
       console.error('Failed to refresh stats', e);
     } finally {
@@ -64,7 +70,7 @@ export default function AdminPortal({ currentUser, onExitToApp, onLogout, onAddN
     { id: 'overview', label: 'Tổng Quan', icon: LayoutDashboard },
     { id: 'users', label: 'Người Dùng', icon: Users, badge: stats?.totalUsers },
     { id: 'workouts', label: 'Buổi Tập', icon: Activity, badge: stats?.totalWorkouts },
-    { id: 'practice', label: 'Bài Tập/Máy', icon: Bike, badge: EQUIPMENT_LIST.length },
+    { id: 'practice', label: 'Bài Tập/Máy', icon: Bike, badge: practicesCount },
     { id: 'food', label: 'Thực Phẩm', icon: Apple, badge: stats?.totalFoodItems },
     { id: 'notify', label: 'Thông Báo', icon: Bell },
     { id: 'settings', label: 'Hệ Thống', icon: Settings },

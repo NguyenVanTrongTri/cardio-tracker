@@ -200,7 +200,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
       },
       credentials: 'include', // Bắt buộc gửi kèm cookie xác thực
       body: JSON.stringify({
-        name: editingName, // Fixed: use editingName state
+        name: oldName, // Dùng tên gốc để định danh hoặc đảm bảo tên không bị đổi thành null/undefined
         caloriesPer100g: Number(editCals),
         category: editCategory,
       }),

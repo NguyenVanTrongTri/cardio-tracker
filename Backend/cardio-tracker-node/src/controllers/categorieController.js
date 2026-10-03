@@ -7,17 +7,25 @@ const { symlinkSync } = require('fs');
 const getCateLog = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const userRole = req.user?.role; // Lấy role từ thông tin token/đăng nhập
 
-    // Kiểm tra xem user hiện tại có phải là Admin không (dựa vào role)
-    const isAdmin = userRole === 'ADMIN' || userRole === 'admin';
+    // 1. Lấy danh sách tất cả ID của các tài khoản có role là Admin
+    // Giả sử bảng user của bạn tên là 'user'
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        role: { in: ['ADMIN', 'admin'] } // Lọc theo role trong bảng User
+      },
+      select: { id: true }
+    });
+    
+    // Chuyển thành một mảng các ID: ['id_admin_1', 'id_admin_2', ...]
+    const adminIds = adminUsers.map(u => u.id);
 
-    // Xây dựng điều kiện lọc linh hoạt
+    // 2. Xây dựng điều kiện lọc linh hoạt
     const whereCondition = {
       OR: [
-        { userId: null },           // 1. Luôn luôn lấy các món chung của hệ thống (do hệ thống/admin gốc tạo với userId = null)
-        ...(userId ? [{ userId: userId }] : []) // 2. Lấy các món cá nhân do chính user hiện tại tạo
-        // Nếu muốn Admin có thể thấy toàn bộ hoặc có đặc quyền riêng, ta có thể mở rộng ở đây
+        { userId: null },               // Lấy món chung hệ thống
+        ...(userId ? [{ userId: userId }] : []), // Lấy món cá nhân của user
+        { userId: { in: adminIds } }    // LẤY TẤT CẢ MÓN CỦA MỌI ADMIN
       ]
     };
 
@@ -30,8 +38,7 @@ const getCateLog = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: categories,
-      isAdmin: isAdmin // Trả về thêm cờ này nếu frontend cần check quyền giao diện
+      data: categories
     });
   } catch (error) {
     console.error('Error getting meal categories:', error);

@@ -8,24 +8,11 @@ const getCateLog = async (req, res) => {
   try {
     const userId = req.user?.id;
 
-    // 1. Lấy danh sách tất cả ID của các tài khoản có role là Admin
-    // Giả sử bảng user của bạn tên là 'user'
-    const adminUsers = await prisma.user.findMany({
-      where: {
-        role: { in: ['ADMIN', 'admin'] } // Lọc theo role trong bảng User
-      },
-      select: { id: true }
-    });
-    
-    // Chuyển thành một mảng các ID: ['id_admin_1', 'id_admin_2', ...]
-    const adminIds = adminUsers.map(u => u.id);
-
-    // 2. Xây dựng điều kiện lọc linh hoạt
+    // Xây dựng điều kiện lọc: Lấy món chung (userId = null) hoặc món riêng của user hiện tại
     const whereCondition = {
       OR: [
-        { userId: null },               // Lấy món chung hệ thống
-        ...(userId ? [{ userId: userId }] : []), // Lấy món cá nhân của user
-        { userId: { in: adminIds } }    // LẤY TẤT CẢ MÓN CỦA MỌI ADMIN
+        { userId: null },                      // Món ăn dùng chung của hệ thống (do Admin tạo và để trống userId)
+        ...(userId ? [{ userId: userId }] : []) // Món ăn riêng tư do chính user hiện tại tạo
       ]
     };
 
@@ -48,6 +35,8 @@ const getCateLog = async (req, res) => {
     });
   }
 };
+
+export default getCateLog;
 const createCateLog = async (req, res) => {
   try {
     // 🔒 Lấy userId từ middleware xác thực

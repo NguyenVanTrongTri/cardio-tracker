@@ -361,7 +361,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
                 required
                 min="1"
                 placeholder="Ví dụ: 95"
-                value={newCals}
+                value={newCals || ''}
                 onChange={(e) => setNewCals(Number(e.target.value))}
                 className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono"
               />

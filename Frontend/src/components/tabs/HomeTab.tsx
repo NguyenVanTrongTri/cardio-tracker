@@ -50,6 +50,7 @@ import DraftRestoreModal from './HomeTab/DraftRestoreModal';
 import { useWorkoutForm } from '../../hooks/useWorkoutForm';
 import { getCurrentUser } from '../../services/auth';
 import { API_ENDPOINTS } from '../../services/apiConfig';
+import { FoodItem } from '@/src/data/foodData';
 
 interface HomeTabProps {
   key?: string;
@@ -98,6 +99,9 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
   const [showDraftModal, setShowDraftModal] = useState(false);
   const isInitialized = useRef(false);
   const [savedSuccessMessage, setSavedSuccessMessage] = useState<string | null>(null);
+
+  const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Real-time calculated phases
   const phases = useMemo(() => {
@@ -379,6 +383,31 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
     checkAndLoadTodayMeals();
   }, []);
 
+  useEffect(() => {
+    const fetchFoods = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.CATEGORIES, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          setFoods(result.data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            caloriesPer100g: item.caloriesPer100g ?? 0,
+            category: item.category || 'Khác',
+          })));
+        }
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách từ server:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFoods();
+  }, []);
+
   return (
     <div className="max-w-xl mx-auto px-4 pt-4 pb-28 space-y-5">
       {/* Top Welcome & Smart Coaching Banner */}
@@ -453,8 +482,7 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 key={category}
                 category={category}
                 meals={meals}
-                setMeals={setMeals}
-              />
+                setMeals={setMeals} foods={[]} isLoading={false}              />
             ))}
           </div>
           {meals.some(meal => checkPreWorkoutAlert(workoutStartTime, meal.time)) && (

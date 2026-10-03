@@ -1,7 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Meal, FoodItemEntry } from '../../../types';
-import { useState, useEffect } from 'react';
-import { API_ENDPOINTS } from '../../../services/apiConfig';
 import { FoodItem } from '../../../data/foodData';
 
 export interface MealSectionProps {
@@ -9,39 +7,25 @@ export interface MealSectionProps {
   category: string;
   meals: Meal[];
   setMeals: Dispatch<SetStateAction<Meal[]>>;
+  foods: FoodItem[];      // 👈 Nhận danh sách món ăn từ component cha
+  isLoading: boolean;     // 👈 Nhận trạng thái loading chung từ cha
 }
 
 export const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối'];
 
-export default function MealSection({ category, meals, setMeals }: MealSectionProps) {
-  const [foods, setFoods] = useState<FoodItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function MealSection({ 
+  category, 
+  meals, 
+  setMeals, 
+  foods, 
+  isLoading 
+}: MealSectionProps) {
   const categoryMeals = meals.filter((m) => m.category === category);
 
-  useEffect(() => {
-    const fetchFoods = async () => {
-      try {
-        const response = await fetch(API_ENDPOINTS.CATEGORIES, {
-          method: 'GET',
-          credentials: 'include',
-        });
-        const result = await response.json();
-        if (result.success && Array.isArray(result.data)) {
-          setFoods(result.data.map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            caloriesPer100g: item.caloriesPer100g ?? 0,
-            category: item.category || 'Khác',
-          })));
-        }
-      } catch (error) {
-        console.error('Lỗi khi lấy danh sách từ server:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchFoods();
-  }, []);
+  // Hiển thị trạng thái tải chung (có thể tùy biến vị trí hiển thị ở cấp cha hoặc ở đây)
+  if (isLoading) {
+    return <div className="text-xs p-3 text-slate-400">Đang tải danh sách món...</div>;
+  }
 
   const updateMealFoodItems = (mealId: string, updatedItems: FoodItemEntry[]) => {
     setMeals(
@@ -57,10 +41,8 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
     );
   };
 
-  if (isLoading) return <div className="text-xs p-3">Đang tải danh sách món...</div>;
-
   return (
-    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mb-3">
       <div className="flex justify-between items-center mb-2">
         <h4 className="text-sm font-bold text-slate-700">{category}</h4>
         {categoryMeals.length === 0 && (
@@ -73,12 +55,13 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                 { id: 'm-' + Date.now(), category, time: currentTime, foodItems: [], totalCalories: 0 },
               ]);
             }}
-            className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
+            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
           >
             + Thêm món
           </button>
         )}
       </div>
+
       {categoryMeals.map((meal) => (
         <div key={meal.id} className="space-y-2 mt-2 pt-2 border-t border-slate-200">
           <div className="flex gap-2 items-center">
@@ -94,11 +77,12 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
             <button
               type="button"
               onClick={() => setMeals(meals.filter((m) => m.id !== meal.id))}
-              className="text-slate-400 hover:text-rose-500 text-xs font-bold"
+              className="text-slate-400 hover:text-rose-500 text-xs font-bold cursor-pointer"
             >
               Xóa
             </button>
           </div>
+
           <div className="space-y-1">
             {(meal.foodItems || []).map((item) => (
               <div key={item.id} className="flex gap-1 items-center text-xs">
@@ -144,15 +128,17 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                     const updatedItems = (meal.foodItems || []).filter((i) => i.id !== item.id);
                     updateMealFoodItems(meal.id, updatedItems);
                   }}
-                  className="text-rose-400"
+                  className="text-rose-400 hover:text-rose-600 font-bold px-1 cursor-pointer"
                 >
                   ×
                 </button>
               </div>
             ))}
+
             <button
               type="button"
               onClick={() => {
+                if (foods.length === 0) return;
                 const newItem = {
                   id: 'fi-' + Date.now(),
                   foodName: foods[0].name,
@@ -162,7 +148,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                 const updatedItems = [...(meal.foodItems || []), newItem];
                 updateMealFoodItems(meal.id, updatedItems);
               }}
-              className="text-xs text-emerald-600 font-bold"
+              className="text-xs text-emerald-600 font-bold hover:text-emerald-700 cursor-pointer pt-1"
             >
               + Món
             </button>

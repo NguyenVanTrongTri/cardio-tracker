@@ -1,6 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Meal, FoodItemEntry } from '../../../types';
-import { FOOD_DATABASE } from '../../../data/foodData';
+import { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '../../../services/apiConfig';
+import { FoodItem } from '../../../data/foodData';
 
 export interface MealSectionProps {
   key?: string;
@@ -12,7 +14,34 @@ export interface MealSectionProps {
 export const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối'];
 
 export default function MealSection({ category, meals, setMeals }: MealSectionProps) {
+  const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const categoryMeals = meals.filter((m) => m.category === category);
+
+  useEffect(() => {
+    const fetchFoods = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.CATEGORIES, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          setFoods(result.data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            caloriesPer100g: item.caloriesPer100g ?? 0,
+            category: item.category || 'Khác',
+          })));
+        }
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách từ server:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFoods();
+  }, []);
 
   const updateMealFoodItems = (mealId: string, updatedItems: FoodItemEntry[]) => {
     setMeals(
@@ -28,6 +57,8 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
     );
   };
 
+  if (isLoading) return <div className="text-xs p-3">Đang tải danh sách món...</div>;
+
   return (
     <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
       <div className="flex justify-between items-center mb-2">
@@ -42,7 +73,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                 { id: 'm-' + Date.now(), category, time: currentTime, foodItems: [], totalCalories: 0 },
               ]);
             }}
-            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
+            className="text-xs font-bold text-emerald-600 hover:text-emerald-700"
           >
             + Thêm món
           </button>
@@ -63,7 +94,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
             <button
               type="button"
               onClick={() => setMeals(meals.filter((m) => m.id !== meal.id))}
-              className="text-slate-400 hover:text-rose-500 text-xs font-bold cursor-pointer"
+              className="text-slate-400 hover:text-rose-500 text-xs font-bold"
             >
               Xóa
             </button>
@@ -74,7 +105,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                 <select
                   value={item.foodName}
                   onChange={(e) => {
-                    const food = FOOD_DATABASE.find((f) => f.name === e.target.value);
+                    const food = foods.find((f) => f.name === e.target.value);
                     const calories = food ? Math.round((item.grams / 100) * food.caloriesPer100g) : 0;
                     const updatedItems = (meal.foodItems || []).map((i) =>
                       i.id === item.id ? { ...i, foodName: e.target.value, calories } : i
@@ -83,7 +114,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                   }}
                   className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
                 >
-                  {FOOD_DATABASE.map((f) => (
+                  {foods.map((f) => (
                     <option key={f.name} value={f.name}>
                       {f.name}
                     </option>
@@ -97,7 +128,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                   value={item.grams || ''}
                   onChange={(e) => {
                     const grams = Number(e.target.value);
-                    const food = FOOD_DATABASE.find((f) => f.name === item.foodName);
+                    const food = foods.find((f) => f.name === item.foodName);
                     const calories = (food && grams > 0) ? Math.round((grams / 100) * food.caloriesPer100g) : 0;
                     const updatedItems = (meal.foodItems || []).map((i) =>
                       i.id === item.id ? { ...i, grams: grams > 0 ? grams : 0, calories } : i
@@ -113,7 +144,7 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
                     const updatedItems = (meal.foodItems || []).filter((i) => i.id !== item.id);
                     updateMealFoodItems(meal.id, updatedItems);
                   }}
-                  className="text-rose-400 font-bold px-1 cursor-pointer"
+                  className="text-rose-400"
                 >
                   ×
                 </button>
@@ -124,14 +155,14 @@ export default function MealSection({ category, meals, setMeals }: MealSectionPr
               onClick={() => {
                 const newItem = {
                   id: 'fi-' + Date.now(),
-                  foodName: FOOD_DATABASE[0].name,
+                  foodName: foods[0].name,
                   grams: 0,
                   calories: 0,
                 };
                 const updatedItems = [...(meal.foodItems || []), newItem];
                 updateMealFoodItems(meal.id, updatedItems);
               }}
-              className="text-xs text-emerald-600 font-bold cursor-pointer"
+              className="text-xs text-emerald-600 font-bold"
             >
               + Món
             </button>

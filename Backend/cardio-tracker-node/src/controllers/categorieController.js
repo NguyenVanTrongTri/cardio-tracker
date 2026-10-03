@@ -7,32 +7,36 @@ const { symlinkSync } = require('fs');
 const getCateLog = async (req, res) => {
   try {
     const userId = req.user?.id;
+    const userRole = req.user?.role;
+    const isAdmin = userRole === 'ADMIN';
 
-    // Xây dựng điều kiện lọc: Lấy món chung (userId = null) hoặc món riêng của user hiện tại
+    // 1. Lấy tất cả ID của những người có role ADMIN
+    const adminUsers = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true }
+    });
+    const adminIds = adminUsers.map(u => u.id);
+
+    // 2. Điều kiện OR:
+    // - userId = null: Món dùng chung (đúng chuẩn)
+    // - userId = userId: Món riêng của user
+    // - userId IN (adminIds): Món do Admin tạo (đang lưu sai thành món riêng, nên ta "lấy ké")
     const whereCondition = {
       OR: [
-        { userId: null },                      // Món ăn dùng chung của hệ thống (do Admin tạo và để trống userId)
-        ...(userId ? [{ userId: userId }] : []) // Món ăn riêng tư do chính user hiện tại tạo
+        { userId: null },
+        ...(userId ? [{ userId: userId }] : []),
+        { userId: { in: adminIds } } 
       ]
     };
 
     const categories = await prisma.mealCategory.findMany({
       where: whereCondition,
-      orderBy: {
-        sortOrder: 'asc'
-      }
+      orderBy: { sortOrder: 'asc' }
     });
 
-    return res.status(200).json({
-      success: true,
-      data: categories
-    });
+    return res.status(200).json({ success: true, data: categories });
   } catch (error) {
-    console.error('Error getting meal categories:', error);
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 

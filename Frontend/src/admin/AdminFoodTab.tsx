@@ -456,7 +456,7 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
                         {isEditing ? (
                           <input
                             type="number"
-                            value={editCals}
+                            value={editCals|| ''}
                             onChange={(e) => setEditCals(Number(e.target.value))}
                             className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-900 w-20"
                           />

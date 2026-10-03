@@ -222,17 +222,6 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
     showToast('Lỗi kết nối khi cập nhật thực phẩm!', 'error');
   }
   };
-
-  const handleResetDefaults = () => {
-    const confirm = window.confirm('Khôi phục danh sách thực phẩm chuẩn ban đầu?');
-    if (!confirm) return;
-
-    saveStoredFoodDatabase(INITIAL_FOOD_DATABASE);
-    logAdminAction(adminEmail, 'Khôi phục danh mục món ăn', 'Đặt lại danh mục thực phẩm mặc định', 'INFO');
-    showToast('Đã khôi phục danh mục thực phẩm mặc định.');
-    refreshList();
-  };
-
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Action Bar */}
@@ -262,15 +251,6 @@ export default function AdminFoodTab({ adminEmail, onRefreshStats }: AdminFoodTa
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleResetDefaults}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
-            title="Khôi phục danh sách chuẩn mặc định"
-          >
-            <RotateCcw size={14} />
-            <span className="hidden sm:inline">Khôi Phục Mặc Định</span>
-          </button>
-
           <button
             onClick={() => setIsAdding(!isAdding)}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 cursor-pointer transition-all active:scale-[0.98]"

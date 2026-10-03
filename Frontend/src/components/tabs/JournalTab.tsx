@@ -26,7 +26,7 @@ import {
   deleteMealFromDateJournal,
   deleteDailyJournal
 } from '../../services/storage';
-import { getStoredFoodDatabase, FoodItem, FOOD_DATABASE } from '../../data/foodData';
+import { getStoredFoodDatabase, FoodItem } from '../../data/foodData';
 import { API_ENDPOINTS } from '../../services/apiConfig';
 import MealSection from './HomeTab/MealSection';
 
@@ -144,7 +144,26 @@ export default function JournalTab() {
 
   useEffect(() => {
     loadData();
-    setFoodDb(FOOD_DATABASE);
+    const fetchFoods = async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.CATEGORIES, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          setFoodDb(result.data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            caloriesPer100g: item.caloriesPer100g ?? 0,
+            category: item.category || 'Khác',
+          })));
+        }
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách từ server:', error);
+      }
+    };
+    fetchFoods();
   }, []);
 
   // Filtered Journals

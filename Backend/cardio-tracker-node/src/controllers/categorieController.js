@@ -7,12 +7,17 @@ const { symlinkSync } = require('fs');
 const getCateLog = async (req, res) => {
   try {
     const userId = req.user?.id;
+    const userRole = req.user?.role; // Lấy role từ thông tin token/đăng nhập
+
+    // Kiểm tra xem user hiện tại có phải là Admin không (dựa vào role)
+    const isAdmin = userRole === 'ADMIN' || userRole === 'admin';
 
     // Xây dựng điều kiện lọc linh hoạt
     const whereCondition = {
       OR: [
-        { userId: null }, // Luôn luôn lấy dữ liệu chung của hệ thống
-        ...(userId ? [{ userId: userId }] : []) // Chỉ thêm điều kiện user nếu đã đăng nhập
+        { userId: null },           // 1. Luôn luôn lấy các món chung của hệ thống (do hệ thống/admin gốc tạo với userId = null)
+        ...(userId ? [{ userId: userId }] : []) // 2. Lấy các món cá nhân do chính user hiện tại tạo
+        // Nếu muốn Admin có thể thấy toàn bộ hoặc có đặc quyền riêng, ta có thể mở rộng ở đây
       ]
     };
 
@@ -25,7 +30,8 @@ const getCateLog = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: categories
+      data: categories,
+      isAdmin: isAdmin // Trả về thêm cờ này nếu frontend cần check quyền giao diện
     });
   } catch (error) {
     console.error('Error getting meal categories:', error);

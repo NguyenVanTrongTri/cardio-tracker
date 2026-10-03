@@ -482,7 +482,10 @@ export default function HomeTab({ onWorkoutSaved, onNavigateToHistory, onAddNoti
                 key={category}
                 category={category}
                 meals={meals}
-                setMeals={setMeals} foods={[]} isLoading={false}              />
+                setMeals={setMeals}
+                foods={foods}
+                isLoading={isLoading}
+              />
             ))}
           </div>
           {meals.some(meal => checkPreWorkoutAlert(workoutStartTime, meal.time)) && (

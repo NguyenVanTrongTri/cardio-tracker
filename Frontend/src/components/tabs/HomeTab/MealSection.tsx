@@ -22,11 +22,8 @@ export default function MealSection({
 }: MealSectionProps) {
   const categoryMeals = meals.filter((m) => m.category === category);
 
-  // Hiển thị trạng thái tải chung (có thể tùy biến vị trí hiển thị ở cấp cha hoặc ở đây)
-  if (isLoading) {
-    return <div className="text-xs p-3 text-slate-400">Đang tải danh sách món...</div>;
-  }
-
+  // Removed the isLoading check to prevent showing loading text
+  
   const updateMealFoodItems = (mealId: string, updatedItems: FoodItemEntry[]) => {
     setMeals(
       meals.map((m) =>

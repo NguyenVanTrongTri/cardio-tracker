@@ -172,34 +172,50 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
     }
   };
 
-  const handleCreateUser = (e: FormEvent) => {
-    e.preventDefault();
-    const res = adminCreateUser({
-      email: newEmail,
-      fullName: newName,
-      password: newPass,
-      role: newRole,
-      heightCm: Number(newHeight) || 170,
-      gender: newGender,
+  const handleCreateUser = async (e: FormEvent) => {
+  e.preventDefault();
+  try {
+    const res = await fetch(`${API_ENDPOINTS.USERS}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Đảm bảo gửi kèm cookie xác thực nếu hệ thống dùng cookie
+      body: JSON.stringify({
+        email: newEmail,
+        fullName: newName,
+        password: newPass,
+        role: newRole,
+        heightCm: Number(newHeight) || 170,
+        gender: newGender,
+      }),
     });
 
-    if (res.success && res.user) {
+    const result = await res.json();
+
+    if (result.success && (result.user || result.data)) {
+      const createdUser = result.user || result.data;
+      
       logAdminAction(
         currentUser.email,
         'Tạo người dùng mới',
-        `Tạo tài khoản ${res.user.email} (Quyền: ${res.user.role})`,
+        `Tạo tài khoản ${createdUser.email} (Quyền: ${createdUser.role})`,
         'SUCCESS'
       );
-      showNotification(`Tạo người dùng ${res.user.fullName} thành công!`);
+      showNotification(`Tạo người dùng ${createdUser.fullName} thành công!`);
       setIsAddUserOpen(false);
       setNewEmail('');
       setNewName('');
       setNewPass('password123');
       refreshList();
     } else {
-      showNotification(res.error || 'Không thể tạo tài khoản', 'error');
+      showNotification(result.error || result.message || 'Không thể tạo tài khoản', 'error');
     }
-  };
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    showNotification('Lỗi kết nối khi tạo tài khoản!', 'error');
+  }
+};
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">

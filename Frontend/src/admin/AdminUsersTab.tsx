@@ -160,14 +160,21 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
   };
 
   const confirmDeleteUser = async () => {
-    if (!userToDelete) return;
-    setIsDeleting(true);
-    const res = adminDeleteUser(userToDelete.id);
-    setIsDeleting(false);
-    setIsDeleteModalOpen(false);
-    setUserToDelete(null);
+  if (!userToDelete) return;
+  setIsDeleting(true);
+  
+  try {
+    const res = await fetch(`${API_ENDPOINTS.USERS}/${userToDelete.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Gửi kèm cookie phiên đăng nhập
+    });
 
-    if (res.success) {
+    const result = await res.json();
+
+    if (result.success) {
       logAdminAction(
         currentUser.email,
         'Xóa tài khoản người dùng',
@@ -175,11 +182,19 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
         'WARNING'
       );
       showNotification(`Đã xóa tài khoản ${userToDelete.fullName}.`);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
       refreshList();
     } else {
-      showNotification(res.error || 'Xóa tài khoản thất bại', 'error');
+      showNotification(result.error || result.message || 'Xóa tài khoản thất bại', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    showNotification('Lỗi kết nối khi xóa tài khoản!', 'error');
+  } finally {
+    setIsDeleting(false); // Luôn tắt trạng thái loading dù thành công hay thất bại
+  }
+};
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 

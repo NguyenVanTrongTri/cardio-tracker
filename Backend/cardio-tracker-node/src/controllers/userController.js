@@ -139,25 +139,35 @@ const updateUser = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-
-export default updateUser;
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
-    // 🔒 Lấy userId từ middleware xác thực
-    if (!userId) {
+    const currentUserId = req.user?.id;
+    const currentUserRole = req.user?.role;
+
+    if (!currentUserId) {
       return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    // 🔒 Chỉ cho phép ADMIN hoặc chính chủ mới được xóa tài khoản
+    if (currentUserRole !== 'ADMIN' && currentUserId !== id) {
+      return res.status(403).json({ 
+        success: false, 
+        error: "Bạn không có quyền xóa tài khoản này!" 
+      });
     }
 
     const user = await prisma.user.delete({
       where: { id }
     });
 
-    res.status(200).json({ success: true, data: user });
+    // Ẩn passwordHash trước khi trả về (nếu cần)
+    const { passwordHash: _, ...userWithoutPassword } = user;
+
+    return res.status(200).json({ success: true, data: userWithoutPassword });
   } catch (error) {
-    console.error("Lỗi /api/users:", error);
-    res.status(500).json({ success: false, error: error.message });
+    console.error("Lỗi /api/users (Delete):", error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 module.exports = {

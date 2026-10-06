@@ -146,26 +146,35 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
     }
   };
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleDeleteUser = (targetUser: UserAccount) => {
     if (targetUser.id === currentUser.id) {
       showNotification('Không thể xóa tài khoản Admin đang đăng nhập.', 'error');
       return;
     }
+    setUserToDelete(targetUser);
+    setIsDeleteModalOpen(true);
+  };
 
-    const confirm = window.confirm(
-      `⚠️ BẠN CÓ CHẮC MUỐN XÓA TÀI KHOẢN: ${targetUser.fullName} (${targetUser.email})?`
-    );
-    if (!confirm) return;
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    const res = adminDeleteUser(userToDelete.id);
+    setIsDeleting(false);
+    setIsDeleteModalOpen(false);
+    setUserToDelete(null);
 
-    const res = adminDeleteUser(targetUser.id);
     if (res.success) {
       logAdminAction(
         currentUser.email,
         'Xóa tài khoản người dùng',
-        `Đã xóa tài khoản ${targetUser.email}`,
+        `Đã xóa tài khoản ${userToDelete.email}`,
         'WARNING'
       );
-      showNotification(`Đã xóa tài khoản ${targetUser.fullName}.`);
+      showNotification(`Đã xóa tài khoản ${userToDelete.fullName}.`);
       refreshList();
     } else {
       showNotification(res.error || 'Xóa tài khoản thất bại', 'error');
@@ -560,6 +569,38 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && userToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
+            <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <Trash2 size={20} />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 text-center">
+              Xóa tài khoản "{userToDelete.fullName}"?
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed text-center">
+              Thao tác này sẽ xóa vĩnh viễn tài khoản người dùng khỏi cơ sở dữ liệu.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={confirmDeleteUser}
+                disabled={isDeleting}
+                className={`flex-1 py-2.5 ${isDeleting ? 'bg-rose-400' : 'bg-rose-600 hover:bg-rose-700'} text-white rounded-xl font-bold text-xs transition-colors shadow-xs cursor-pointer`}
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xóa ngay'}
+              </button>
+            </div>
           </div>
         </div>
       )}

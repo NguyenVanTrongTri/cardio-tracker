@@ -172,15 +172,18 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleCreateUser = async (e: FormEvent) => {
   e.preventDefault();
+  setIsSubmitting(true);
   try {
     const res = await fetch(`${API_ENDPOINTS.USERS}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Đảm bảo gửi kèm cookie xác thực nếu hệ thống dùng cookie
+      credentials: 'include',
       body: JSON.stringify({
         email: newEmail,
         fullName: newName,
@@ -214,6 +217,8 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
   } catch (error: any) {
     console.error('Error creating user:', error);
     showNotification('Lỗi kết nối khi tạo tài khoản!', 'error');
+  } finally {
+    setIsSubmitting(false);
   }
 };
 
@@ -498,9 +503,10 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-600/20 cursor-pointer"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-600/20 cursor-pointer disabled:opacity-50"
                 >
-                  Lưu Người Dùng
+                  {isSubmitting ? 'Đang lưu...' : 'Lưu Người Dùng'}
                 </button>
               </div>
             </form>

@@ -581,7 +581,7 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
               <Trash2 size={20} />
             </div>
             <h3 className="text-base font-bold text-slate-900 text-center">
-              Xóa tài khoản "{userToDelete.fullName}"?
+              Xóa tài khoản?
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed text-center">
               Thao tác này sẽ xóa vĩnh viễn tài khoản người dùng khỏi cơ sở dữ liệu.

@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 // Lấy danh sách toàn bộ users với các trường thông tin cần thiết
 const getUsers = async (req, res) => {
   try {

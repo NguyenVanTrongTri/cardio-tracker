@@ -1,4 +1,4 @@
-import { useState, useMemo, type FormEvent } from 'react';
+import { useState, useMemo, useEffect, type FormEvent } from 'react';
 import {
   Users,
   Search,
@@ -17,13 +17,13 @@ import {
 } from 'lucide-react';
 import { UserAccount } from '../types';
 import {
-  getStoredUsers,
   adminUpdateUserRole,
   adminResetUserPassword,
   adminDeleteUser,
   adminCreateUser
 } from '../services/auth';
 import { logAdminAction } from './adminService';
+import { API_ENDPOINTS } from '../services/apiConfig';
 
 interface AdminUsersTabProps {
   currentUser: UserAccount;
@@ -31,7 +31,7 @@ interface AdminUsersTabProps {
 }
 
 export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUsersTabProps) {
-  const [users, setUsers] = useState<UserAccount[]>(getStoredUsers());
+  const [users, setUsers] = useState<UserAccount[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'ADMIN' | 'USER'>('ALL');
 
@@ -50,8 +50,30 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
 
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const loadUsers = async () => {
+    try {
+      const res = await fetch(`${API_ENDPOINTS.USERS}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const result = await res.json();
+      if (result.success) {
+        setUsers(result.data);
+      } else {
+        showNotification(result.message || 'Không thể tải danh sách người dùng!', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+      showNotification('Lỗi kết nối khi tải danh sách người dùng!', 'error');
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
   const refreshList = () => {
-    setUsers(getStoredUsers());
+    loadUsers();
     onRefreshStats();
   };
 

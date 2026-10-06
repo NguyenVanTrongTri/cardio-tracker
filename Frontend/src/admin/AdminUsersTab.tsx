@@ -472,17 +472,6 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                   </select>
                 </div>
               </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Chiều Cao (cm)</label>
-                <input
-                  type="number"
-                  value={newHeight}
-                  onChange={(e) => setNewHeight(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900"
-                />
-              </div>
-
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"

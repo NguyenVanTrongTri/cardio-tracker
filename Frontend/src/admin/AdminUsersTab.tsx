@@ -13,7 +13,8 @@ import {
   Lock,
   Mail,
   User,
-  Scale
+  Scale,
+  Edit2
 } from 'lucide-react';
 import { UserAccount } from '../types';
 import {
@@ -415,6 +416,17 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                             title="Đặt lại mật khẩu"
                           >
                             <KeyRound size={14} />
+                          </button>
+
+                          {/* Edit user button */}
+                          <button
+                            onClick={() => {
+                              showNotification('Tính năng chỉnh sửa đang được phát triển', 'error');
+                            }}
+                            className="p-1.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-all cursor-pointer"
+                            title="Chỉnh sửa thông tin"
+                          >
+                            <Edit2 size={14} />
                           </button>
 
                           {/* Delete user button */}

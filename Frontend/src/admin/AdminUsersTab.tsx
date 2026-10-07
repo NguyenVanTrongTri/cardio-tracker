@@ -127,6 +127,46 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
     }
   };
 
+  const handleToggleLock = async (targetUser: UserAccount) => {
+    if (targetUser.id === currentUser.id) {
+      showNotification('Bạn không thể tự khóa tài khoản của chính mình.', 'error');
+      return;
+    }
+
+    const nextLockedStatus = !targetUser.isLocked;
+    const confirm = window.confirm(
+      `Xác nhận ${nextLockedStatus ? 'khóa' : 'mở khóa'} tài khoản cho ${targetUser.fullName}?`
+    );
+    if (!confirm) return;
+
+    try {
+      const res = await fetch(`${API_ENDPOINTS.USERS}/${targetUser.id}/lock`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ isLocked: nextLockedStatus }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        logAdminAction(
+          currentUser.email,
+          'Khóa/Mở khóa tài khoản',
+          `${nextLockedStatus ? 'Đã khóa' : 'Đã mở khóa'} tài khoản ${targetUser.email}`,
+          'SUCCESS'
+        );
+        showNotification(`Đã ${nextLockedStatus ? 'khóa' : 'mở khóa'} tài khoản ${targetUser.fullName}!`);
+        refreshList();
+      } else {
+        showNotification(result.error || 'Thao tác không thành công', 'error');
+      }
+    } catch (error) {
+      console.error('Error locking user:', error);
+      showNotification('Lỗi kết nối khi cập nhật trạng thái tài khoản!', 'error');
+    }
+  };
+
   const handleResetPassword = (e: FormEvent) => {
     e.preventDefault();
     if (!resetPassUserId || !newPassword) return;
@@ -366,11 +406,6 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                                   Bạn
                                 </span>
                               )}
-                              {user.isLocked && (
-                                <span className="text-[10px] text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">
-                                  <Lock size={10} /> Đã khóa
-                                </span>
-                              )}
                             </div>
                             <div className="text-[11px] text-slate-500 font-mono">{user.email}</div>
                           </div>
@@ -414,6 +449,20 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                             title={isAdmin ? 'Hạ quyền xuống User' : 'Thăng cấp lên Admin'}
                           >
                             <Shield size={14} />
+                          </button>
+
+                          {/* Lock/Unlock account button */}
+                          <button
+                            onClick={() => handleToggleLock(user)}
+                            disabled={isCurrent}
+                            className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                              user.isLocked
+                                ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                            } ${isCurrent ? 'opacity-30 cursor-not-allowed' : ''}`}
+                            title={user.isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                          >
+                            <Lock size={14} />
                           </button>
 
                           {/* Reset password button */}

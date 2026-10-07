@@ -38,6 +38,8 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
 
   // Modal states
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
   const [resetPassUserId, setResetPassUserId] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState('');
 
@@ -199,53 +201,56 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCreateUser = async (e: FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-  try {
-    const res = await fetch(`${API_ENDPOINTS.USERS}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        email: newEmail,
-        fullName: newName,
-        password: newPass,
-        role: newRole,
-        heightCm: Number(newHeight) || 170,
-        gender: newGender,
-      }),
-    });
+  const handleSaveUser = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const url = isEditUserOpen && editingUser ? `${API_ENDPOINTS.USERS}/${editingUser.id}` : `${API_ENDPOINTS.USERS}`;
+      const method = isEditUserOpen ? 'PUT' : 'POST';
 
-    const result = await res.json();
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: newEmail,
+          fullName: newName,
+          password: newPass,
+          role: newRole,
+          heightCm: Number(newHeight) || 170,
+          gender: newGender,
+        }),
+      });
 
-    if (result.success && (result.user || result.data)) {
-      const createdUser = result.user || result.data;
-      
-      logAdminAction(
-        currentUser.email,
-        'Tạo người dùng mới',
-        `Tạo tài khoản ${createdUser.email} (Quyền: ${createdUser.role})`,
-        'SUCCESS'
-      );
-      showNotification(`Tạo người dùng ${createdUser.fullName} thành công!`);
-      setIsAddUserOpen(false);
-      setNewEmail('');
-      setNewName('');
-      setNewPass('password123');
-      refreshList();
-    } else {
-      showNotification(result.error || result.message || 'Không thể tạo tài khoản', 'error');
+      const result = await res.json();
+
+      if (result.success) {
+        logAdminAction(
+          currentUser.email,
+          isEditUserOpen ? 'Cập nhật người dùng' : 'Tạo người dùng mới',
+          `${isEditUserOpen ? 'Cập nhật' : 'Tạo'} tài khoản ${newEmail}`,
+          'SUCCESS'
+        );
+        showNotification(`${isEditUserOpen ? 'Cập nhật' : 'Tạo'} người dùng thành công!`);
+        setIsAddUserOpen(false);
+        setIsEditUserOpen(false);
+        setEditingUser(null);
+        setNewEmail('');
+        setNewName('');
+        setNewPass('password123');
+        refreshList();
+      } else {
+        showNotification(result.error || result.message || 'Thao tác thất bại', 'error');
+      }
+    } catch (error: any) {
+      console.error('Error saving user:', error);
+      showNotification('Lỗi kết nối!', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error: any) {
-    console.error('Error creating user:', error);
-    showNotification('Lỗi kết nối khi tạo tài khoản!', 'error');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
@@ -421,7 +426,12 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                           {/* Edit user button */}
                           <button
                             onClick={() => {
-                              showNotification('Tính năng chỉnh sửa đang được phát triển', 'error');
+                              setEditingUser(user);
+                              setNewEmail(user.email);
+                              setNewName(user.fullName);
+                              setNewRole((user.role || 'USER') as 'ADMIN' | 'USER');
+                              setNewGender(user.gender);
+                              setIsEditUserOpen(true);
                             }}
                             className="p-1.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-all cursor-pointer"
                             title="Chỉnh sửa thông tin"
@@ -452,23 +462,28 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
       </div>
 
       {/* Add User Modal */}
-      {isAddUserOpen && (
+      {(isAddUserOpen || isEditUserOpen) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <UserPlus size={18} className="text-emerald-600" />
-                <h3 className="text-sm font-bold text-slate-900">Thêm Người Dùng Mới</h3>
+                <h3 className="text-sm font-bold text-slate-900">
+                  {isAddUserOpen ? 'Thêm Người Dùng Mới' : 'Chỉnh Sửa Thông Tin Người Dùng'}
+                </h3>
               </div>
               <button
-                onClick={() => setIsAddUserOpen(false)}
+                onClick={() => {
+                  setIsAddUserOpen(false);
+                  setIsEditUserOpen(false);
+                }}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-full cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleCreateUser} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveUser} className="space-y-3.5 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Họ và Tên</label>
                 <input
@@ -532,7 +547,10 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
               <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsAddUserOpen(false)}
+                  onClick={() => {
+                    setIsAddUserOpen(false);
+                    setIsEditUserOpen(false);
+                  }}
                   className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer"
                 >
                   Hủy

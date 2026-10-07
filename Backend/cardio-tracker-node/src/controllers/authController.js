@@ -17,17 +17,23 @@ const login = async (req, res) => {
       where: { email },
     });
     
-    // So sánh mật khẩu bằng bcryptjs
+    // Kiểm tra xem user có tồn tại và mật khẩu có khớp không
     const isPasswordValid = user ? await bcrypt.compare(password, user.passwordHash) : false;
 
-    // ✅ Sửa thành dùng biến isPasswordValid
     if (!user || !isPasswordValid) {
       return res.status(401).json({ 
         success: false, 
         error: 'Email hoặc mật khẩu không chính xác' 
       });
     }
-    
+
+    // 🔒 BỔ SUNG: Kiểm tra xem tài khoản có đang bị khóa hay không
+    if (user.isLocked) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.' 
+      });
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -37,10 +43,10 @@ const login = async (req, res) => {
     console.log("DEBUG_LOG: Đang trả về response từ dòng này...");
 
     res.cookie('token', token, {
-      httpOnly: true, // Bảo mật chống XSS
-      secure: process.env.NODE_ENV === 'production', // True nếu chạy trên HTTPS (production trên Vercel)
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' nếu FE và BE khác domain (Vercel + Render/v.v), 'lax' nếu chạy localhost
-      maxAge: 24 * 60 * 60 * 1000 // 1 ngày
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', 
+      maxAge: 24 * 60 * 60 * 1000 
     });
 
     res.json({
@@ -52,6 +58,7 @@ const login = async (req, res) => {
         fullName: user.fullName,
         role: user.role,
         gender: user.gender,
+        isLocked: user.isLocked, // Có thể gửi kèm nếu cần thiết
       }
     });
   } catch (error) {

@@ -73,9 +73,13 @@ export default function LoginForm({
         setTimeout(() => {
           onSuccess(data.user as UserAccount);
         }, 700);
-      }
-      else {
-        setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
+      } else {
+        // 🔒 BỔ SUNG: Kiểm tra nếu mã lỗi là 403 hoặc thông báo chứa từ khóa khóa tài khoản
+        if (response.status === 403 || (data.error && data.error.toLowerCase().includes('khóa'))) {
+          setErrorMsg('🔒 Tài khoản của bạn đã bị khóa bởi quản trị viên. Vui lòng liên hệ hỗ trợ.');
+        } else {
+          setErrorMsg(data.error || `Lỗi server HTTP ${response.status}`);
+        }
       }
     } catch (err: any) {
       console.error('Network/Fetch Catch Error:', err);

@@ -127,46 +127,6 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
     }
   };
 
-  const handleToggleLock = async (targetUser: UserAccount) => {
-    if (targetUser.id === currentUser.id) {
-      showNotification('Bạn không thể tự khóa tài khoản của chính mình.', 'error');
-      return;
-    }
-
-    const nextLockedStatus = !targetUser.isLocked;
-    const confirm = window.confirm(
-      `Xác nhận ${nextLockedStatus ? 'khóa' : 'mở khóa'} tài khoản cho ${targetUser.fullName}?`
-    );
-    if (!confirm) return;
-
-    try {
-      const res = await fetch(`${API_ENDPOINTS.USERS}/${targetUser.id}/lock`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isLocked: nextLockedStatus }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        logAdminAction(
-          currentUser.email,
-          'Khóa/Mở khóa tài khoản',
-          `${nextLockedStatus ? 'Đã khóa' : 'Đã mở khóa'} tài khoản ${targetUser.email}`,
-          'SUCCESS'
-        );
-        showNotification(`Đã ${nextLockedStatus ? 'khóa' : 'mở khóa'} tài khoản ${targetUser.fullName}!`);
-        refreshList();
-      } else {
-        showNotification(result.error || 'Thao tác không thành công', 'error');
-      }
-    } catch (error) {
-      console.error('Error locking user:', error);
-      showNotification('Lỗi kết nối khi cập nhật trạng thái tài khoản!', 'error');
-    }
-  };
-
   const handleResetPassword = (e: FormEvent) => {
     e.preventDefault();
     if (!resetPassUserId || !newPassword) return;
@@ -193,6 +153,11 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
   const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // New state for lock modal
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+  const [userToLock, setUserToLock] = useState<UserAccount | null>(null);
+  const [isLocking, setIsLocking] = useState(false);
+
   const handleDeleteUser = (targetUser: UserAccount) => {
     if (targetUser.id === currentUser.id) {
       showNotification('Không thể xóa tài khoản Admin đang đăng nhập.', 'error');
@@ -200,6 +165,53 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
     }
     setUserToDelete(targetUser);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleLockUser = (targetUser: UserAccount) => {
+    if (targetUser.id === currentUser.id) {
+      showNotification('Bạn không thể tự khóa tài khoản của chính mình.', 'error');
+      return;
+    }
+    setUserToLock(targetUser);
+    setIsLockModalOpen(true);
+  };
+
+  const confirmLockUser = async () => {
+    if (!userToLock) return;
+    setIsLocking(true);
+
+    const nextLockedStatus = !userToLock.isLocked;
+
+    try {
+      const res = await fetch(`${API_ENDPOINTS.USERS}/${userToLock.id}/lock`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ isLocked: nextLockedStatus }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        logAdminAction(
+          currentUser.email,
+          'Khóa/Mở khóa tài khoản',
+          `${nextLockedStatus ? 'Đã khóa' : 'Đã mở khóa'} tài khoản ${userToLock.email}`,
+          'SUCCESS'
+        );
+        showNotification(`Đã ${nextLockedStatus ? 'khóa' : 'mở khóa'} tài khoản ${userToLock.fullName}!`);
+        setIsLockModalOpen(false);
+        setUserToLock(null);
+        refreshList();
+      } else {
+        showNotification(result.error || 'Thao tác không thành công', 'error');
+      }
+    } catch (error) {
+      console.error('Error locking user:', error);
+      showNotification('Lỗi kết nối khi cập nhật trạng thái tài khoản!', 'error');
+    } finally {
+      setIsLocking(false);
+    }
   };
 
   const confirmDeleteUser = async () => {
@@ -453,7 +465,7 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
 
                           {/* Lock/Unlock account button */}
                           <button
-                            onClick={() => handleToggleLock(user)}
+                            onClick={() => handleLockUser(user)}
                             disabled={isCurrent}
                             className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
                               user.isLocked
@@ -668,6 +680,40 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lock Confirmation Modal */}
+      {isLockModalOpen && userToLock && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mx-auto ${userToLock.isLocked ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+              <Lock size={20} />
+            </div>
+            <h3 className="text-base font-bold text-slate-900 text-center">
+              {userToLock.isLocked ? 'Mở khóa tài khoản?' : 'Khóa tài khoản?'}
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed text-center">
+              {userToLock.isLocked 
+                ? `Thao tác này sẽ mở khóa tài khoản cho ${userToLock.fullName}.`
+                : `Thao tác này sẽ khóa tài khoản ${userToLock.fullName}. Họ sẽ không thể đăng nhập.`}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsLockModalOpen(false)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={confirmLockUser}
+                disabled={isLocking}
+                className={`flex-1 py-2.5 ${userToLock.isLocked ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'} text-white rounded-xl font-bold text-xs transition-colors shadow-xs cursor-pointer`}
+              >
+                {isLocking ? 'Đang xử lý...' : userToLock.isLocked ? 'Mở khóa ngay' : 'Khóa ngay'}
+              </button>
+            </div>
           </div>
         </div>
       )}

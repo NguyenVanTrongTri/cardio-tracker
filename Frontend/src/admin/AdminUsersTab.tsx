@@ -366,6 +366,11 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                                   Bạn
                                 </span>
                               )}
+                              {user.isLocked && (
+                                <span className="text-[10px] text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">
+                                  <Lock size={10} /> Đã khóa
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-slate-500 font-mono">{user.email}</div>
                           </div>

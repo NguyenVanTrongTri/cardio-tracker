@@ -1,6 +1,7 @@
 export type Gender = 'MALE' | 'FEMALE';
 
 export interface UserAccount {
+  isLocked: import("react").JSX.Element;
   id: string;
   email: string;
   password?: string; // Stored securely

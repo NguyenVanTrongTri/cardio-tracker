@@ -177,42 +177,44 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
   };
 
   const confirmLockUser = async () => {
-    if (!userToLock) return;
-    setIsLocking(true);
+  if (!userToLock) return;
+  setIsLocking(true);
 
-    const nextLockedStatus = !userToLock.isLocked;
-
-    try {
-      const res = await fetch(`${API_ENDPOINTS.USERS}/${userToLock.id}/lock`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isLocked: nextLockedStatus }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        logAdminAction(
-          currentUser.email,
-          'Khóa/Mở khóa tài khoản',
-          `${nextLockedStatus ? 'Đã khóa' : 'Đã mở khóa'} tài khoản ${userToLock.email}`,
-          'SUCCESS'
-        );
-        showNotification(`Đã ${nextLockedStatus ? 'khóa' : 'mở khóa'} tài khoản ${userToLock.fullName}!`);
-        setIsLockModalOpen(false);
-        setUserToLock(null);
-        refreshList();
-      } else {
-        showNotification(result.error || 'Thao tác không thành công', 'error');
-      }
-    } catch (error) {
-      console.error('Error locking user:', error);
-      showNotification('Lỗi kết nối khi cập nhật trạng thái tài khoản!', 'error');
-    } finally {
-      setIsLocking(false);
+  try {
+    // 💡 Đổi 'PUT' thành 'PATCH' cho khớp với route ở Backend
+    const res = await fetch(`${API_ENDPOINTS.USERS}/${userToLock.id}/lock`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+    
+    const result = await res.json();
+    
+    if (result.success) {
+      const isNowLocked = result.data.isLocked; // Lấy trạng thái thực tế từ Backend trả về
+      
+      logAdminAction(
+        currentUser.email,
+        'Khóa/Mở khóa tài khoản',
+        `${isNowLocked ? 'Đã khóa' : 'Đã mở khóa'} tài khoản ${userToLock.email}`,
+        'SUCCESS'
+      );
+      showNotification(`Đã ${isNowLocked ? 'khóa' : 'mở khóa'} tài khoản ${userToLock.fullName}!`);
+      setIsLockModalOpen(false);
+      setUserToLock(null);
+      refreshList();
+    } else {
+      showNotification(result.error || 'Thao tác không thành công', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error locking user:', error);
+    showNotification('Lỗi kết nối khi cập nhật trạng thái tài khoản!', 'error');
+  } finally {
+    setIsLocking(false);
+  }
+};
 
   const confirmDeleteUser = async () => {
   if (!userToDelete) return;

@@ -33,6 +33,7 @@ model User {
   medicalConditions  String?              @map("medical_conditions") @db.Text
   medicalNotes       String?              @map("medical_notes") @db.Text
   weeklyGoalKg       Decimal?             @map("weekly_goal_kg") @db.Decimal(4, 2)
+  isLocked          Boolean            @default(false) @map("is_locked")
   createdAt          DateTime?            @default(now()) @map("created_at") @db.Timestamp(0)
   updated_at         DateTime?            @updatedAt @db.Timestamp(0)
   

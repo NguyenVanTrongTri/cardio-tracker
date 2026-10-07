@@ -13,4 +13,5 @@ router.put('/:id', verifyToken, updateUser);
 router.delete('/:id', verifyToken, deleteUser);
 // LOCK /api/users/:id
 router.patch('/:id/lock', verifyAdmin, lockUser);
+
 module.exports = router;

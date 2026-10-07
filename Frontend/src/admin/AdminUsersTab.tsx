@@ -560,7 +560,7 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                   disabled={isSubmitting}
                   className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-600/20 cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Đang lưu...' : 'Lưu Người Dùng'}
+                  {isSubmitting ? 'Đang lưu...' : isEditUserOpen ? 'Cập nhật người dùng' : 'Lưu Người Dùng'}
                 </button>
               </div>
             </form>

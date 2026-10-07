@@ -114,23 +114,37 @@ const updateUser = async (req, res) => {
       });
     }
 
-    // Nếu không phải admin, ngăn chặn việc tự ý đổi role của chính mình
     let updateData = { ...req.body };
+
+    // Nếu không phải admin, ngăn chặn việc tự ý đổi role của chính mình
     if (!isAdmin) {
-      delete updateData.role; // User thường không được tự đổi role
+      delete updateData.role; 
     }
 
-    // Xử lý chuyển đổi kiểu dữ liệu số nếu cần (ví dụ Decimal/Int)
-    if (updateData.heightCm) updateData.heightCm = parseFloat(updateData.heightCm);
-    if (updateData.weightKg) updateData.weightKg = parseFloat(updateData.weightKg);
-    // ... (tương tự cho các trường số khác nếu có gửi lên)
+    // 🔑 Xử lý mã hóa mật khẩu nếu có truyền lên trường password để đổi mới
+    if (updateData.password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.passwordHash = await bcrypt.hash(updateData.password, salt);
+      delete updateData.password; // 👈 Xóa trường 'password' thô để Prisma không bị lỗi Unknown argument
+    }
 
+    // 📊 Xử lý chuyển đổi kiểu dữ liệu số (Decimal) sang dạng chuẩn cho Prisma
+    if (updateData.heightCm !== undefined) updateData.heightCm = updateData.heightCm ? parseFloat(updateData.heightCm) : null;
+    if (updateData.weightKg !== undefined) updateData.weightKg = updateData.weightKg ? parseFloat(updateData.weightKg) : null;
+    if (updateData.targetWeightKg !== undefined) updateData.targetWeightKg = updateData.targetWeightKg ? parseFloat(updateData.targetWeightKg) : null;
+    if (updateData.targetWaistCm !== undefined) updateData.targetWaistCm = updateData.targetWaistCm ? parseFloat(updateData.targetWaistCm) : null;
+    if (updateData.waistCm !== undefined) updateData.waistCm = updateData.waistCm ? parseFloat(updateData.waistCm) : null;
+    if (updateData.hipCm !== undefined) updateData.hipCm = updateData.hipCm ? parseFloat(updateData.hipCm) : null;
+    if (updateData.bodyFatPercentage !== undefined) updateData.bodyFatPercentage = updateData.bodyFatPercentage ? parseFloat(updateData.bodyFatPercentage) : null;
+    if (updateData.weeklyGoalKg !== undefined) updateData.weeklyGoalKg = updateData.weeklyGoalKg ? parseFloat(updateData.weeklyGoalKg) : null;
+
+    // Thực hiện cập nhật trong Database
     const updatedUser = await prisma.user.update({
       where: { id },
       data: updateData
     });
 
-    // Ẩn mật khẩu trước khi trả về
+    // 🛡️ Ẩn passwordHash trước khi trả về response cho an toàn
     const { passwordHash: _, ...userWithoutPassword } = updatedUser;
 
     return res.status(200).json({ success: true, data: userWithoutPassword });

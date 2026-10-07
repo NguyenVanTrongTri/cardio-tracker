@@ -184,6 +184,71 @@ const deleteUser = async (req, res) => {
     return res.status(500).json({ success: false, error: error.message });
   }
 };
+const lockUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUserId = req.user?.id;
+    const currentUserRole = req.user?.role;
+
+    // 1. Kiểm tra xác thực (Đã đăng nhập chưa)
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    // 2. Kiểm tra phân quyền: Chỉ có ADMIN mới được phép khóa/mở khóa tài khoản
+    if (currentUserRole !== 'ADMIN') {
+      return res.status(403).json({ 
+        success: false, 
+        error: "Bạn không có quyền thực hiện thao tác này!" 
+      });
+    }
+
+    // 3. Ngăn chặn Admin tự khóa tài khoản của chính mình
+    if (currentUserId === id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Bạn không thể tự khóa tài khoản của chính mình!" 
+      });
+    }
+
+    // 4. Tìm kiếm người dùng trong cơ sở dữ liệu để lấy trạng thái hiện tại
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, fullName: true, isLocked: true }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ success: false, error: "Không tìm thấy người dùng này!" });
+    }
+
+    // 5. Đảo ngược trạng thái khóa (Đang khóa -> Mở khóa, Đang mở -> Khóa)
+    const newLockStatus = !targetUser.isLocked;
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { isLocked: newLockStatus },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        isLocked: true,
+        createdAt: true
+      }
+    });
+
+    // 6. Trả về kết quả thành công kèm theo trạng thái mới
+    return res.status(200).json({ 
+      success: true, 
+      message: newLockStatus ? `Đã khóa tài khoản ${updatedUser.fullName}` : `Đã mở khóa tài khoản ${updatedUser.fullName}`,
+      data: updatedUser 
+    });
+
+  } catch (error) {
+    console.error("Lỗi /api/users/lock (Toggle Lock):", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
 module.exports = {
   getUsers,
   createUser,

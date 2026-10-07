@@ -253,5 +253,6 @@ module.exports = {
   getUsers,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  lockUser
 };

@@ -22,13 +22,14 @@ const getUsers = async (req, res) => {
         activityLevel: true,
         workoutEnvironment: true,
         weeklyGoalKg: true,
+        isLocked: true, // 👈 Bổ sung thuộc tính này để Frontend biết user nào đang bị khóa
         createdAt: true,
       },
     });
-    res.status(200).json({ success: true, count: users.length, data: users });
+    return res.status(200).json({ success: true, count: users.length, data: users });
   } catch (error) {
     console.error("Lỗi /api/users:", error);
-    res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 const createUser = async (req, res) => {

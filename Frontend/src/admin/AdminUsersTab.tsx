@@ -438,12 +438,6 @@ export default function AdminUsersTab({ currentUser, onRefreshStats }: AdminUser
                             Thành viên
                           </span>
                         )}
-                        {user.isLocked && (
-                          <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
-                            <Lock size={10} />
-                            Đang khóa
-                          </span>
-                        )}
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">

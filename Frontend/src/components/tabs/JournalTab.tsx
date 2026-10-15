@@ -21,14 +21,14 @@ import {
 } from 'lucide-react';
 import { DailyMealJournal, Meal, FoodItemEntry } from '../../types';
 import {
-  getStoredMealJournals,
-  saveMealToDateJournal,
-  deleteMealFromDateJournal,
-  deleteDailyJournal
-} from '../../services/storage';
-import { getStoredFoodDatabase, FoodItem } from '../../data/foodData';
-import { API_ENDPOINTS } from '../../services/apiConfig';
+  fetchMeals,
+  fetchFoodCategories,
+  createMeal,
+  updateMeal as updateMealService,
+  deleteMeal
+} from './JournalTab/journalService';
 import MealSection from './HomeTab/MealSection';
+import { FoodItem } from '@/src/data/foodData';
 
 
 const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối'];
@@ -84,21 +84,12 @@ export default function JournalTab() {
   const [isLoading, setIsLoading] = useState(false); // State for loading indicator
 
   const loadData = async () => {
-  try {
-    // Gọi API lấy dữ liệu meals từ backend
-    const res = await fetch(`${API_ENDPOINTS.MEALS}`, {
-      method: 'GET',
-      credentials: 'include', // 👈 BẮT BUỘC: Gửi kèm HttpOnly Cookie để xác thực
-    });
-    const result = await res.json();
-
-    if (result.success) {
-      const rawMeals = result.data;
+    setIsLoading(true);
+    try {
+      const rawMeals = await fetchMeals();
 
       // Group meals by date
-      // Group meals by date (Ép kiểu Record<string, DailyMealJournal> rõ ràng cho reduce)
       const grouped = rawMeals.reduce((acc: Record<string, DailyMealJournal>, meal: any) => {
-        // Cắt chuỗi lấy định dạng YYYY-MM-DD từ ISO date string
         const dateKey = meal.mealDate ? meal.mealDate.split('T')[0] : 'Unknown';
         
         if (!acc[dateKey]) {
@@ -123,36 +114,29 @@ export default function JournalTab() {
         return acc;
       }, {} as Record<string, DailyMealJournal>);
 
-      // 🛠️ Ép kiểu mảng trả về chuẩn DailyMealJournal[] thay vì để any[]
       const list: DailyMealJournal[] = Object.values(grouped);
       setJournals(list);
       
-      // Mặc định mở rộng tất cả các ngày
       const initExpanded: Record<string, boolean> = {};
       list.forEach((j) => {
         initExpanded[j.date] = true;
       });
       setExpandedDates(initExpanded);
-    } else {
-      showToast(result.message || 'Không thể tải nhật ký dinh dưỡng!', 'error');
+    } catch (error: any) {
+      console.error('Error loading meals:', error);
+      showToast(error.message || 'Không thể tải nhật ký dinh dưỡng!', 'error');
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Error loading meals from server:', error);
-    showToast('Lỗi kết nối khi tải nhật ký dinh dưỡng!', 'error');
-  }
   };
 
   useEffect(() => {
     loadData();
     const fetchFoods = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.CATEGORIES, {
-          method: 'GET',
-          credentials: 'include',
-        });
-        const result = await response.json();
-        if (result.success && Array.isArray(result.data)) {
-          setFoodDb(result.data.map((item: any) => ({
+        const data = await fetchFoodCategories();
+        if (Array.isArray(data)) {
+          setFoodDb(data.map((item: any) => ({
             id: item.id,
             name: item.name,
             caloriesPer100g: item.caloriesPer100g ?? 0,
@@ -290,26 +274,14 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
 
     try {
       const dayJournal = journals.find(j => j.date === modalDate);
-
-      // Lấy tất cả các category đang có mặt trong state hoặc trong DB để duyệt xử lý
-      // (hoặc duyệt qua toàn bộ các category khả dụng của app)
       const allCategories = Object.keys(modalMealsData);
 
       for (const category of allCategories) {
         const currentMealItems = modalMealsData[category] || [];
         const existingMeal = dayJournal?.meals.find(m => m.category === category);
 
-        // THƯỜNG HỢP 1: Bữa này đã có trong DB từ trước (`existingMeal`)
         if (existingMeal) {
-          // Dù user sửa thêm món hay xóa sạch món, ta đều đẩy vào hàm updateMeal 
-          // (hàm updateMeal ở trên sẽ tự phân định: hết món thì gọi DELETE, còn món thì gọi PUT)
-          await updateMeal(existingMeal.id, category, currentMealItems, modalTime, modalDate);
-          continue; 
-        }
-
-        // TRƯỜNG HỢP 2: Bữa này CHƯA có trong DB trước đó, nhưng user có nhập món mới vào (`> 0`) -> Gọi POST
-        if (!existingMeal && currentMealItems.length > 0) {
-          const payload = {
+          await updateMealService(existingMeal.id, {
             mealDate: modalDate,
             category: category,
             mealTime: modalTime,
@@ -318,21 +290,21 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
               grams: Number(item.grams) || 0,
               calories: Number(item.calories) || 0,
             }))
-          };
-
-          const response = await fetch(API_ENDPOINTS.MEALS, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify(payload),
           });
+          continue; 
+        }
 
-          const result = await response.json();
-          if (!response.ok || !result.success) {
-            throw new Error(result.message || `Lỗi khi lưu bữa ${category}`);
-          }
+        if (!existingMeal && currentMealItems.length > 0) {
+          await createMeal({
+            mealDate: modalDate,
+            category: category,
+            mealTime: modalTime,
+            foodItems: currentMealItems.map(item => ({
+              foodName: item.foodName,
+              grams: Number(item.grams) || 0,
+              calories: Number(item.calories) || 0,
+            }))
+          });
         }
       }
 
@@ -347,51 +319,7 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
       setIsLoading(false);
     }
   };
-  const updateMeal = async (mealId: string, category: string, foodItems: FoodItemEntry[], mealTime: string, mealDate: string) => {
-  try {
-    // Nếu mảng món ăn trống, ta gọi DELETE để xóa luôn bữa ăn đó khỏi DB
-    if (!foodItems || foodItems.length === 0) {
-      const response = await fetch(`${API_ENDPOINTS.MEALS}/${mealId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Lỗi khi xóa bữa ăn');
-      }
-      return;
-    }
 
-    // Nếu vẫn còn món, tiến hành PUT cập nhật bình thường
-    const payload = {
-      mealDate,
-      category,
-      mealTime,
-      foodItems: foodItems.map(item => ({
-        foodName: item.foodName,
-        grams: Number(item.grams) || 0,
-        calories: Number(item.calories) || 0,
-      }))
-    };
-
-    const response = await fetch(`${API_ENDPOINTS.MEALS}/${mealId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(payload),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || 'Lỗi khi cập nhật bữa ăn');
-    }
-  } catch (error: any) {
-    throw error; // Ném lỗi ra ngoài để vòng lặp ở handleSaveMeal bắt được
-  }
-};
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     
@@ -399,35 +327,18 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
 
     try {
       if (deleteTarget.type === 'meal' && deleteTarget.mealId) {
-        // Gọi API xóa bữa ăn
-        const response = await fetch(`${API_ENDPOINTS.MEALS}/${deleteTarget.mealId}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          throw new Error('Không thể xóa bữa ăn');
-        }
+        await deleteMeal(deleteTarget.mealId);
         showToast('Xóa bữa ăn thành công!', 'success');
         
       } else if (deleteTarget.type === 'day') {
-        // Tìm tất cả bữa ăn của ngày này
         const mealsToDelete = journals.find(j => j.date === deleteTarget.date)?.meals || [];
         
-        // Gọi API xóa từng bữa của ngày đó
         for (const meal of mealsToDelete) {
-          const response = await fetch(`${API_ENDPOINTS.MEALS}/${meal.id}`, {
-            method: 'DELETE',
-            credentials: 'include',
-          });
-          if (!response.ok) {
-            throw new Error(`Không thể xóa bữa ${meal.category}`);
-          }
+          await deleteMeal(meal.id);
         }
         showToast('Xóa nhật ký ngày thành công!', 'success');
       }
 
-      // 🛠️ LUÔN TẢI LẠI DỮ LIỆU TỪ SERVER SAU KHI XÓA
       await loadData();
       
     } catch (error: any) {
@@ -435,7 +346,7 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
       showToast(error?.message || 'Có lỗi xảy ra khi xóa!', 'error');
     } finally {
       setIsLoading(false);
-      setDeleteTarget(null); // Đóng modal xác nhận xóa
+      setDeleteTarget(null);
     }
   };
 

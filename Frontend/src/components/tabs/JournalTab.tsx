@@ -1,371 +1,52 @@
-import { useState, useMemo, useEffect } from 'react';
 import {
   UtensilsCrossed,
   Plus,
   Calendar,
   Flame,
-  Clock,
-  Trash2,
-  Edit3,
   ChevronDown,
   ChevronUp,
   Apple,
-  Scale,
-  Sparkles,
-  Info,
-  Check,
-  X,
-  TrendingDown,
-  Activity,
-  Utensils
+  Edit3,
+  Trash2,
+  X
 } from 'lucide-react';
-import { DailyMealJournal, Meal, FoodItemEntry } from '../../types';
-import {
-  fetchMeals,
-  fetchFoodCategories,
-  createMeal,
-  updateMeal as updateMealService,
-  deleteMeal
-} from './JournalTab/journalService';
-import MealSection from './HomeTab/MealSection';
-import { FoodItem } from '@/src/data/foodData';
-
+import { useJournal } from './JournalTab/useJournal';
 
 const MEAL_CATEGORIES = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Xế', 'Bữa Tối'];
 
 export default function JournalTab() {
-  const [journals, setJournals] = useState<DailyMealJournal[]>([]);
-  const [foodDb, setFoodDb] = useState<FoodItem[]>([]);
-  const [dateFilter, setDateFilter] = useState<'all' | '7days' | 'custom'>('all');
-  const [customDate, setCustomDate] = useState<string>('');
-  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
-
-  // Modal State for adding/editing a meal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [isModalOpenDetail, setIsModalOpenDetail] = useState(false);
-  const [isDetailMode, setIsDetailMode] = useState(false); // Add this state
-  const [modalDate, setModalDate] = useState(new Date().toISOString().split('T')[0]);
-  const [modalCategory, setModalCategory] = useState('Bữa Trưa');
-  const [modalTime, setModalTime] = useState(
-    new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  );
-  // NEW: Store meals by category to prevent mixing
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const [modalMealsData, setModalMealsData] = useState<Record<string, FoodItemEntry[]>>({});
-  const [modalItems, setModalItems] = useState<FoodItemEntry[]>([]); // For backward compatibility, not used in new structure
-  const toggleCategory = (category: string) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [category]: !prev[category]
-    }));
-  };
-  
-  const normalizeTime = (timeStr: string) => {
-    if (!timeStr) return "12:00";
-    if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
-    const date = new Date(`1970-01-01 ${timeStr}`);
-    if (isNaN(date.getTime())) return "12:00";
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const [editingMealId, setEditingMealId] = useState<string | null>(null);
-
-  // Confirmation modal for delete
-  const [deleteTarget, setDeleteTarget] = useState<{ date: string; mealId?: string; type: 'meal' | 'day' } | null>(null);
-
-  // Toast Feedback
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
-    setFeedback({ type, text });
-    setTimeout(() => setFeedback(null), 3000);
-  };
-  const [isLoading, setIsLoading] = useState(false); // State for loading indicator
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const rawMeals = await fetchMeals();
-
-      // Group meals by date
-      const grouped = rawMeals.reduce((acc: Record<string, DailyMealJournal>, meal: any) => {
-        const dateKey = meal.mealDate ? meal.mealDate.split('T')[0] : 'Unknown';
-        
-        if (!acc[dateKey]) {
-          acc[dateKey] = {
-            id: dateKey,
-            date: dateKey,
-            meals: [],
-            totalCalories: 0
-          };
-        }
-        
-        const mealObj: Meal = {
-          id: meal.id,
-          category: meal.category,
-          time: meal.mealTime,
-          foodItems: meal.foodItems,
-          totalCalories: meal.totalCalories
-        };
-
-        acc[dateKey].meals.push(mealObj);
-        acc[dateKey].totalCalories += meal.totalCalories;
-        return acc;
-      }, {} as Record<string, DailyMealJournal>);
-
-      const list: DailyMealJournal[] = Object.values(grouped);
-      setJournals(list);
-      
-      const initExpanded: Record<string, boolean> = {};
-      list.forEach((j) => {
-        initExpanded[j.date] = true;
-      });
-      setExpandedDates(initExpanded);
-    } catch (error: any) {
-      console.error('Error loading meals:', error);
-      showToast(error.message || 'Không thể tải nhật ký dinh dưỡng!', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-    const fetchFoods = async () => {
-      try {
-        const data = await fetchFoodCategories();
-        if (Array.isArray(data)) {
-          setFoodDb(data.map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            caloriesPer100g: item.caloriesPer100g ?? 0,
-            category: item.category || 'Khác',
-          })));
-        }
-      } catch (error) {
-        console.error('Lỗi khi lấy danh sách từ server:', error);
-      }
-    };
-    fetchFoods();
-  }, []);
-
-  // Filtered Journals
-  const filteredJournals = useMemo(() => {
-    if (dateFilter === 'custom' && customDate) {
-      return journals.filter((j) => j.date === customDate);
-    }
-    if (dateFilter === '7days') {
-      const now = new Date();
-      const past7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      return journals.filter((j) => new Date(j.date) >= past7);
-    }
-    return journals;
-  }, [journals, dateFilter, customDate]);
-
-  // Macro Summary
-  const stats = useMemo(() => {
-    if (!journals || journals.length === 0) return { avgIn: 0, totalDays: 0, avgBurn: 0, avgNet: 0 };
-    const totalDays = journals.length;
-    
-    // Safely calculate totals
-    const totalCalIn = journals.reduce((sum, j) => sum + (j.totalCalories || 0), 0);
-    const totalCalBurn = journals.reduce((sum, j) => sum + (j.workoutCaloriesBurned || 0), 0);
-    
-    const avgIn = Math.round(totalCalIn / totalDays);
-    const avgBurn = Math.round(totalCalBurn / totalDays);
-    const avgNet = avgIn - avgBurn;
-    
-    return { avgIn, totalDays, avgBurn, avgNet };
-  }, [journals]);
-
-  const toggleExpandDate = (date: string) => {
-    setExpandedDates((prev) => ({ ...prev, [date]: !prev[date] }));
-  };
-
-  const handleOpenAddModal = (date?: string, category?: string) => {
-    setModalMode('add');
-    setIsDetailMode(false); // Set to false
-    setEditingMealId(null);
-    setModalDate(date || new Date().toISOString().split('T')[0]);
-    setModalCategory(category || 'Bữa Trưa');
-    setModalTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
-    setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
-    setModalMealsData({});
-    setIsModalOpen(true);
-  };
-  const handleOpenAddModalDetial = (date?: string, category?: string) => {
-    setIsDetailMode(true); // Set to true
-    setEditingMealId(null);
-    setModalDate(date || new Date().toISOString().split('T')[0]);
-    setModalCategory(category || 'Bữa Trưa');
-    setModalTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
-    setModalItems([{ id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }]);
-    setIsModalOpenDetail(true);
-  };
-
-  const handleOpenEditModal = (date: string, meal: Meal) => {
-    setModalMode('edit');
-    setEditingMealId(meal.id);
-    setModalDate(date);
-    setModalCategory(meal.category);
-    setModalTime(meal.time);
-    setModalItems(meal.foodItems && meal.foodItems.length > 0 ? [...meal.foodItems] : [
-      { id: `fi-${Date.now()}`, foodName: foodDb[0]?.name || 'Cơm trắng', grams: 200, calories: 260 }
-    ]);
-    setIsModalOpen(true);
-  };
-
-  // 1. Hàm mở modal chỉnh sửa
-// 1. Hàm mở modal chỉnh sửa
-const handleOpenEditJournalModal = (date: string) => {
-  const dayData = journals.find(j => j.date === date);
-  if (!dayData) {
-    showToast('Không tìm thấy dữ liệu ngày này', 'error');
-    return;
-  }
-
-  setModalMode('edit');
-  setEditingMealId(null);
-  setModalDate(date);
-  setIsDetailMode(false);
-  
-  const mappedMealsData: Record<string, FoodItemEntry[]> = {};
-  const newExpandedCategories: Record<string, boolean> = {};
-
-  dayData.meals.forEach(m => {
-    mappedMealsData[m.category] = m.foodItems || [];
-    if (m.foodItems && m.foodItems.length > 0) {
-      newExpandedCategories[m.category] = true;
-    }
-  });
-
-  setModalMealsData(mappedMealsData);
-  setExpandedCategories(newExpandedCategories);
-
-  if (dayData.meals.length > 0 && dayData.meals[0].time) {
-    setModalTime(normalizeTime(dayData.meals[0].time));
-  } else {
-    setModalTime('12:00');
-  }
-
-  setIsModalOpen(true);
-};
-
-// 2. Logic kiểm tra bữa ăn đã tồn tại (CHỈ áp dụng khi thêm mới)
-const categoriesToSave = Object.keys(modalMealsData).filter(cat => modalMealsData[cat] && modalMealsData[cat].length > 0);
-const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journals.find(j => j.date === modalDate)?.meals.some(m => categoriesToSave.includes(m.category));
-
-// 3. Hàm lưu / cập nhật dữ liệu
-  const handleSaveMeal = async () => {
-    // Kiểm tra xem có bất kỳ danh mục nào còn món hay không
-    const hasAnyItems = Object.values(modalMealsData).some(items => items && items.length > 0);
-    if (!hasAnyItems) {
-      showToast('Vui lòng nhập ít nhất một món ăn cho bữa bất kỳ!', 'error');
-      return;
-    }
-    
-    if (modalMode === 'add' && isMealExists) {
-      showToast('Bữa ăn đã tồn tại trong ngày này!', 'error');
-      return;
-    }
-    
-    setIsLoading(true);
-
-    try {
-      const dayJournal = journals.find(j => j.date === modalDate);
-      const allCategories = Object.keys(modalMealsData);
-
-      for (const category of allCategories) {
-        const currentMealItems = modalMealsData[category] || [];
-        const existingMeal = dayJournal?.meals.find(m => m.category === category);
-
-        if (existingMeal) {
-          await updateMealService(existingMeal.id, {
-            mealDate: modalDate,
-            category: category,
-            mealTime: modalTime,
-            foodItems: currentMealItems.map(item => ({
-              foodName: item.foodName,
-              grams: Number(item.grams) || 0,
-              calories: Number(item.calories) || 0,
-            }))
-          });
-          continue; 
-        }
-
-        if (!existingMeal && currentMealItems.length > 0) {
-          await createMeal({
-            mealDate: modalDate,
-            category: category,
-            mealTime: modalTime,
-            foodItems: currentMealItems.map(item => ({
-              foodName: item.foodName,
-              grams: Number(item.grams) || 0,
-              calories: Number(item.calories) || 0,
-            }))
-          });
-        }
-      }
-
-      showToast(modalMode === 'edit' ? 'Cập nhật nhật ký thành công!' : 'Thêm bữa ăn thành công!', 'success');
-      setIsModalOpen(false);
-      setModalMealsData({});
-      loadData();
-    } catch (error: any) {
-      console.error('Lỗi kết nối API:', error);
-      showToast(error.message || 'Có lỗi xảy ra khi lưu dữ liệu!', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    journals,
+    isLoading,
+    stats,
+    dateFilter,
+    setDateFilter,
+    customDate,
+    setCustomDate,
+    expandedDates,
+    toggleExpandDate,
+    isModalOpen,
+    setIsModalOpen,
+    modalMode,
+    modalDate,
+    modalTime,
+    setModalTime,
+    expandedCategories,
+    toggleCategory,
+    modalMealsData,
+    setModalMealsData,
+    deleteTarget,
+    setDeleteTarget,
+    filteredJournals,
+    handleOpenAddModal,
+    handleOpenEditJournalModal,
+    isMealExists,
+    handleSaveMeal,
+    handleDelete
+  } = useJournal();
 
   const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    
-    setIsLoading(true);
-
-    try {
-      if (deleteTarget.type === 'meal' && deleteTarget.mealId) {
-        await deleteMeal(deleteTarget.mealId);
-        showToast('Xóa bữa ăn thành công!', 'success');
-        
-      } else if (deleteTarget.type === 'day') {
-        const mealsToDelete = journals.find(j => j.date === deleteTarget.date)?.meals || [];
-        
-        for (const meal of mealsToDelete) {
-          await deleteMeal(meal.id);
-        }
-        showToast('Xóa nhật ký ngày thành công!', 'success');
-      }
-
-      await loadData();
-      
-    } catch (error: any) {
-      console.error('Lỗi khi xóa:', error);
-      showToast(error?.message || 'Có lỗi xảy ra khi xóa!', 'error');
-    } finally {
-      setIsLoading(false);
-      setDeleteTarget(null);
-    }
-  };
-
-  const formatDisplayDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr + 'T00:00:00');
-      const todayStr = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-      let prefix = '';
-      if (dateStr === todayStr) prefix = 'Hôm nay • ';
-      else if (dateStr === yesterday) prefix = 'Hôm qua • ';
-
-      const weekday = date.toLocaleDateString('vi-VN', { weekday: 'long' });
-      const dayMonth = date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      return `${prefix}${weekday.charAt(0).toUpperCase() + weekday.slice(1)}, ${dayMonth}`;
-    } catch {
-      return dateStr;
-    }
+    await handleDelete();
   };
 
   return (
@@ -517,7 +198,7 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
                       className="flex items-center gap-2 text-left flex-1 cursor-pointer select-none"
                     >
                       <span className="font-bold text-sm text-slate-800">
-                        {formatDisplayDate(journal.date)}
+                        {journal.date}
                       </span>
                       {isExpanded ? (
                         <ChevronUp size={16} className="text-slate-400" />
@@ -585,7 +266,6 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
                               </span>
                             </div>   
                           </div>
-
                           {/* Food Items List */}
                           {meal.foodItems && Array.isArray(meal.foodItems) && meal.foodItems.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -663,12 +343,11 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
                           type="button"
                           onClick={() => {
                             if (!expandedCategories[category]) toggleCategory(category);
-                            const defaultFood = foodDb[0] || { name: 'Cơm trắng', caloriesPer100g: 130 };
                             setModalMealsData(prev => ({
                               ...prev,
                               [category]: [
                                 ...(prev[category] || []),
-                                { id: `fi-${Date.now()}`, foodName: defaultFood.name, grams: 150, calories: Math.round(1.5 * defaultFood.caloriesPer100g) }
+                                { id: `fi-${Date.now()}`, foodName: 'Món ăn mới', grams: 150, calories: 100 }
                               ]
                             }));
                           }}
@@ -693,20 +372,16 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
                         
                           {categoryItems.map((item) => (
                             <div key={item.id} className="flex gap-2 items-center text-xs">
-                              <select
+                              <input
                                 value={item.foodName}
                                 onChange={(e) => {
-                                  const selected = foodDb.find((f) => f.name === e.target.value);
-                                  const per100 = selected ? selected.caloriesPer100g : 0;
                                   setModalMealsData(prev => ({
                                     ...prev,
-                                    [category]: prev[category].map(i => i.id === item.id ? { ...i, foodName: e.target.value, calories: Math.round((i.grams / 100) * per100) } : i)
+                                    [category]: prev[category].map(i => i.id === item.id ? { ...i, foodName: e.target.value } : i)
                                   }));
                                 }}
                                 className="flex-1 bg-white border border-slate-200 rounded-lg px-2 py-1"
-                              >
-                                {foodDb.map((f) => <option key={f.name} value={f.name}>{f.name}</option>)}
-                              </select>
+                              />
 
                               <input
                                 type="number"
@@ -714,11 +389,9 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
                                 value={item.grams ||''}
                                 onChange={(e) => {
                                   const grams = Number(e.target.value);
-                                  const selected = foodDb.find((f) => f.name === item.foodName);
-                                  const per100 = selected ? selected.caloriesPer100g : 0;
                                   setModalMealsData(prev => ({
                                     ...prev,
-                                    [category]: prev[category].map(i => i.id === item.id ? { ...i, grams, calories: Math.round((grams / 100) * per100) } : i)
+                                    [category]: prev[category].map(i => i.id === item.id ? { ...i, grams } : i)
                                   }));
                                 }}
                                 className="w-16 bg-white border border-slate-200 rounded-lg px-1 py-1 text-center"
@@ -807,5 +480,3 @@ const isMealExists = modalMode === 'add' && categoriesToSave.length > 0 && journ
     </div>
   );
 }
-
-
